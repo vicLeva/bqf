@@ -32,7 +32,6 @@ int main (int argc, char * argv[]) {
 
 	// uint64 generators
 	default_random_engine generator;
-	cout << "seed " << seed << endl; 
 	generator.seed(seed);
 	uniform_int_distribution<uint64_t> distribution;
 

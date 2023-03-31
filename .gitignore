@@ -11,6 +11,10 @@ CQF
 bin/
 lib/
 Testing/
+
 build/
 .idea/.name
 .idea/workspace.xml
+
+benchmark/statsFiles/*
+benchmark/figs/*

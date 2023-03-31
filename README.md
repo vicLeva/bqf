@@ -46,3 +46,12 @@ From build directory
 ```bash
 ctest
 ```
+
+# Benchmark
+
+in build/
+```bash
+make && bin/benchmark && python ../benchmark/plot.py
+```
+
+

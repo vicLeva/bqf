@@ -10,8 +10,20 @@ PRINTING, DEBUGGING AND TESTING
 #include <getopt.h>
 #include <vector>
 #include <algorithm>
+#include <chrono>
+#include "sys/types.h"
+#include "sys/sysinfo.h"
 
 #include "filter.hpp" 
+
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
+
+#include <iostream>
+#include <fstream>
+using namespace std;
+
 
 #define MEM_UNIT 64ULL
 #define MET_UNIT 3ULL
@@ -21,6 +33,30 @@ PRINTING, DEBUGGING AND TESTING
 
 using namespace std;
 
+int parseLine(char* line){
+    // This assumes that a digit will be found and the line ends in " Kb".
+    int i = strlen(line);
+    const char* p = line;
+    while (*p <'0' || *p > '9') p++;
+    line[i-3] = '\0';
+    i = atoi(p);
+    return i;
+}
+
+int getValue(){ //Note: this value is in KB!
+    FILE* file = fopen("/proc/self/status", "r");
+    int result = -1;
+    char line[128];
+
+    while (fgets(line, 128, file) != NULL){
+        if (strncmp(line, "VmRSS:", 6) == 0){
+            result = parseLine(line);
+            break;
+        }
+    }
+    fclose(file);
+    return result;
+}
 
 void print_pair(std::pair<uint64_t,uint64_t> bound){
   std::cout << bound.first << "-" << bound.second << " ";
@@ -232,6 +268,47 @@ void test_one_cqf(){
 }
 
 
+void test_time_fill_cqf(int q, int n){
+  uint64_t seed = time(NULL);
+  default_random_engine generator;
+  generator.seed(seed);
+  uniform_int_distribution<uint64_t> distribution;
+
+  ofstream myfile;
+  myfile.open ("/tmp/tmp");
+  
+  auto ttot = std::chrono::high_resolution_clock::now();
+
+  
+
+  for (int j=0 ; j<n ; j++) {
+
+    uint64_t seedTMP = distribution(generator);
+    default_random_engine generatorTMP;
+    generatorTMP.seed(seedTMP);
+    uniform_int_distribution<uint64_t> distributionTMP;
+
+    Rsqf small_qf(q, 64-q, false);
+
+    for (size_t i=0 ; i<(1ULL<<q)-1 ; i++) { //fill to 2^qsize elements (100%-1)
+
+      auto t1 = std::chrono::high_resolution_clock::now();
+
+      uint64_t val = distributionTMP(generatorTMP);      
+      small_qf.insert(val);
+
+      myfile << to_string( std::chrono::duration<double, std::milli>(
+        std::chrono::high_resolution_clock::now() - t1
+      ).count()) << "\n";
+    }     
+  }
+
+  myfile.close();
+
+  cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms\n";
+}
+
+
 
 
 int main(int argc, char** argv) {
@@ -241,9 +318,17 @@ int main(int argc, char** argv) {
 
     //test_lots_of_full_cqf_enumerate();
 
-    test_lots_of_full_cqf_remove();
+    //test_lots_of_full_cqf_remove();
+
+    test_time_fill_cqf(22, 1);
 
 
+
+    
+    
+
+    
+    
   
   return 0;
 }
