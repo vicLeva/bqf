@@ -86,7 +86,6 @@ void writeQueryTimes(vector<int> & vec){
 	myfile.close();
 }
 
-
 void writeInsertTimes(int q){
 	//q >= 11 for having 100insert less than 0.5% load addition
 	uint64_t max_load = ((1ULL << q) - 1);
@@ -142,6 +141,13 @@ void printMaxMemUsage(int mem){
 	cmd = cmd + cwd + "/../build/bin/random_uints -s " + to_string(mem) + " -n " + to_string(500);
 	cmd = cmd + " 2> " + cwd + "/statsFiles/tmpMaxMem";
 	system(cmd.c_str());
+
+	ifstream myfile;
+  	myfile.open(cwd + "statsFiles/tmpMaxMem");
+	int c=0;
+	for( std::string line; getline( myfile, line ); ) {
+		if(++c == 10) cout << "Max memory usage : " << line.substr(37) << " KB while building " << mem << "MB QF" << endl;
+	}
 }
 
 int main (int argc, char * argv[]) {
@@ -151,7 +157,7 @@ int main (int argc, char * argv[]) {
 	
 	
 	//q >= 11 for having 100insert less than 0.5% load addition
-	writeInsertTimes(12);
+	writeInsertTimes(20);
 
 	//mem = 4  ==>  q = 19
 	printMaxMemUsage(4);
