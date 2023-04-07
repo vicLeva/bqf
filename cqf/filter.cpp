@@ -441,7 +441,6 @@ uint64_t Rsqf::remainder(uint64_t num) const{
 // REMAINDER OPERATIONS
 
 uint64_t Rsqf::get_remainder(uint64_t position){
-
     uint64_t block = get_block_id(position);
     uint64_t pos_in_block = get_shift_in_block(position);
 

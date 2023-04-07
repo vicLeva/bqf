@@ -8,6 +8,8 @@
 #include "additional_methods.hpp"
 
 
+class Backpack_cqf;
+
 
 /**
  * \brief Represents a RSQF
@@ -30,7 +32,7 @@ class Rsqf {
     /** 
      * \brief Constructor that instantiates a QF from quotient and remainder sizes
      * \param q_size The desired size of quotient, will induce filter's size
-     * \param r_size The desired size of quotient (usually 64-q_size)
+     * \param r_size The desired size of remainders (usually 64-q_size)
      * \param verbose to print on-going operations in stdout
      */
     Rsqf(uint64_t q_size, uint64_t r_size, bool verbose = false);
@@ -121,7 +123,7 @@ class Rsqf {
 
 
 
-    private:
+    protected:
     // ATTRIBUTES
 
     /** 

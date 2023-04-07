@@ -113,7 +113,7 @@ void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t
     if (len == 0) return;
 
     uint64_t mask = mask_right(len);
-    uint64_t word = get_block_id(pos);
+    uint64_t word = get_block_id(pos); //not rly block id, more like word id (pos is exact bit pos)
     uint64_t shift = get_shift_in_block(pos);
 
     value &= mask;

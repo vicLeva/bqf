@@ -5,6 +5,8 @@
 *.tcl
 *.a
 
+build/
+
 .vscode
 
 CQF

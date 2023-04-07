@@ -1,6 +1,7 @@
 add_library(CQF
 	additional_methods.cpp
 	filter.cpp
+	backpack_cqf.cpp
 )
 
 target_include_directories(CQF
