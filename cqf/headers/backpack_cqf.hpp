@@ -34,7 +34,7 @@ class Backpack_cqf : public Rsqf{
      * \param c_size The desired size of remainders counters
      * \param verbose to print on-going operations in stdout
      */
-    Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verbose);
+    Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verbose=false);
 
     /** 
      * \brief Constructor that deduces quotient and remainder sizes from the desired struct size
@@ -44,7 +44,7 @@ class Backpack_cqf : public Rsqf{
      * \param c_size The desired size of remainders counters
      * \param verbose to print on-going operations in stdout
      */
-    Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verbose);
+    Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verbose=false);
 
 
     void insert(uint64_t number, uint64_t count = 1);
@@ -56,7 +56,7 @@ class Backpack_cqf : public Rsqf{
     std::map<uint64_t, uint64_t> enumerate();
 
 
-    protected:
+    public:
 
     uint64_t count_size;
 

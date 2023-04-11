@@ -16,8 +16,10 @@ using namespace std;
 
 Backpack_cqf::Backpack_cqf(){}
 
-Backpack_cqf::Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verbose){
+Backpack_cqf::Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb){
     assert (c_size < q_size);
+
+    verbose = verb;
 
     elements_inside = 0;
     quotient_size = q_size;
@@ -37,8 +39,10 @@ Backpack_cqf::Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bo
 }
 
 
-Backpack_cqf::Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verbose){
+Backpack_cqf::Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verb){
     elements_inside = 0;
+
+    verbose = verb;
     
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory, c_size);
@@ -62,12 +66,14 @@ Backpack_cqf::Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verbose){
 
 
 void Backpack_cqf::insert(uint64_t number, uint64_t count){
+
     if (elements_inside == number_blocks*MEM_UNIT - 1) return; //100%-1 is max number
 
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
     uint64_t rem = remainder(number);
-    uint64_t rem_count = (rem << count_size) | count;
+    uint64_t rem_count = (rem << count_size) | (count < (1ULL << count_size) ? count : (1ULL << count_size)-1); 
+    //handles count > 2^c 
 
     if (verbose){
         std::cout << "[INSERT] quot " << quot << std::endl;
@@ -220,6 +226,7 @@ bool Backpack_cqf::remove(uint64_t number, uint64_t count){
     }
     //last iter
     remainder_in_filter = get_remainder(boundary.second); 
+    cout << remainder_in_filter << endl;
     if (remainder_in_filter == rem) {
         pos_element = position;
         found = true;
@@ -335,10 +342,9 @@ uint64_t Backpack_cqf::find_quotient_given_memory(uint64_t max_memory, uint64_t 
 
 void Backpack_cqf::add_to_counter(uint64_t position, uint64_t remainder_w_count){
     uint64_t old_rem = get_remainder(position, true);
-
     uint64_t sum = (old_rem & mask_right(count_size)) + (remainder_w_count & mask_right(count_size));
-    if (! (sum < 1ULL << (count_size+1))){
-        sum = (1ULL << (count_size+1)) - 1;
+    if (! (sum < 1ULL << (count_size))){
+        sum = (1ULL << (count_size)) - 1;
     }  
     
     sum |= old_rem & mask_left(MEM_UNIT - count_size);

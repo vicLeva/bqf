@@ -123,7 +123,7 @@ class Rsqf {
 
 
 
-    protected:
+    public:
     // ATTRIBUTES
 
     /** 

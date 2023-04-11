@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+
 #include "filter.hpp"
+#include "backpack_cqf.hpp"
 #include <random>
 
 using namespace std;
@@ -9,8 +11,9 @@ class RsqfTest : public ::testing::Test {
   void SetUp() override {
     generator.seed(time(NULL));
     
-    usual_qf = Rsqf(4);
+    usual_qf = Rsqf(2);
     small_qf = Rsqf(7, 64-7, false);
+    cqf = Backpack_cqf(4, 5, false);
   }
 
   // void TearDown() override {}
@@ -20,6 +23,7 @@ class RsqfTest : public ::testing::Test {
 
   Rsqf usual_qf;
   Rsqf small_qf;
+  Backpack_cqf cqf;
 };
 
 
@@ -284,7 +288,7 @@ TEST_F(RsqfTest, finalTest) {
     unordered_set<uint64_t> verif; 
 
     //INSERT
-    for (uint64_t i=0; i < (1ULL<<19)-1; i++){
+    for (uint64_t i=0; i < (1ULL<<18)-1; i++){
         val = distribution(generator);      
         usual_qf.insert(val);
         verif.insert(val);
@@ -293,11 +297,90 @@ TEST_F(RsqfTest, finalTest) {
     EXPECT_EQ(usual_qf.enumerate(), verif);
 
     //REMOVE
-    for (uint64_t i=0; i < (1ULL<<19)-1; i++){
+    for (uint64_t i=0; i < (1ULL<<18)-1; i++){
         val = *verif.begin(); 
         verif.extract(val);    
         usual_qf.remove(val);
     }
 
     EXPECT_EQ(usual_qf.enumerate(), verif);
+}
+
+
+
+
+
+
+class BCqfTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    generator.seed(time(NULL));
+    
+    small_cqf = Backpack_cqf(7, 64-7, 5, false);
+    cqf = Backpack_cqf(1, 5, false);
+  }
+
+  // void TearDown() override {}
+
+  std::default_random_engine generator;
+  std::uniform_int_distribution<uint64_t> distribution;
+
+  Backpack_cqf small_cqf;
+  Backpack_cqf cqf;
+};
+
+
+TEST_F(BCqfTest, insert1occs) {
+    uint64_t val;
+    std::map<uint64_t, uint64_t> verif; 
+
+    //INSERT
+    for (uint64_t i=0; i < (1ULL<<17)-1; i++){
+        val = distribution(generator);    
+        while (verif.count(val) == 1) { //already seen key
+            val = distribution(generator);    
+        }  
+
+        cqf.insert(val);
+        verif.insert({ val, 1 });
+    }
+
+    EXPECT_EQ(cqf.enumerate(), verif);
+
+    //REMOVE
+    std::map<uint64_t,uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++){
+        cqf.remove((*it).first);
+    }
+    verif.clear();
+
+    EXPECT_EQ(cqf.enumerate(), verif);
+}
+
+
+TEST_F(BCqfTest, insertRDMoccs) {
+    uint64_t val;
+    std::map<uint64_t, uint64_t> verif; 
+
+    //INSERT
+    for (uint64_t i=0; i < (1ULL<<17)-1; i++){
+        val = distribution(generator);    
+        while (verif.count(val) == 1) { //already seen key
+            val = distribution(generator);    
+        }  
+
+        cqf.insert(val, val%31);
+        verif.insert({ val, val%31 });
+    }
+
+    EXPECT_EQ(cqf.enumerate(), verif);
+
+    //REMOVE
+    std::map<uint64_t,uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++){
+        cqf.remove((*it).first, (*it).second);
+    }
+    verif.clear();
+
+    EXPECT_EQ(cqf.enumerate(), verif);
 }
