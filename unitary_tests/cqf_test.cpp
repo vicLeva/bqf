@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "filter.hpp"
-#include "backpack_cqf.hpp"
+#include "bcqf_ec.hpp" 
+#include "bcqf_oom.hpp"
 #include <random>
 
 using namespace std;
@@ -13,7 +14,7 @@ class RsqfTest : public ::testing::Test {
     
     usual_qf = Rsqf(2);
     small_qf = Rsqf(7, 64-7, false);
-    cqf = Backpack_cqf(4, 5, false);
+    cqf = Bcqf_ec(4, 5, false);
   }
 
   // void TearDown() override {}
@@ -23,7 +24,7 @@ class RsqfTest : public ::testing::Test {
 
   Rsqf usual_qf;
   Rsqf small_qf;
-  Backpack_cqf cqf;
+  Bcqf_ec cqf;
 };
 
 
@@ -316,8 +317,8 @@ class BCqfTest : public ::testing::Test {
   void SetUp() override {
     generator.seed(time(NULL));
     
-    small_cqf = Backpack_cqf(7, 64-7, 5, false);
-    cqf = Backpack_cqf(1, 5, false);
+    small_cqf = Bcqf_ec(7, 64-7, 5, false);
+    cqf = Bcqf_ec(1, 5, false);
   }
 
   // void TearDown() override {}
@@ -325,8 +326,8 @@ class BCqfTest : public ::testing::Test {
   std::default_random_engine generator;
   std::uniform_int_distribution<uint64_t> distribution;
 
-  Backpack_cqf small_cqf;
-  Backpack_cqf cqf;
+  Bcqf_ec small_cqf;
+  Bcqf_ec cqf;
 };
 
 

@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cassert>
 
-#include "backpack_cqf.hpp" 
+#include "bcqf_oom.hpp" 
 
 // STATIC VARIABLES 
 #define MEM_UNIT 64ULL
@@ -14,9 +14,9 @@
 
 using namespace std;
 
-Backpack_cqf::Backpack_cqf(){}
+Bcqf_oom::Bcqf_oom(){}
 
-Backpack_cqf::Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb){
+Bcqf_oom::Bcqf_oom(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb){
     assert (c_size < q_size);
 
     verbose = verb;
@@ -39,7 +39,7 @@ Backpack_cqf::Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bo
 }
 
 
-Backpack_cqf::Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verb){
+Bcqf_oom::Bcqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){
     elements_inside = 0;
 
     verbose = verb;
@@ -65,25 +65,22 @@ Backpack_cqf::Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verb){
 
 
 
-void Backpack_cqf::insert(uint64_t number, uint64_t count){
+void Bcqf_oom::insert(uint64_t number, uint64_t count){
 
     if (elements_inside == number_blocks*MEM_UNIT - 1) return; //100%-1 is max number
 
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
     uint64_t rem = remainder(number);
-    uint64_t rem_count = (rem << count_size) | (count < (1ULL << count_size) ? count : (1ULL << count_size)-1); 
-    //handles count > 2^c 
+    uint64_t rem_count = (rem << count_size) | inf_bound(count); 
 
     if (verbose){
         std::cout << "[INSERT] quot " << quot << std::endl;
         std::cout << "[INSERT] rem " << rem << std::endl;
     }
-    
 
     // GET FIRST UNUSED SLOT
     uint64_t fu_slot = first_unused_slot(quot);
-    //assert(fu_slot.remainder == 0)
     assert(get_remainder(fu_slot) == 0);
     
     if (verbose) {
@@ -124,20 +121,12 @@ void Backpack_cqf::insert(uint64_t number, uint64_t count){
             if (remainder_in_filter < rem) {
                 starting_position = get_next_quot(starting_position);
             }
-            else if (remainder_in_filter == rem){ 
-                    add_to_counter(starting_position, rem_count);
-                    return;
-            }
         }
         else{
             while(starting_position != boundary.second){
                 remainder_in_filter = get_remainder(starting_position); 
                 if (remainder_in_filter > rem) {
                     break;
-                }
-                else if (remainder_in_filter == rem){ 
-                    add_to_counter(starting_position, rem_count);
-                    return;
                 }
                 starting_position = get_next_quot(starting_position);
             }
@@ -147,10 +136,6 @@ void Backpack_cqf::insert(uint64_t number, uint64_t count){
             remainder_in_filter = get_remainder(starting_position); 
             if (remainder_in_filter < rem) {
                 starting_position = get_next_quot(starting_position);
-            }
-            else if (remainder_in_filter == rem){ 
-                add_to_counter(starting_position, rem_count);
-                return;
             }
         }        
         
@@ -162,7 +147,7 @@ void Backpack_cqf::insert(uint64_t number, uint64_t count){
 }
 
 
-uint64_t Backpack_cqf::query(uint64_t number){
+uint64_t Bcqf_oom::query(uint64_t number){
     if (elements_inside == 0) return 0;
     uint64_t quot = quotient(number);
     uint64_t rem = remainder(number);
@@ -179,19 +164,20 @@ uint64_t Backpack_cqf::query(uint64_t number){
     while(position != boundary.second){
         uint64_t remainder_in_filter = get_remainder(position);
 
-        if (remainder_in_filter == rem) return get_remainder(position, true) & mask_right(count_size);
+        if (remainder_in_filter == rem) return (1ULL << (get_remainder(position, true) & mask_right(count_size)));
         else if (remainder_in_filter > rem) return 0;
         position = get_next_quot(position);
     }
 
     uint64_t remainder_in_filter = get_remainder(boundary.second); 
-    if (remainder_in_filter == rem) return get_remainder(position, true) & mask_right(count_size);
+    if (remainder_in_filter == rem) return (1ULL << (get_remainder(position, true) & mask_right(count_size)));
 
     return 0;
 }
 
 
-bool Backpack_cqf::remove(uint64_t number, uint64_t count){
+bool Bcqf_oom::remove(uint64_t number){
+
     if (elements_inside == 0) return 0;
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
@@ -216,6 +202,7 @@ bool Backpack_cqf::remove(uint64_t number, uint64_t count){
     // GET POSITION
     while(position != boundary.second){
         remainder_in_filter = get_remainder(position); 
+        cout << "rem_infilt " << remainder_in_filter << endl;
         if (remainder_in_filter == rem) {
             pos_element = position;
             found = true;
@@ -224,28 +211,23 @@ bool Backpack_cqf::remove(uint64_t number, uint64_t count){
         else if (remainder_in_filter > rem) return 0;
         position = get_next_quot(position);
     }
-    //last iter
+    
     remainder_in_filter = get_remainder(boundary.second); 
-    cout << remainder_in_filter << endl;
+    cout << "rem_infilt " << remainder_in_filter << endl;
     if (remainder_in_filter == rem) {
         pos_element = position;
         found = true;
         }
     if (!found) return 0; //not found
 
-    //remove some of the ones present
-    if (count < (get_remainder(pos_element, true) & mask_right(count_size))){
-        sub_to_counter(pos_element, count);
-        return 1;
-    }
-
-    //remove everything (delete remainder)
     // GET FIRST UNSHIFTABLE SLOT (first quot = runend(quot) or unused)
     uint64_t end_slot = first_unshiftable_slot(quot);
 
     if (verbose){
         cout << "[REMOVE] FUS " << end_slot << endl;
     }
+
+    
 
     if (pos_element == end_slot) {}
 
@@ -280,7 +262,7 @@ bool Backpack_cqf::remove(uint64_t number, uint64_t count){
 }
 
 
-std::map<uint64_t, uint64_t> Backpack_cqf::enumerate(){
+std::map<uint64_t, uint64_t> Bcqf_oom::enumerate(){
     std::map<uint64_t, uint64_t> finalSet;
     uint64_t curr_occ;
     
@@ -319,7 +301,7 @@ std::map<uint64_t, uint64_t> Backpack_cqf::enumerate(){
 
 
 
-uint64_t Backpack_cqf::find_quotient_given_memory(uint64_t max_memory, uint64_t count_size){
+uint64_t Bcqf_oom::find_quotient_given_memory(uint64_t max_memory, uint64_t count_size){
     uint64_t quotient_size;
     uint64_t curr_m;
     
@@ -340,40 +322,8 @@ uint64_t Backpack_cqf::find_quotient_given_memory(uint64_t max_memory, uint64_t 
 
 }
 
-void Backpack_cqf::add_to_counter(uint64_t position, uint64_t remainder_w_count){
-    uint64_t old_rem = get_remainder(position, true);
-    uint64_t sum = (old_rem & mask_right(count_size)) + (remainder_w_count & mask_right(count_size));
-    if (! (sum < 1ULL << (count_size))){
-        sum = (1ULL << (count_size)) - 1;
-    }  
-    
-    sum |= old_rem & mask_left(MEM_UNIT - count_size);
 
-    set_bits(filter, 
-            get_remainder_word_position(position) * MEM_UNIT + get_remainder_shift_position(position), 
-            sum, 
-            remainder_size);
-}
-
-void Backpack_cqf::sub_to_counter(uint64_t position, uint64_t count){
-    uint64_t old_rem = get_remainder(position, true);
-
-    cout << "sub " << (old_rem & mask_right(count_size)) << endl;
-
-    uint64_t sub = (old_rem & mask_right(count_size)) - count;
-
-    
-    
-    sub |= old_rem & mask_left(MEM_UNIT - count_size);
-
-    set_bits(filter, 
-            get_remainder_word_position(position) * MEM_UNIT + get_remainder_shift_position(position), 
-            sub, 
-            remainder_size);
-}
-
-
-uint64_t Backpack_cqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
+uint64_t Bcqf_oom::get_remainder(uint64_t position, bool w_counter ){ //default=false
     uint64_t block = get_block_id(position);
     uint64_t pos_in_block = get_shift_in_block(position);
     uint64_t pos = (block*((MET_UNIT+remainder_size)*MEM_UNIT)+MET_UNIT*MEM_UNIT+pos_in_block*remainder_size); 
@@ -382,7 +332,14 @@ uint64_t Backpack_cqf::get_remainder(uint64_t position, bool w_counter ){ //defa
     else return get_bits(filter, pos, remainder_size) >> count_size;
 }
 
-uint64_t Backpack_cqf::remainder(uint64_t num) const{
+uint64_t Bcqf_oom::remainder(uint64_t num) const{
+    cout << "ce rem là" << endl;
     return num >> (MEM_UNIT - remainder_size + count_size);
+}
+
+
+uint64_t Bcqf_oom::inf_bound(uint64_t c) {
+    uint64_t val = bitselectasm(c, bitrankasm(c, MEM_UNIT-1));
+    return val < (1ULL << count_size) ? val : (1ULL << count_size)-1;
 }
 

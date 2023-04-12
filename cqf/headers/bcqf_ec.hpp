@@ -1,5 +1,5 @@
-#ifndef BACKPACK_CQF_HPP
-#define BACKPACK_CQF_HPP
+#ifndef BACKPACK_CQF_EC_HPP
+#define BACKPACK_CQF_EC_HPP
 
 #include <stdint.h> 
 #include <map>
@@ -16,7 +16,7 @@
  * is a few bits at the end of its remainder. These bits can be an exact count or an order of magnitude.
  * Inherited from RSQF class.
  */
-class Backpack_cqf : public Rsqf{
+class Bcqf_ec : public Rsqf{
     
     public:
     /*  
@@ -25,7 +25,7 @@ class Backpack_cqf : public Rsqf{
         ================================================================
     */ 
 
-    Backpack_cqf();
+    Bcqf_ec();
 
     /** 
      * \brief Constructor that instantiates a BackpackCQF from quotient and remainder sizes
@@ -34,7 +34,7 @@ class Backpack_cqf : public Rsqf{
      * \param c_size The desired size of remainders counters
      * \param verbose to print on-going operations in stdout
      */
-    Backpack_cqf(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verbose=false);
+    Bcqf_ec(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verbose=false);
 
     /** 
      * \brief Constructor that deduces quotient and remainder sizes from the desired struct size
@@ -44,7 +44,7 @@ class Backpack_cqf : public Rsqf{
      * \param c_size The desired size of remainders counters
      * \param verbose to print on-going operations in stdout
      */
-    Backpack_cqf(uint64_t max_memory, uint64_t c_size, bool verbose=false);
+    Bcqf_ec(uint64_t max_memory, uint64_t c_size, bool verbose=false);
 
 
     void insert(uint64_t number, uint64_t count = 1);
