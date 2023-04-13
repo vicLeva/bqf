@@ -29,6 +29,7 @@ Rsqf::Rsqf(){
 }
 
 Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : verbose(verbose) {
+    assert(q_size >= 7);
     elements_inside = 0;
     quotient_size = q_size;
     remainder_size = r_size;
@@ -50,6 +51,7 @@ Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) {
     
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory);
+    assert(quotient_size >= 7);
     remainder_size = MEM_UNIT - quotient_size;
 
     // Number of quotients must be >= MEM_UNIT

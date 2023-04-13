@@ -17,7 +17,7 @@ using namespace std;
 Bcqf_ec::Bcqf_ec(){}
 
 Bcqf_ec::Bcqf_ec(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb){
-    assert (c_size < q_size);
+    assert(q_size >= 7);
 
     verbose = verb;
 
@@ -46,7 +46,7 @@ Bcqf_ec::Bcqf_ec(uint64_t max_memory, uint64_t c_size, bool verb){
     
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory, c_size);
-    assert (c_size < quotient_size);
+    assert(quotient_size >= 7);
     remainder_size = MEM_UNIT - quotient_size + c_size;
     count_size = c_size;
 
@@ -357,12 +357,8 @@ void Bcqf_ec::add_to_counter(uint64_t position, uint64_t remainder_w_count){
 void Bcqf_ec::sub_to_counter(uint64_t position, uint64_t count){
     uint64_t old_rem = get_remainder(position, true);
 
-    cout << "sub " << (old_rem & mask_right(count_size)) << endl;
-
     uint64_t sub = (old_rem & mask_right(count_size)) - count;
 
-    
-    
     sub |= old_rem & mask_left(MEM_UNIT - count_size);
 
     set_bits(filter, 

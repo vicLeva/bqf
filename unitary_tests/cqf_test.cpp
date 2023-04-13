@@ -319,6 +319,9 @@ class BCqfTest : public ::testing::Test {
     
     small_cqf = Bcqf_ec(7, 64-7, 5, false);
     cqf = Bcqf_ec(1, 5, false);
+    
+    small_cqf_oom = Bcqf_oom(7, 64-7, 5, false);
+    cqf_oom = Bcqf_oom(1, 5, false);
   }
 
   // void TearDown() override {}
@@ -328,6 +331,9 @@ class BCqfTest : public ::testing::Test {
 
   Bcqf_ec small_cqf;
   Bcqf_ec cqf;
+  
+  Bcqf_oom small_cqf_oom;
+  Bcqf_oom cqf_oom;
 };
 
 
@@ -384,4 +390,32 @@ TEST_F(BCqfTest, insertRDMoccs) {
     verif.clear();
 
     EXPECT_EQ(cqf.enumerate(), verif);
+}
+
+
+TEST_F(BCqfTest, insertRDMoccs_oom) {
+    uint64_t val;
+    std::map<uint64_t, uint64_t> verif; 
+
+    //INSERT
+    for (uint64_t i=0; i < (1ULL<<17)-1; i++){
+        val = distribution(generator);    
+        while (verif.count(val) == 1) { //already seen key (unlikely)
+            val = distribution(generator);    
+        }  
+        
+        cqf_oom.insert(val, (1ULL << val%31));
+        verif.insert({ val, (1ULL << val%31) });
+    }
+
+    EXPECT_EQ(cqf_oom.enumerate(), verif);
+
+    //REMOVE
+    std::map<uint64_t,uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++){
+        cqf_oom.remove((*it).first);
+    }
+    verif.clear();
+
+    EXPECT_EQ(cqf_oom.enumerate(), verif);
 }

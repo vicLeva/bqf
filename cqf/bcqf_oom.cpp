@@ -17,7 +17,7 @@ using namespace std;
 Bcqf_oom::Bcqf_oom(){}
 
 Bcqf_oom::Bcqf_oom(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb){
-    assert (c_size < q_size);
+    assert (q_size >= 7);
 
     verbose = verb;
 
@@ -46,7 +46,7 @@ Bcqf_oom::Bcqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){
     
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory, c_size);
-    assert (c_size < quotient_size);
+    assert (quotient_size >= 7);
     remainder_size = MEM_UNIT - quotient_size + c_size;
     count_size = c_size;
 
@@ -202,7 +202,6 @@ bool Bcqf_oom::remove(uint64_t number){
     // GET POSITION
     while(position != boundary.second){
         remainder_in_filter = get_remainder(position); 
-        cout << "rem_infilt " << remainder_in_filter << endl;
         if (remainder_in_filter == rem) {
             pos_element = position;
             found = true;
@@ -213,7 +212,6 @@ bool Bcqf_oom::remove(uint64_t number){
     }
     
     remainder_in_filter = get_remainder(boundary.second); 
-    cout << "rem_infilt " << remainder_in_filter << endl;
     if (remainder_in_filter == rem) {
         pos_element = position;
         found = true;
@@ -284,12 +282,12 @@ std::map<uint64_t, uint64_t> Bcqf_oom::enumerate(){
                 cursor = bounds.first;
                 while (cursor != (bounds.second)){ //every remainder of the run
                     number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                    finalSet[number] = get_remainder(cursor, true) & mask_right(count_size);
+                    finalSet[number] = (1ULL << ( get_remainder(cursor, true) & mask_right(count_size) ));
                     cursor = get_next_quot(cursor);
                 }
 
                 number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                finalSet[number] = get_remainder(cursor, true) & mask_right(count_size);
+                finalSet[number] = (1ULL << ( get_remainder(cursor, true) & mask_right(count_size) ));
             }
 
             curr_occ >>= 1ULL; //next bit of occupied vector
@@ -298,8 +296,6 @@ std::map<uint64_t, uint64_t> Bcqf_oom::enumerate(){
 
     return finalSet;
 }
-
-
 
 uint64_t Bcqf_oom::find_quotient_given_memory(uint64_t max_memory, uint64_t count_size){
     uint64_t quotient_size;
@@ -333,7 +329,6 @@ uint64_t Bcqf_oom::get_remainder(uint64_t position, bool w_counter ){ //default=
 }
 
 uint64_t Bcqf_oom::remainder(uint64_t num) const{
-    cout << "ce rem là" << endl;
     return num >> (MEM_UNIT - remainder_size + count_size);
 }
 

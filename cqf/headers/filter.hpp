@@ -57,17 +57,17 @@ class Rsqf {
      * \brief Insert a new number in the filter. 
      * 
      * This function inserts a number in the RSQF. IF the number is already present, it just adds another copy of the number.
-     * If a number has the same quotient but different reminders, it stores reminders in a monothonic way
+     * If a number has the same quotient but different remainders, it stores remainders in a monothonic way
      * (i.e. each reminder in a run is greater or equal than the predecessor).
      * If the filter is full, new insertions are authomatically discarded.
-     * When adding a new element, all reminders and runend bits are shifted right of 1 position.
+     * When adding a new element, all remainders and runend bits are shifted right of 1 position.
      * 
      * \param number to insert
      */
     void insert(uint64_t number);
     
     /** 
-     * \brief query a number from the filter.
+     * \brief Query a number from the filter.
      * 
      * it queries a number. It first checks if the occupied bit of the quotient is set to 1. If so it scans
      * in a linear way the remainders of the run associated to this element. If it find the remainder it returns 1 else 0.
@@ -114,16 +114,16 @@ class Rsqf {
     
     /** 
      * \brief Generate a string to represent a block. 
-     * The 3 first lines are offset, occ and runend metadata. Then the other lines are reminders.
+     * The 3 first lines are offset, occ and runend metadata. Then the other lines are remainders.
      * \param block_id The block to print.
-     * \param bitformat a flag to print reminders as bitvector instead of numbers.
+     * \param bitformat a flag to print remainders as bitvector instead of numbers.
      * \return The block represented as string
      */
     std::string block2string(size_t block_id, bool bit_format = false);
 
 
 
-    public:
+    protected:
     // ATTRIBUTES
 
     /** 
