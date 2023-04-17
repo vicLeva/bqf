@@ -47,7 +47,7 @@ From build directory
 ctest
 ```
 
-# Benchmark
+## Benchmark
 
 in build/
 ```bash

@@ -137,9 +137,11 @@ void writeInsertTimes(int q){
 }
 
 void printMaxMemUsage(int mem){
+	cout << cwd + "statsFiles/tmpMaxMem" << endl;
+
 	std::string cmd = "/usr/bin/time -v ";
 	cmd = cmd + cwd + "/../build/bin/random_uints -s " + to_string(mem) + " -n " + to_string(500);
-	cmd = cmd + " 2> " + cwd + "/statsFiles/tmpMaxMem";
+	cmd = cmd + " 2> " + cwd + "statsFiles/tmpMaxMem";
 	system(cmd.c_str());
 
 	ifstream myfile;
@@ -153,7 +155,7 @@ void printMaxMemUsage(int mem){
 int main (int argc, char * argv[]) {
 	
 	vector<int> qsizes = {7, 17, 20};
-	//writeQueryTimes(qsizes);
+	writeQueryTimes(qsizes);
 	
 	
 	//q >= 11 for having 100insert less than 0.5% load addition
