@@ -33,31 +33,6 @@ using namespace std;
 
 using namespace std;
 
-int parseLine(char* line){
-    // This assumes that a digit will be found and the line ends in " Kb".
-    int i = strlen(line);
-    const char* p = line;
-    while (*p <'0' || *p > '9') p++;
-    line[i-3] = '\0';
-    i = atoi(p);
-    return i;
-}
-
-int getValue(){ //Note: this value is in KB!
-    FILE* file = fopen("/proc/self/status", "r");
-    int result = -1;
-    char line[128];
-
-    while (fgets(line, 128, file) != NULL){
-        if (strncmp(line, "VmRSS:", 6) == 0){
-            result = parseLine(line);
-            break;
-        }
-    }
-    fclose(file);
-    return result;
-}
-
 void print_pair(std::pair<uint64_t,uint64_t> bound){
   std::cout << bound.first << "-" << bound.second << " ";
 }
@@ -320,7 +295,7 @@ int main(int argc, char** argv) {
 
     //test_lots_of_full_cqf_remove();
 
-    test_time_fill_cqf(22, 1);
+    //test_time_fill_cqf(22, 1);
 
 
 
