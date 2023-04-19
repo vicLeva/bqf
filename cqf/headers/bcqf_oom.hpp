@@ -132,17 +132,6 @@ class Bcqf_oom : public Rsqf{
     uint64_t get_remainder(uint64_t position, bool w_counter = false);
 
     /** 
-     * \brief Computes the remainder from a number to insert/find in the filter
-     *
-     * This redefinition is needed because remainder() uses the attribute remainder_size which now contains the
-     * information of the counter size but we don't want this method to use counter_size
-     * 
-     * \param num the number (hash) we want to insert/query
-     * \return the remainder part that will be inserted or queried in the filter without its counter
-     */
-    uint64_t remainder(uint64_t num) const;
-
-    /** 
      * \brief Computes the lower bound of the original count as a power of 2
      *
      * If the computed value overflows the number of bits allocated for the counter,

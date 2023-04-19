@@ -16,6 +16,7 @@
 
 // STATIC VARIABLES 
 #define MEM_UNIT 64ULL
+#define BLOCK_SIZE 64ULL
 #define MET_UNIT 3ULL
 #define OFF_POS 0ULL
 #define OCC_POS 1ULL
@@ -30,23 +31,22 @@ Rsqf::Rsqf(){
 
 Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : verbose(verbose) {
     assert(q_size >= 7);
+
     elements_inside = 0;
     quotient_size = q_size;
     remainder_size = r_size;
+
     uint64_t num_quots = 1ULL << quotient_size; 
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
 
     // In machine words
-    this->block_size = (3 + this->remainder_size);
-    number_blocks = std::ceil(num_quots / MEM_UNIT);
+    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
 
     filter = std::vector<uint64_t>(num_of_words);
-    m_num_bits = num_of_words*MEM_UNIT;
 }
 
 
-Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) {
-
+Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) { //TO CHANGE, MISS HASH INFORMATION
     elements_inside = 0;
     
     // Size of the quotient/remainder to fit into max_memory MB
@@ -59,18 +59,16 @@ Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) {
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
 
     // In machine words
-    this->block_size = (3 + this->remainder_size);
-    number_blocks = std::ceil(num_quots / MEM_UNIT);
+    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
     
     filter = std::vector<uint64_t>(num_of_words);
-    m_num_bits = num_of_words*MEM_UNIT;
 }
 
 std::string Rsqf::block2string(size_t block_id, bool bit_format) {
     std::stringstream stream;
 
     // Init the position in filter to the first machine word of the block
-    uint64_t position = block_id * this->block_size;
+    uint64_t position = block_id * (MET_UNIT + this->remainder_size);
 
     stream << "BLOCK " << block_id;
     stream << "   first quotient: " << block_id*64 << endl;
@@ -171,7 +169,7 @@ uint64_t Rsqf::get_num_el_inserted(){
     return elements_inside;
 }
 
-uint64_t Rsqf::find_quotient_given_memory(uint64_t max_memory){
+uint64_t Rsqf::find_quotient_given_memory(uint64_t max_memory){ //TO CHANGE, MISS HASH INFORMATION
     uint64_t quotient_size;
     uint64_t curr_m;
     
@@ -195,7 +193,7 @@ uint64_t Rsqf::find_quotient_given_memory(uint64_t max_memory){
 using namespace std;
 
 void Rsqf::insert(uint64_t number){
-    if (elements_inside == number_blocks*MEM_UNIT - 1) return; //100%-1 is max number
+    if (elements_inside == number_blocks*BLOCK_SIZE - 1) return; //100%-1 is max number
 
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
@@ -409,9 +407,9 @@ std::unordered_set<uint64_t> Rsqf::enumerate(){
         curr_occ = get_occupied_word(block);
         if (curr_occ == 0) continue;
 
-        for (uint64_t i=0; i<MEM_UNIT; i++){
+        for (uint64_t i=0; i<BLOCK_SIZE; i++){
             if (curr_occ & 1ULL){ //occupied
-                quotient = block*MEM_UNIT + i;
+                quotient = block*BLOCK_SIZE + i;
                 bounds = get_run_boundaries(quotient);
                 cursor = bounds.first;
                 while (cursor != (bounds.second)){ //every remainder of the run
@@ -439,7 +437,7 @@ uint64_t Rsqf::quotient(uint64_t num) const{
 }
 
 uint64_t Rsqf::remainder(uint64_t num) const{
-    return num >> (MEM_UNIT - remainder_size);
+    return num >> (quotient_size);
 }
 
 // REMAINDER OPERATIONS
@@ -448,29 +446,30 @@ uint64_t Rsqf::get_remainder(uint64_t position){
     uint64_t block = get_block_id(position);
     uint64_t pos_in_block = get_shift_in_block(position);
 
-    uint64_t pos = (block*((MET_UNIT+remainder_size)*MEM_UNIT)+MET_UNIT*MEM_UNIT+pos_in_block*remainder_size); 
+    uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
+    // ----------| all remainders slots before current block -----| all metadata slots -| all remainder slots before current slot 
 
     return get_bits(filter, pos, remainder_size);
 }
 
 
 void Rsqf::set_remainder(uint64_t position, uint64_t value){
-    assert(position < number_blocks*MEM_UNIT);
+    assert(position < number_blocks*BLOCK_SIZE);
 
     uint64_t block = get_block_id(position);
     uint64_t pos_in_block = get_shift_in_block(position);
 
-    uint64_t pos = (block*((3+remainder_size)*MEM_UNIT)+3*MEM_UNIT+pos_in_block*remainder_size);
+    uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size;
 
     set_bits(filter, pos, value, remainder_size);
 }
 
 uint64_t Rsqf::get_remainder_word_position(uint64_t quotient){
-    return (get_block_id(quotient) * (MET_UNIT + remainder_size) + MET_UNIT + ((remainder_size * get_shift_in_block(quotient)) / MEM_UNIT)); 
+    return (get_block_id(quotient) * (MET_UNIT + remainder_size) + MET_UNIT + ((remainder_size * get_shift_in_block(quotient)) / BLOCK_SIZE)); 
 }
 
 uint64_t Rsqf::get_remainder_shift_position(uint64_t quotient){
-    return (get_shift_in_block(quotient) * remainder_size ) % MEM_UNIT;
+    return (get_shift_in_block(quotient) * remainder_size ) % BLOCK_SIZE;
 }
 
 void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient, uint64_t next_remainder){
@@ -487,27 +486,27 @@ void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient
 
     if (curr_word_pos == end_word_pos){
         if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, remainder_size);
-            set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, next_remainder, remainder_size);
+            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
+            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
             next_remainder = to_shift;
 
             curr_word_shift += remainder_size;
         }
         
         //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, next_remainder, remainder_size);
+        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
     }
 
 
     else {
         // WHILE CURR_WORD != END_WORD
         while (curr_word_pos != end_word_pos){
-            to_shift = get_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, remainder_size);
-            set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, next_remainder, remainder_size);
+            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
+            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
             next_remainder = to_shift;
 
-            if (curr_word_shift + remainder_size >= MEM_UNIT){
-                curr_word_shift = remainder_size - (MEM_UNIT - curr_word_shift); //(curr_word_shift + rem_size) % MEM_UNIT 
+            if (curr_word_shift + remainder_size >= BLOCK_SIZE){
+                curr_word_shift = remainder_size - (BLOCK_SIZE - curr_word_shift); //(curr_word_shift + rem_size) % BLOCK_SIZE 
                 curr_word_pos = get_next_remainder_word(curr_word_pos);
             }
             else{
@@ -517,15 +516,15 @@ void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient
 
         //curr_word_pos == end_word_pos
         if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, remainder_size);
-            set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, next_remainder, remainder_size);
+            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
+            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
             next_remainder = to_shift;
 
             curr_word_shift += remainder_size;
         }
 
         //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, next_remainder, remainder_size);
+        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
     }
 }
 
@@ -545,14 +544,14 @@ void Rsqf::shift_right_and_rem_circ(uint64_t start_quotient,uint64_t end_quotien
 
     if (curr_word_pos == end_word_pos){
         if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift + remainder_size, remainder_size);
-            set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, to_shift, remainder_size);
+            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift + remainder_size, remainder_size);
+            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, to_shift, remainder_size);
 
             curr_word_shift += remainder_size;
         }
         
         //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, 0, remainder_size);
+        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, 0, remainder_size);
     }
 
 
@@ -562,8 +561,8 @@ void Rsqf::shift_right_and_rem_circ(uint64_t start_quotient,uint64_t end_quotien
 
         // WHILE CURR_WORD != END_WORD
         while (curr_word_pos != end_word_pos){
-            if (curr_word_shift + remainder_size >= MEM_UNIT){
-                to_copy_shift = remainder_size - (MEM_UNIT - curr_word_shift); //(curr_word_shift + rem_size) % MEM_UNIT 
+            if (curr_word_shift + remainder_size >= BLOCK_SIZE){
+                to_copy_shift = remainder_size - (BLOCK_SIZE - curr_word_shift); //(curr_word_shift + rem_size) % BLOCK_SIZE 
                 to_copy_pos = get_next_remainder_word(curr_word_pos);
             }
             else{
@@ -571,8 +570,8 @@ void Rsqf::shift_right_and_rem_circ(uint64_t start_quotient,uint64_t end_quotien
             }
 
 
-            to_shift = get_bits(filter, to_copy_pos * MEM_UNIT + to_copy_shift, remainder_size);
-            set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, to_shift, remainder_size);
+            to_shift = get_bits(filter, to_copy_pos*BLOCK_SIZE + to_copy_shift, remainder_size);
+            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, to_shift, remainder_size);
 
             curr_word_pos = to_copy_pos;
             curr_word_shift = to_copy_shift;
@@ -580,14 +579,14 @@ void Rsqf::shift_right_and_rem_circ(uint64_t start_quotient,uint64_t end_quotien
 
         //curr_word_pos == end_word_pos
         if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift + remainder_size, remainder_size);
-            set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, to_shift, remainder_size);
+            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift + remainder_size, remainder_size);
+            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, to_shift, remainder_size);
 
             curr_word_shift += remainder_size;
         }
 
         //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos * MEM_UNIT + curr_word_shift, 0, remainder_size);
+        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, 0, remainder_size);
     }
 }
 
@@ -606,13 +605,13 @@ uint64_t Rsqf::get_next_remainder_word(uint64_t current_word) const{
 
 
 uint64_t Rsqf::get_next_quot(uint64_t current_quot) const{
-    if (current_quot < number_blocks*MEM_UNIT - 1) return ++current_quot;
+    if (current_quot < number_blocks*BLOCK_SIZE - 1) return ++current_quot;
     else return 0;
 }
 
 uint64_t Rsqf::get_prev_quot(uint64_t current_quot) const{
     if (current_quot > 0 ) return --current_quot;
-    else return number_blocks*MEM_UNIT - 1;
+    else return number_blocks*BLOCK_SIZE - 1;
 }
 
 
@@ -769,7 +768,7 @@ std::pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
         }
         else {
             return std::make_pair((quotient + offset - 1) % (1ULL << quotient_size), 
-                                  (offset-1 >= MEM_UNIT));
+                                  (offset-1 >= BLOCK_SIZE));
         }
     }
 
@@ -781,11 +780,11 @@ std::pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
 
     if (nb_runs == 0) { 
         uint64_t offset_orig = (offset==0) ? 0 : offset-1;
-        return std::make_pair(quotient - current_shift + offset_orig, (offset_orig >= MEM_UNIT));
+        return std::make_pair(quotient - current_shift + offset_orig, (offset_orig >= BLOCK_SIZE));
     }
 
     
-    uint64_t pos_after_jump = ((current_block * MEM_UNIT) + offset) % (1ULL << quotient_size);
+    uint64_t pos_after_jump = ((current_block * BLOCK_SIZE) + offset) % (1ULL << quotient_size);
     bool left_block = (current_block != get_block_id(pos_after_jump));
 
     current_block = get_block_id(pos_after_jump);
@@ -803,14 +802,14 @@ std::pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
                           MEM_UNIT-1);
 
 
-    while (select_val == MEM_UNIT){   
+    while (select_val == BLOCK_SIZE){   
         left_block = true;
         current_block = get_next_block_id(current_block);
         select_val = bitselectasm(get_runend_word(current_block), nb_runs);
         nb_runs -= bitrankasm(get_runend_word(current_block), MEM_UNIT-1);
     }
 
-    return std::make_pair(current_block*MEM_UNIT + select_val, left_block);
+    return std::make_pair(current_block*BLOCK_SIZE + select_val, left_block);
 }
 
 
@@ -822,7 +821,7 @@ uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
 
     // === JUMP W/ OFFSET ===
     uint64_t select_val;
-    uint64_t pos_after_jump = ((current_block * MEM_UNIT) + offset) % (1ULL << quotient_size);
+    uint64_t pos_after_jump = ((current_block * BLOCK_SIZE) + offset) % (1ULL << quotient_size);
     // (pos of block[0] + offset) % nbQuotsMax
 
 
@@ -846,12 +845,12 @@ uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
 
         current_shift = get_shift_in_block(pos_after_jump);
         
-        uint64_t runend_mask = mask_left(MEM_UNIT - current_shift - (!is_occupied(current_block*MEM_UNIT))); 
+        uint64_t runend_mask = mask_left(MEM_UNIT - current_shift - (!is_occupied(current_block*BLOCK_SIZE))); 
         // if slot 0 of block is not occupied, look runend[paj+1:end]
         // if slot 0 of block is occupied, look runend[paj:end]
 
         // === FIRST BLOCK WE JUMP INTO ===
-        if (offset < MEM_UNIT){
+        if (offset < BLOCK_SIZE){
             // jumped into the same block
             if (nb_runs == 0){
                 return pos_after_jump < quotient ? quotient : get_next_quot(pos_after_jump); // changed <= to < (might bug, maybe check if block[0] is occupied)
@@ -879,13 +878,13 @@ uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
                             MEM_UNIT-1);
 
         // === OTHER BLOCKS TO FIND THE END OF dth RUN === 
-        while (select_val == MEM_UNIT){     
+        while (select_val == BLOCK_SIZE){     
                 current_block = get_next_block_id(current_block);
                 select_val = bitselectasm(get_runend_word(current_block), nb_runs);
                 nb_runs -= bitrankasm(get_runend_word(current_block), MEM_UNIT-1);
         }
 
-        return (current_block*MEM_UNIT + select_val + 1) % (1ULL << quotient_size); 
+        return (current_block*BLOCK_SIZE + select_val + 1) % (1ULL << quotient_size); 
         //+1 because select_val is the end of the dth run before our quot's one
     }
 } 
@@ -901,7 +900,7 @@ uint64_t Rsqf::get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t off
     // run 2' : quotient64; start71; end150;  get_runstart(64)?
     uint64_t nth_runend = 0;
     uint64_t current_block = get_block_id(quotient); 
-    if (offset < MEM_UNIT){ //jump same block
+    if (offset < BLOCK_SIZE){ //jump same block
         nth_runend = bitrankasm(get_runend_word(current_block), get_shift_in_block(paj));
 
         if (nth_runend-occ_bit <= 0){ return quotient; } //only one run in beginning of block, ours
@@ -925,7 +924,7 @@ uint64_t Rsqf::get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t off
     
     else { //other runs before the interesting one, we have to find in which block the last one ends up
         current_block = get_block_id(quotient);
-        while ( nth_runend > MEM_UNIT || bitselectasm(get_runend_word(current_block), nth_runend-occ_bit) == MEM_UNIT ){
+        while ( nth_runend > BLOCK_SIZE || bitselectasm(get_runend_word(current_block), nth_runend-occ_bit) == BLOCK_SIZE ){
             nth_runend -= bitrankasm(get_runend_word(current_block), MEM_UNIT-1);
             current_block = get_next_block_id(current_block);
         }

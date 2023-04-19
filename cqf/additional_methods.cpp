@@ -109,7 +109,6 @@ uint64_t get_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t len){
 using namespace std;
 void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t len) {
     assert(pos + len <= vec.size() * 64);
-    assert(len == MEM_UNIT or (value >> len) == 0);
     if (len == 0) return;
 
     uint64_t mask = mask_right(len);

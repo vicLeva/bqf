@@ -6,6 +6,7 @@
 
 // STATIC VARIABLES 
 #define MEM_UNIT 64ULL
+#define BLOCK_SIZE 64ULL
 #define MET_UNIT 3ULL
 #define OFF_POS 0ULL
 #define OCC_POS 1ULL
@@ -31,15 +32,13 @@ Bcqf_oom::Bcqf_oom(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb)
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
 
     // In machine words
-    this->block_size = (3 + this->remainder_size);
-    number_blocks = std::ceil(num_quots / MEM_UNIT);
+    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
 
     filter = std::vector<uint64_t>(num_of_words);
-    m_num_bits = num_of_words*MEM_UNIT;
 }
 
 
-Bcqf_oom::Bcqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){
+Bcqf_oom::Bcqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){ //TO CHANGE, MISS HASH INFORMATION
     elements_inside = 0;
 
     verbose = verb;
@@ -55,11 +54,9 @@ Bcqf_oom::Bcqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
 
     // In machine words
-    this->block_size = (3 + this->remainder_size);
-    number_blocks = std::ceil(num_quots / MEM_UNIT);
+    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
     
     filter = std::vector<uint64_t>(num_of_words);
-    m_num_bits = num_of_words*MEM_UNIT;
 }
 
 
@@ -67,7 +64,7 @@ Bcqf_oom::Bcqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){
 
 void Bcqf_oom::insert(uint64_t number, uint64_t count){
 
-    if (elements_inside == number_blocks*MEM_UNIT - 1) return; //100%-1 is max number
+    if (elements_inside == number_blocks*BLOCK_SIZE - 1) return; //100%-1 is max number
 
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
@@ -275,9 +272,9 @@ std::map<uint64_t, uint64_t> Bcqf_oom::enumerate(){
         curr_occ = get_occupied_word(block);
         if (curr_occ == 0) continue;
 
-        for (uint64_t i=0; i<MEM_UNIT; i++){
+        for (uint64_t i=0; i<BLOCK_SIZE; i++){
             if (curr_occ & 1ULL){ //occupied
-                quotient = block*MEM_UNIT + i;
+                quotient = block*BLOCK_SIZE + i;
                 bounds = get_run_boundaries(quotient);
                 cursor = bounds.first;
                 while (cursor != (bounds.second)){ //every remainder of the run
@@ -322,14 +319,10 @@ uint64_t Bcqf_oom::find_quotient_given_memory(uint64_t max_memory, uint64_t coun
 uint64_t Bcqf_oom::get_remainder(uint64_t position, bool w_counter ){ //default=false
     uint64_t block = get_block_id(position);
     uint64_t pos_in_block = get_shift_in_block(position);
-    uint64_t pos = (block*((MET_UNIT+remainder_size)*MEM_UNIT)+MET_UNIT*MEM_UNIT+pos_in_block*remainder_size); 
+    uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
 
     if (w_counter) return get_bits(filter, pos, remainder_size);
     else return get_bits(filter, pos, remainder_size) >> count_size;
-}
-
-uint64_t Bcqf_oom::remainder(uint64_t num) const{
-    return num >> (MEM_UNIT - remainder_size + count_size);
 }
 
 

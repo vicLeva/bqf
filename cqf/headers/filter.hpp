@@ -133,11 +133,6 @@ class Rsqf {
      * integers and remainders are written into 1 64bits integer or over multiple ones.
      */
     std::vector<uint64_t> filter; 
-    
-    /** 
-     * \brief max number of bits occupied by the qf to check no memory leaks
-     */
-    uint64_t m_num_bits; 
 
     /** 
      * \brief size in bits of quotients, will determine filter's size
@@ -150,17 +145,12 @@ class Rsqf {
     uint64_t remainder_size; 
 
     /** 
-     * \brief Block size (in machine words (64 bits multiples))
-     */
-    uint64_t block_size;
-
-    /** 
      * \brief number of blocks the qf is divided into
      */
     uint64_t number_blocks;
 
     /** 
-     * \brief number of elements (non distinct) inserted in the filter
+     * \brief number of elements (non distinct in RSQF, distinct in BCQF) inserted in the filter
      */
     uint64_t elements_inside;
 
