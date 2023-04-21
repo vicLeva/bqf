@@ -1,6 +1,7 @@
 #ifndef ADDITIONAL_METHODS_HPP
 #define ADDITIONAL_METHODS_HPP
 #include <stdint.h> 
+#include <string.h>
 
 /** 
  * \brief Print the bits of a given uint64 word
@@ -122,5 +123,15 @@ uint64_t get_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t len);
  * \param len   number of bits that are gonna be effectively casted in the vector
  */
 void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t len);
+
+
+uint64_t encode(std::string data);
+std::string decode(uint64_t hash, uint64_t size);
+
+uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
+uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
+
+uint64_t kmer_to_hash(std::string data, uint64_t size);
+std::string hash_to_kmer(uint64_t hash, uint64_t size);
 
 #endif
