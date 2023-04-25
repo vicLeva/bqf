@@ -134,4 +134,8 @@ uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
 uint64_t kmer_to_hash(std::string data, uint64_t size);
 std::string hash_to_kmer(uint64_t hash, uint64_t size);
 
+char complement(char nucl);
+std::string revcomp(const std::string& kmer);
+std::vector<std::string> canonical_kmers(const std::string& s, int len, int k);
+
 #endif

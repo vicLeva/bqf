@@ -2,6 +2,7 @@
 #define BACKPACK_CQF_EC_HPP
 
 #include <stdint.h> 
+#include <string.h> 
 #include <map>
 
 #include "filter.hpp"
@@ -59,6 +60,10 @@ class Bcqf_ec : public Rsqf{
      * \param count number of occurences of the element to insert (default: 1)
      */
     void insert(uint64_t number, uint64_t count = 1);
+    
+    void insert(std::string kmer, uint64_t count);
+
+    void insert(std::string file);
 
     /** 
      * \brief query a number from the filter.
@@ -71,6 +76,8 @@ class Bcqf_ec : public Rsqf{
      * \return the abundance of the given number in the filter
      */
     uint64_t query(uint64_t number);
+
+    uint64_t query(std::string kmer, uint64_t k);
 
     /** 
      * \brief Removes (if present) a number from the filter
@@ -86,6 +93,8 @@ class Bcqf_ec : public Rsqf{
      * \return 1 if the value has been found in the process, 0 if the element was absent
      **/
     bool remove(uint64_t number, uint64_t count = 1);
+    
+    bool remove(std::string kmer, uint64_t count = 1);
 
     /** 
      * \brief Enumerate every element that has been inserted in the filter (possibly hashes)
@@ -96,7 +105,7 @@ class Bcqf_ec : public Rsqf{
      * 
      * \return a uint_64t map, linking every originally inserted hash to its abundance in the filter
      **/ 
-    std::map<uint64_t, uint64_t> enumerate();
+    std::map<std::string, uint64_t> enumerate();
 
 
     private:
@@ -105,6 +114,10 @@ class Bcqf_ec : public Rsqf{
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
     uint64_t count_size;
+
+    uint64_t hash_size;
+    
+    uint64_t kmer_size;
 
 
     /** 

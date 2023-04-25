@@ -233,3 +233,51 @@ uint64_t kmer_to_hash(string kmer, uint64_t k){
 string hash_to_kmer(uint64_t hash, uint64_t k){
     return decode(bfc_hash_64_inv(hash, mask_right(k*2)), k);
 }
+
+
+char complement(char nucl){
+  //Returns the complement of a nucleotide
+  switch (nucl){
+    case 'A':
+      return 'T';
+    case 'T':
+      return 'A';
+    case 'C':
+      return 'G';
+    default:
+      return 'C';
+  }
+}
+
+std::string revcomp(const std::string& kmer) {
+    std::string revComp(kmer.rbegin(), kmer.rend());
+    for (auto& c : revComp) {
+        c = complement(c);
+    }
+    return revComp;
+}
+
+// Returns an array of canonical k-mers in a given sequence s
+std::vector<std::string> canonical_kmers(const std::string& s, int len, int k) {
+    std::vector<std::string> kmers{};
+    string kmer = s.substr(0, k);
+    string rc = revcomp(kmer);
+
+    if (kmer < rc) {
+        kmers.push_back(kmer);
+    } else {
+        kmers.push_back(rc);
+    }
+
+    for (int i = k; i < len; i++) {
+        kmer = kmer.substr(1) + s[i];
+        rc = complement(s[i]) + rc.substr(0, k-1);
+        if (kmer < rc) {
+            kmers.push_back(kmer);
+        } else {
+            kmers.push_back(rc);
+        }
+    }
+
+    return kmers;
+}

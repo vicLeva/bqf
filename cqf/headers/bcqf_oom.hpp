@@ -60,6 +60,10 @@ class Bcqf_oom : public Rsqf{
      */
     void insert(uint64_t number, uint64_t count = 1);
 
+    void insert(std::string kmer, uint64_t count);
+
+    void insert(std::string file);
+
     /** 
      * \brief query a number from the filter.
      * 
@@ -72,6 +76,8 @@ class Bcqf_oom : public Rsqf{
      * \return the abundance of the given number in the filter (the lower bound )
      */
     uint64_t query(uint64_t number);
+
+    uint64_t query(std::string kmer, uint64_t k);
 
     /** 
      * \brief Removes (if present) a number from the filter
@@ -86,6 +92,8 @@ class Bcqf_oom : public Rsqf{
      **/
     bool remove(uint64_t number);
 
+    bool remove(std::string kmer);
+
     /** 
      * \brief Enumerate every element that has been inserted in the filter (possibly hashes)
      * 
@@ -95,7 +103,7 @@ class Bcqf_oom : public Rsqf{
      * 
      * \return a uint_64t map, linking every originally inserted hash to its abundance in the filter
      **/ 
-    std::map<uint64_t, uint64_t> enumerate();
+    std::map<std::string, uint64_t> enumerate();
 
 
     private:
@@ -104,6 +112,10 @@ class Bcqf_oom : public Rsqf{
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
     uint64_t count_size;
+
+    uint64_t hash_size;
+    
+    uint64_t kmer_size;
 
     /** 
      * \brief Deduce a quotient size from the memory occupation limit and counter's size

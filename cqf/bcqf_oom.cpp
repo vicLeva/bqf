@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <cassert>
+#include <fstream>
 
 #include "bcqf_oom.hpp" 
 
@@ -26,8 +27,11 @@ Bcqf_oom::Bcqf_oom(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb)
     quotient_size = q_size;
     remainder_size = r_size + c_size;
     count_size = c_size;
-    cout << "quotient_size " << quotient_size << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
+    cout << "q " << quotient_size << " r " << r_size << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
 
+    hash_size = q_size + r_size;
+    kmer_size = hash_size/2;
+    
     uint64_t num_quots = 1ULL << quotient_size; 
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
 
@@ -60,7 +64,21 @@ Bcqf_oom::Bcqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){ //TO CHANGE
 }
 
 
+void Bcqf_oom::insert(string kmc_input){
+    std::ifstream infile(kmc_input);
 
+    string kmer; 
+    uint64_t count;
+
+    while (infile >> kmer >> count) {
+        this->insert(kmer, count);
+    }
+    
+}
+
+void Bcqf_oom::insert(string kmer, uint64_t count){
+    this->insert(kmer_to_hash(kmer, kmer_size), count);
+}
 
 void Bcqf_oom::insert(uint64_t number, uint64_t count){
 
@@ -143,6 +161,19 @@ void Bcqf_oom::insert(uint64_t number, uint64_t count){
     }
 }
 
+uint64_t Bcqf_oom::query(string seq, uint64_t seq_size){ //use string_view ?
+    uint64_t min_count = 2ULL<<count_size;
+    uint64_t count;
+    vector<string> smers = canonical_kmers(seq, seq_size, kmer_size);
+
+    for (uint64_t i=0; i < seq_size-kmer_size+1; i++){
+        count = this->query(kmer_to_hash(smers[i], kmer_size));
+        cout << "count " << count << endl;
+        if (count < min_count) min_count = count;
+    }
+    return min_count;
+}
+
 
 uint64_t Bcqf_oom::query(uint64_t number){
     if (elements_inside == 0) return 0;
@@ -172,6 +203,10 @@ uint64_t Bcqf_oom::query(uint64_t number){
     return 0;
 }
 
+
+bool Bcqf_oom::remove(string kmer){
+    return this->remove(kmer_to_hash(kmer, kmer_size));
+}
 
 bool Bcqf_oom::remove(uint64_t number){
 
@@ -257,8 +292,8 @@ bool Bcqf_oom::remove(uint64_t number){
 }
 
 
-std::map<uint64_t, uint64_t> Bcqf_oom::enumerate(){
-    std::map<uint64_t, uint64_t> finalSet;
+std::map<string, uint64_t> Bcqf_oom::enumerate(){
+    std::map<string, uint64_t> finalSet;
     uint64_t curr_occ;
     
     std::pair<uint64_t, uint64_t> bounds;
@@ -279,12 +314,12 @@ std::map<uint64_t, uint64_t> Bcqf_oom::enumerate(){
                 cursor = bounds.first;
                 while (cursor != (bounds.second)){ //every remainder of the run
                     number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                    finalSet[number] = (1ULL << ( get_remainder(cursor, true) & mask_right(count_size) ));
+                    finalSet[hash_to_kmer(number, kmer_size)] = (1ULL << ( get_remainder(cursor, true) & mask_right(count_size) ));
                     cursor = get_next_quot(cursor);
                 }
 
                 number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                finalSet[number] = (1ULL << ( get_remainder(cursor, true) & mask_right(count_size) ));
+                finalSet[hash_to_kmer(number, kmer_size)] = (1ULL << ( get_remainder(cursor, true) & mask_right(count_size) ));
             }
 
             curr_occ >>= 1ULL; //next bit of occupied vector

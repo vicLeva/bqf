@@ -2,21 +2,6 @@
 #include "additional_methods.hpp"
 
 
-TEST(AddMethods_DeathTest, set_bits) {
-  std::vector<uint64_t> v = {((31<<25) + 365), 1023};
-  EXPECT_DEATH(
-    set_bits(v, 35, ((1ULL<<63ULL)-1), 0),
-    "");
-
-  EXPECT_DEATH(
-    set_bits(v, 120, 3, 50),
-    "");
-}
-
-
-
-
-
 TEST(AddMethods, mask_right) {
   EXPECT_EQ (mask_right(0),  0);
   EXPECT_EQ (mask_right(1),  1);

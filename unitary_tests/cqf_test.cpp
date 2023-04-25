@@ -339,23 +339,23 @@ class BCqfTest : public ::testing::Test {
 
 TEST_F(BCqfTest, insert1occs) {
     uint64_t val;
-    std::map<uint64_t, uint64_t> verif; 
+    std::map<string, uint64_t> verif; 
 
     //INSERT
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
         val = distribution(generator);    
-        while (verif.count(val) == 1) { //already seen key
+        while (verif.count(hash_to_kmer(val, 32)) == 1) { //already seen key
             val = distribution(generator);    
         }  
 
         cqf.insert(val);
-        verif.insert({ val, 1 });
+        verif.insert({ hash_to_kmer(val, 32), 1 });
     }
 
     EXPECT_EQ(cqf.enumerate(), verif);
 
     //REMOVE
-    std::map<uint64_t,uint64_t>::iterator it;
+    std::map<string,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
         cqf.remove((*it).first);
     }
@@ -367,23 +367,23 @@ TEST_F(BCqfTest, insert1occs) {
 
 TEST_F(BCqfTest, insertRDMoccs) {
     uint64_t val;
-    std::map<uint64_t, uint64_t> verif; 
+    std::map<string, uint64_t> verif; 
 
     //INSERT
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
         val = distribution(generator);    
-        while (verif.count(val) == 1) { //already seen key
+        while (verif.count(hash_to_kmer(val, 32)) == 1) { //already seen key
             val = distribution(generator);    
         }  
 
         cqf.insert(val, val%31);
-        verif.insert({ val, val%31 });
+        verif.insert({ hash_to_kmer(val, 32), val%31 });
     }
 
     EXPECT_EQ(cqf.enumerate(), verif);
 
     //REMOVE
-    std::map<uint64_t,uint64_t>::iterator it;
+    std::map<string,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
         cqf.remove((*it).first, (*it).second);
     }
@@ -395,23 +395,23 @@ TEST_F(BCqfTest, insertRDMoccs) {
 
 TEST_F(BCqfTest, insertRDMoccs_oom) {
     uint64_t val;
-    std::map<uint64_t, uint64_t> verif; 
+    std::map<string, uint64_t> verif; 
 
     //INSERT
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
         val = distribution(generator);    
-        while (verif.count(val) == 1) { //already seen key (unlikely)
+        while (verif.count(hash_to_kmer(val, 32)) == 1) { //already seen key (unlikely)
             val = distribution(generator);    
         }  
         
         cqf_oom.insert(val, (1ULL << val%31));
-        verif.insert({ val, (1ULL << val%31) });
+        verif.insert({ hash_to_kmer(val, 32), (1ULL << val%31) });
     }
 
     EXPECT_EQ(cqf_oom.enumerate(), verif);
 
     //REMOVE
-    std::map<uint64_t,uint64_t>::iterator it;
+    std::map<string,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
         cqf_oom.remove((*it).first);
     }
