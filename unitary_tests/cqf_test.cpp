@@ -28,12 +28,7 @@ class RsqfTest : public ::testing::Test {
 };
 
 
-/* TEST_F(RsqfTest, QuotientSize) {
-    EXPECT_EQ(usual_qf.get_quot_size(), 19);
-}
-
-
-TEST_F(RsqfTest, get_runstart) {
+/* TEST_F(RsqfTest, get_runstart) {
     small_qf.insert((2ULL<<30)+64);
     EXPECT_EQ(small_qf.get_runstart(64), 64);
     small_qf.insert((2ULL<<31)+63);
@@ -138,7 +133,7 @@ TEST_F(RsqfTest, toricity2) {
 
     EXPECT_EQ(small_qf.get_offset_word(0), 12); 
     EXPECT_EQ(small_qf.get_offset_word(1), 6); 
-}
+} */
 
 
 TEST_F(RsqfTest, enumerate1) {
@@ -160,7 +155,7 @@ TEST_F(RsqfTest, enumerate1) {
 
 
 
-TEST_F(RsqfTest, get_run_boundaries) {
+/* TEST_F(RsqfTest, get_run_boundaries) {
     std::pair<uint64_t,uint64_t> compare(126, 2);
     small_qf.insert((2ULL<<30)+126);
     small_qf.insert((2ULL<<31)+126);

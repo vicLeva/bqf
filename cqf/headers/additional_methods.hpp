@@ -124,18 +124,79 @@ uint64_t get_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t len);
  */
 void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t len);
 
-
+/** 
+ * \brief encode a kmer into a number by encoding each nucl to 2bits
+ * \param data the kmer you want to encode
+ * A->11 C->10 G->01 T->00, T is 00 because we'll never have a kmer full of T 
+ * as its reverse complement will be smaller, so we never have 0 as encoded value,
+ * which wd be problematic for hashing
+ * \return a uint64, encoding the kmer
+ */
 uint64_t encode(std::string data);
+
+/** 
+ * \brief decode a number into a kmer
+ * \param hash the number to turn into a kmer
+ * \param size the size of the kmer, to know where to stop in the 64bits number
+ * \return the kmer string decoded
+ */
 std::string decode(uint64_t hash, uint64_t size);
 
+/** 
+ * \brief modular and reversible xorshift64
+ * \param key the number to hash (usually an encoded kmer)
+ * \param mask the hash output size (in bits) as a mask (see mask_right())
+ * from https://github.com/lh3/bfc/blob/master/kmer.h
+ * \return uint64_t, the hash
+ */
 uint64_t bfc_hash_64(uint64_t key, uint64_t mask);
+
+/** 
+ * \brief the reverse of xorshift64 bfc_hash_64()
+ * \param key the number to dehash
+ * \param mask the hash output size (in bits) as a mask (see mask_right())
+ * from https://github.com/lh3/bfc/blob/master/kmer.h
+ * \return uint64_t, the originally hashed number
+ */
 uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
 
+/** 
+ * \brief encode the smallest between the kmer and its revcompl, then hash it
+ * \param data the kmer to hash
+ * \param size the kmer size (in base)
+ * \return uint64_t, the hash
+ */
 uint64_t kmer_to_hash(std::string data, uint64_t size);
+
+/** 
+ * \brief reverse the hash, then decode the number into a kmer (canonical)
+ * \param data the hash to reverse
+ * \param size the kmer size (in base)
+ * \return the kmer (string)
+ */
 std::string hash_to_kmer(uint64_t hash, uint64_t size);
 
+/** 
+ * \brief complement of each nucleotide
+ * \param nucl the nucl whose complement we want to find
+ * \return the complement (char)
+ */
 char complement(char nucl);
+
+/** 
+ * \brief compute the reverse complement of a kmer
+ * \param kmer the kmer to rev complement
+ * \return the reverse complement (string)
+ */
 std::string revcomp(const std::string& kmer);
+
+/** 
+ * \brief find canonical form of every kmer in an ADN sequence
+ * \param s the genomic sequence (has to be A's T's C's and G's)
+ * \param len the sequence length
+ * \param k k, the size of kmers
+ * \return a vector containing each canonical kmer (preserved order)
+ */
 std::vector<std::string> canonical_kmers(const std::string& s, int len, int k);
 
 #endif

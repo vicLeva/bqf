@@ -60,8 +60,25 @@ class Bcqf_oom : public Rsqf{
      */
     void insert(uint64_t number, uint64_t count = 1);
 
+    /** 
+     * TODO: allow user to choose hash function
+     * \brief Insert a kmer in the filter alongside with his count. 
+     * 
+     * This function inserts a kmer in the BackpackCQF.
+     * It is advised that the kmer is in a canonical form, it will be hashed then inserted.
+     * 
+     * \param kmer to insert
+     * \param count kmer abundance
+     */
     void insert(std::string kmer, uint64_t count);
 
+    /** 
+     * \brief Insert every kmer + abundance of a kmer count software output file (eg KMC)
+     * 
+     * This function will read every line of the file to insert every pair <kmer, count> into the BCQF
+     * 
+     * \param file path to file
+     */
     void insert(std::string file);
 
     /** 
@@ -77,6 +94,16 @@ class Bcqf_oom : public Rsqf{
      */
     uint64_t query(uint64_t number);
 
+    /** 
+     * \brief query a kmer from the filter.
+     * 
+     * Every smer of the kmer will be queried, and the smallest count amongst them will 
+     * be returned (see fimpera)
+     * 
+     * \param kmer the kmer to query
+     * \param k the kmer size, k-s+1 smers will be effectively queried
+     * \return the abundance of the given kmer in the filter
+     */
     uint64_t query(std::string kmer, uint64_t k);
 
     /** 
@@ -92,6 +119,12 @@ class Bcqf_oom : public Rsqf{
      **/
     bool remove(uint64_t number);
 
+    /** 
+     * \brief Removes (if present) a kmer from the filter
+     * 
+     * \param kmer element to remove
+     * \return 1 if the value has been found in the process, 0 if the element was absent
+     **/
     bool remove(std::string kmer);
 
     /** 
@@ -101,7 +134,7 @@ class Bcqf_oom : public Rsqf{
      * Then it computes for every remainder in the run, the original number inserted (by concatenating the remainder value
      * and the quotient value (of the run)) and pushes it into the unordered_set alongside with its abundance
      * 
-     * \return a uint_64t map, linking every originally inserted hash to its abundance in the filter
+     * \return a string to uint_64t map, linking every originally inserted kmer to its abundance in the filter
      **/ 
     std::map<std::string, uint64_t> enumerate();
 
@@ -113,8 +146,14 @@ class Bcqf_oom : public Rsqf{
      */
     uint64_t count_size;
 
+    /** 
+     * \brief size in bits of the hashes that will be inserted
+     */
     uint64_t hash_size;
     
+    /** 
+     * \brief k, supposed to be hash_size/2
+     */
     uint64_t kmer_size;
 
     /** 

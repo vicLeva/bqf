@@ -270,7 +270,7 @@ void Rsqf::insert(uint64_t number){
         
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMINDER
         elements_inside++;
-        return shift_left_and_set_circ(starting_position, fu_slot, rem);
+        shift_left_and_set_circ(starting_position, fu_slot, rem);
     }
 }
 
@@ -473,59 +473,36 @@ uint64_t Rsqf::get_remainder_shift_position(uint64_t quotient){
 }
 
 void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient, uint64_t next_remainder){
+    if (verbose){
+        cout << "shift_left_and_set_circ start_quotient " << start_quotient << " end_quotient " << end_quotient << " next_remainder " << next_remainder << endl;
+        cout << "next_rem: "; 
+        print_bits(next_remainder);
+    } 
     assert(start_quotient < ( 1ULL << quotient_size));
     assert(end_quotient < ( 1ULL << quotient_size)); 
 
     uint64_t curr_word_pos = get_remainder_word_position(start_quotient);
     uint64_t curr_word_shift = get_remainder_shift_position(start_quotient);
 
-    uint64_t end_word_pos = get_remainder_word_position(end_quotient);
-    uint64_t end_word_shift = get_remainder_shift_position(end_quotient);
-
     uint64_t to_shift;
 
-    if (curr_word_pos == end_word_pos){
-        if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
-            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
-            next_remainder = to_shift;
+    while (start_quotient != end_quotient) {
+        start_quotient = get_next_quot(start_quotient);
 
-            curr_word_shift += remainder_size;
-        }
+        to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
+        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
+        next_remainder = to_shift;
         
-        //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
-    }
-
-
-    else {
-        // WHILE CURR_WORD != END_WORD
-        while (curr_word_pos != end_word_pos){
-            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
-            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
-            next_remainder = to_shift;
-
-            if (curr_word_shift + remainder_size >= BLOCK_SIZE){
-                curr_word_shift = remainder_size - (BLOCK_SIZE - curr_word_shift); //(curr_word_shift + rem_size) % BLOCK_SIZE 
-                curr_word_pos = get_next_remainder_word(curr_word_pos);
-            }
-            else{
-                curr_word_shift += remainder_size;
-            }
+        if (curr_word_shift + remainder_size >= BLOCK_SIZE){
+            curr_word_shift = remainder_size - (BLOCK_SIZE - curr_word_shift); //(curr_word_shift + rem_size) % BLOCK_SIZE 
+            curr_word_pos = get_next_remainder_word(curr_word_pos);
         }
-
-        //curr_word_pos == end_word_pos
-        if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
-            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
-            next_remainder = to_shift;
-
+        else{
             curr_word_shift += remainder_size;
         }
-
-        //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
     }
+
+    set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
 }
 
 
@@ -536,58 +513,31 @@ void Rsqf::shift_right_and_rem_circ(uint64_t start_quotient,uint64_t end_quotien
     uint64_t curr_word_pos = get_remainder_word_position(start_quotient);
     uint64_t curr_word_shift = get_remainder_shift_position(start_quotient);
 
-    uint64_t end_word_pos = get_remainder_word_position(end_quotient);
-    uint64_t end_word_shift = get_remainder_shift_position(end_quotient);
+    uint64_t to_copy_pos = curr_word_pos;
+    uint64_t to_copy_shift = curr_word_shift;
 
     uint64_t to_shift;
 
 
-    if (curr_word_pos == end_word_pos){
-        if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift + remainder_size, remainder_size);
-            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, to_shift, remainder_size);
+    while (start_quotient != end_quotient){
+        start_quotient = get_next_quot(start_quotient);
 
-            curr_word_shift += remainder_size;
+        if (curr_word_shift + remainder_size >= BLOCK_SIZE){
+            to_copy_shift = remainder_size - (BLOCK_SIZE - curr_word_shift); //(curr_word_shift + rem_size) % BLOCK_SIZE 
+            to_copy_pos = get_next_remainder_word(curr_word_pos);
         }
-        
-        //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, 0, remainder_size);
+        else{
+            to_copy_shift += remainder_size;
+        }
+
+        to_shift = get_bits(filter, to_copy_pos*BLOCK_SIZE + to_copy_shift, remainder_size);
+        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, to_shift, remainder_size);
+
+        curr_word_pos = to_copy_pos;
+        curr_word_shift = to_copy_shift;
     }
 
-
-    else {
-        uint64_t to_copy_pos = curr_word_pos;
-        uint64_t to_copy_shift = curr_word_shift;
-
-        // WHILE CURR_WORD != END_WORD
-        while (curr_word_pos != end_word_pos){
-            if (curr_word_shift + remainder_size >= BLOCK_SIZE){
-                to_copy_shift = remainder_size - (BLOCK_SIZE - curr_word_shift); //(curr_word_shift + rem_size) % BLOCK_SIZE 
-                to_copy_pos = get_next_remainder_word(curr_word_pos);
-            }
-            else{
-                to_copy_shift += remainder_size;
-            }
-
-
-            to_shift = get_bits(filter, to_copy_pos*BLOCK_SIZE + to_copy_shift, remainder_size);
-            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, to_shift, remainder_size);
-
-            curr_word_pos = to_copy_pos;
-            curr_word_shift = to_copy_shift;
-        }
-
-        //curr_word_pos == end_word_pos
-        if (curr_word_shift != end_word_shift){
-            to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift + remainder_size, remainder_size);
-            set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, to_shift, remainder_size);
-
-            curr_word_shift += remainder_size;
-        }
-
-        //curr_word_pos == end_word_pos && curr_word_shift == end_word_shift
-        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, 0, remainder_size);
-    }
+    set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, 0, remainder_size);
 }
 
 // CIRCULAR FILTER OPERATIONS

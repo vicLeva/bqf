@@ -32,7 +32,7 @@ int main (int argc, char * argv[]) {
         cout << ecoli_cqf.query("CGTATGAAAAAACGTATCCCCACTCTCC", 28) << " removed 6 from 28" << endl;
 
         cout << ecoli_cqf.query("ACAACGTTTGCTCGATGATCGCCTGCTCATCG", 32) << endl; //30
-        cout << ecoli_cqf.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGA", 32) << endl; //24 but 25 because of FP
+        cout << ecoli_cqf.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGA", 32) << endl; //24 but 25 because of FalsePositive
 
 	
 	return 0;

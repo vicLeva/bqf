@@ -27,7 +27,10 @@ Bcqf_oom::Bcqf_oom(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb)
     quotient_size = q_size;
     remainder_size = r_size + c_size;
     count_size = c_size;
-    cout << "q " << quotient_size << " r " << r_size << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
+    
+    if (verbose){ 
+        cout << "q " << quotient_size << " r " << r_size << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
+    }
 
     hash_size = q_size + r_size;
     kmer_size = hash_size/2;
@@ -157,7 +160,7 @@ void Bcqf_oom::insert(uint64_t number, uint64_t count){
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
         elements_inside++;
-        return shift_left_and_set_circ(starting_position, fu_slot, rem_count);
+        shift_left_and_set_circ(starting_position, fu_slot, rem_count);
     }
 }
 
