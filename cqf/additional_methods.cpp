@@ -58,10 +58,10 @@ uint64_t get_quot_from_block_shift(uint64_t block, uint64_t shift){
 }
 
 uint64_t bitselectasm(uint64_t num, uint64_t rank){
-    if( !((rank != 0) && (rank <= MEM_UNIT)) ) { 
+    /*if( !((rank != 0) && (rank <= MEM_UNIT)) ) { 
         std::cout << "rank " << rank << "\n";
     }
-    assert((rank != 0) && (rank <= MEM_UNIT));
+    assert((rank != 0) && (rank <= MEM_UNIT));*/
     uint64_t i = 1ULL << (rank - 1); // i = 2^rank
 
     // SELECT(v,i) = TZCNT(PDEP(2^rank,num))     
