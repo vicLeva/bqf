@@ -244,8 +244,9 @@ char complement(char nucl){
       return 'A';
     case 'C':
       return 'G';
-    default:
+    case 'G':
       return 'C';
+    default : throw std::invalid_argument( "received non nucleotidic value" );
   }
 }
 
