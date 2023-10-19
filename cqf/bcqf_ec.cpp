@@ -75,12 +75,12 @@ void Bcqf_ec::insert(string kmc_input){
     string kmer; 
     uint64_t count;
 
-    uint64_t count = 0;
+    uint64_t i = 0;
 
     while (infile >> kmer >> count) {
-        count ++;
-        if (count % 100000 == 0){
-            cout << count << endl;
+        i ++;
+        if (i % 100000 == 0){
+            cout << i << endl;
         }
         this->insert(kmer, count);
 
