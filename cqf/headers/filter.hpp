@@ -106,6 +106,10 @@ class Rsqf {
     std::unordered_set<uint64_t> enumerate(); 
 
 
+    //tmp public
+    void resize(int n); 
+
+
     /*  
         ================================================================
         DISPLAYING 
@@ -122,8 +126,7 @@ class Rsqf {
     std::string block2string(size_t block_id, bool bit_format = false);
 
 
-
-    protected:
+    //protected:
     // ATTRIBUTES
 
     /** 
@@ -143,6 +146,11 @@ class Rsqf {
      * \brief size in bits of remainders
      */
     uint64_t remainder_size; 
+
+    /** 
+     * \brief maximum size (in number of elements) before resizing (=95%)
+     */
+    uint64_t size_limit; 
 
     /** 
      * \brief number of blocks the qf is divided into

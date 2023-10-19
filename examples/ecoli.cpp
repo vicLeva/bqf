@@ -20,20 +20,22 @@ int main (int argc, char * argv[]) {
         "with 5 bits for counter, the quotient filter will weight 2^18*(3+5+38)bits = 1.5MB\n\n";
 
         Bcqf_ec ecoli_cqf(18, 56-18, 5, false);
-        ecoli_cqf.insert(cwd + "data/ecoli_count.txt");
+        ecoli_cqf.insert(cwd + "data/ecoli_count28.txt");
 
-        cout << ecoli_cqf.query("CGTATGAAAAAACGTATCCCCACTCTCC", 28) << endl; //28
-        cout << ecoli_cqf.query("CTCGTTGATACCGGGCGCCCTGCTTGCC", 28) << endl; //1
-        cout << ecoli_cqf.query("AATCTGAAAGATCACAACGAGCAGGTCA", 28) << endl; //25
-        cout << ecoli_cqf.query("TTTTTTTTTATAAAAACGAGCAGAACAA", 28) << endl; //0
+        cout << ecoli_cqf.query("CGTATGAAAAAACGTATCCCCACTCTCC", 28).minimum << endl; //28
+        cout << ecoli_cqf.query("CTCGTTGATACCGGGCGCCCTGCTTGCC", 28).minimum << endl; //1
+        cout << ecoli_cqf.query("AATCTGAAAGATCACAACGAGCAGGTCA", 28).minimum << endl; //25
+        cout << ecoli_cqf.query("TTTTTTTTTATAAAAACGAGCAGAACAA", 28).minimum << endl; //0
 
         ecoli_cqf.remove("CGTATGAAAAAACGTATCCCCACTCTCC", 6);
 
-        cout << ecoli_cqf.query("CGTATGAAAAAACGTATCCCCACTCTCC", 28) << " removed 6 from 28" << endl;
+        cout << ecoli_cqf.query("CGTATGAAAAAACGTATCCCCACTCTCC", 28).minimum << " removed 6 from 28" << endl;
 
-        cout << ecoli_cqf.query("ACAACGTTTGCTCGATGATCGCCTGCTCATCG", 32) << endl; //30
-        cout << ecoli_cqf.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGA", 32) << endl; //24 but 25 because of FalsePositive
+        cout << ecoli_cqf.query("ACAACGTTTGCTCGATGATCGCCTGCTCATCG", 28).minimum << endl; //30
+        cout << ecoli_cqf.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGA", 28).minimum << endl; //24 but 25 because of FalsePositive
 
+        result_query bigQuery = ecoli_cqf.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGAG", 32);
+        cout << bigQuery << endl; 
 	
 	return 0;
 }

@@ -95,16 +95,16 @@ class Bcqf_ec : public Rsqf{
     uint64_t query(uint64_t number);
 
     /** 
-     * \brief query a kmer from the filter.
+     * \brief query a sequence from the filter.
      * 
-     * Every smer of the kmer will be queried, and the smallest count amongst them will 
-     * be returned (see fimpera)
+     * Every abundance of each kmer of the query sequence will be queried. This is done following Fimpera scheme
+     * and the smallest count amongst them will be returned. 
      * 
-     * \param kmer the kmer to query
+     * \param seq the sequence to query
      * \param k the kmer size, k-s+1 smers will be effectively queried
      * \return the abundance of the given kmer in the filter
      */
-    uint64_t query(std::string kmer, uint64_t k);
+    result_query query(std::string seq, int k);
 
     /** 
      * \brief Removes (if present) a number from the filter
@@ -142,8 +142,10 @@ class Bcqf_ec : public Rsqf{
      * 
      * \return a string to uint_64t map, linking every originally inserted kmer to its abundance in the filter
      **/ 
-    std::map<std::string, uint64_t> enumerate();
+    std::map<uint64_t, uint64_t> enumerate();
 
+    //tmp public
+    void resize(int n); 
 
     private:
 

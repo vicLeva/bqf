@@ -37,7 +37,9 @@ Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : verbose(verbose) {
     remainder_size = r_size;
 
     uint64_t num_quots = 1ULL << quotient_size; 
-    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
+    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT;
+    
+    size_limit = num_quots * 0.95;
 
     // In machine words
     number_blocks = std::ceil(num_quots / BLOCK_SIZE);
@@ -193,7 +195,12 @@ uint64_t Rsqf::find_quotient_given_memory(uint64_t max_memory){ //TO CHANGE, MIS
 using namespace std;
 
 void Rsqf::insert(uint64_t number){
-    if (elements_inside == number_blocks*BLOCK_SIZE - 1) return; //100%-1 is max number
+    if (++elements_inside == size_limit){
+        if (verbose){
+            std::cout << "RESIZING" << std::endl;
+        }
+        this->resize(1);    
+    }
 
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
@@ -427,6 +434,28 @@ std::unordered_set<uint64_t> Rsqf::enumerate(){
     }
 
     return finalSet;
+}
+
+
+void Rsqf::resize(int n){
+    std::unordered_set<uint64_t> inserted_elements = this->enumerate();
+
+    this->quotient_size += n;
+    this->remainder_size -= n;
+    
+    uint64_t num_quots = 1ULL << this->quotient_size; 
+    uint64_t num_of_words = num_quots * (MET_UNIT + this->remainder_size) / MEM_UNIT; 
+
+    this->size_limit = num_quots * 0.95;
+
+    // In machine words
+    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+
+    this->filter = std::vector<uint64_t>(num_of_words);
+
+    for (const uint64_t& hash: inserted_elements) {
+        this->insert(hash);
+    }
 }
 
 

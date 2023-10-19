@@ -15,6 +15,8 @@
 #define RUN_POS 2ULL
 
 
+//BITS & KMER MANIPULATION
+
 void print_bits(uint64_t x) {
   std::bitset<MEM_UNIT> bits(x);
   std::cout << bits << std::endl;
@@ -152,10 +154,10 @@ uint64_t encode(string kmer){
     return encoded;
 }
 
-string decode(uint64_t revhash, uint64_t size){
+string decode(uint64_t revhash, uint64_t k){
     string kmer;
 
-    for (size_t i=0; i<size; i++){
+    for (size_t i=0; i<k; i++){
         switch(revhash & mask_right(2)){
             case 3:
                 kmer = 'A' + kmer;
@@ -235,50 +237,51 @@ string hash_to_kmer(uint64_t hash, uint64_t k){
 }
 
 
-char complement(char nucl){
-  //Returns the complement of a nucleotide
+uint64_t nucl_encode(char nucl){
+  //Returns the binary encoding of a nucleotide
+  //different from encode() function because this is for query, so we have to check for canonical smer
+  //and this encoding allows fast comparison (<) of lexico order 
   switch (nucl){
     case 'A':
-      return 'T';
+      return 0;
     case 'T':
-      return 'A';
+      return 3;
     case 'C':
-      return 'G';
+      return 1;
     case 'G':
-      return 'C';
-    default : throw std::invalid_argument( "received non nucleotidic value" );
+      return 2;
+    default :
+        throw std::invalid_argument( "received non nucleotidic value" );
   }
 }
 
-std::string revcomp(const std::string& kmer) {
-    std::string revComp(kmer.rbegin(), kmer.rend());
-    for (auto& c : revComp) {
-        c = complement(c);
-    }
-    return revComp;
+uint64_t flip(uint64_t encoding, size_t bitsize){
+  //Used so Ts are 0s so we dont get 0000.. in xorshift (through revcompl)
+    return ~encoding << (64-bitsize) >> (64-bitsize);
 }
 
-// Returns an array of canonical k-mers in a given sequence s
-std::vector<std::string> canonical_kmers(const std::string& s, int len, int k) {
-    std::vector<std::string> kmers{};
-    string kmer = s.substr(0, k);
-    string rc = revcomp(kmer);
+uint64_t revcomp64 (const uint64_t v, size_t bitsize){
+  return (((uint64_t)rev_table[v & 0xff] << 56) | 
+    ((uint64_t)rev_table[(v >> 8) & 0xff] << 48) | 
+    ((uint64_t)rev_table[(v >> 16) & 0xff] << 40) | 
+    ((uint64_t)rev_table[(v >> 24) & 0xff] << 32) | 
+    ((uint64_t)rev_table[(v >> 32) & 0xff] << 24) | 
+    ((uint64_t)rev_table[(v >> 40) & 0xff] << 16) |
+    ((uint64_t)rev_table[(v >> 48) & 0xff] << 8) |
+    ((uint64_t)rev_table[(v >> 56) & 0xff])) >> (64-bitsize);
+}
 
-    if (kmer < rc) {
-        kmers.push_back(kmer);
-    } else {
-        kmers.push_back(rc);
-    }
+uint64_t canonical(uint64_t smer, size_t size){
+    uint64_t revcomp = revcomp64(smer, size);
+    if (revcomp < smer) { return revcomp; }
+    else { return smer; }
+}
 
-    for (int i = k; i < len; i++) {
-        kmer = kmer.substr(1) + s[i];
-        rc = complement(s[i]) + rc.substr(0, k-1);
-        if (kmer < rc) {
-            kmers.push_back(kmer);
-        } else {
-            kmers.push_back(rc);
-        }
-    }
+std::string canonical(const std::string& smer, size_t s){
+  //debug purpose only
+  return decode(flip(canonical(flip(encode(smer), 2*s), 2*s), 2*s), s);
+}
 
-    return kmers;
+std::ostream& operator<<(std::ostream& os, result_query const& res) {
+    return os << "(min:" << res.minimum << ", average:" << res.average << ", presence ratio:" << res.kmer_present_ratio << ")" << endl;
 }

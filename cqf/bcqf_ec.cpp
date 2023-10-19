@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cassert>
 #include <fstream>
+#include <algorithm>
 
 #include "bcqf_ec.hpp" 
 
@@ -85,7 +86,12 @@ void Bcqf_ec::insert(string kmer, uint64_t count){
 
 void Bcqf_ec::insert(uint64_t number, uint64_t count){
 
-    if (elements_inside == number_blocks*BLOCK_SIZE - 1) return; //100%-1 is max number
+    if (++elements_inside == size_limit){
+        if (verbose){
+            std::cout << "RESIZING" << std::endl;
+        }
+        this->resize(1);    
+    }
 
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
@@ -178,16 +184,59 @@ void Bcqf_ec::insert(uint64_t number, uint64_t count){
     }
 }
 
-uint64_t Bcqf_ec::query(string seq, uint64_t seq_size){ //use string_view ?
-    uint64_t min_count = 2ULL<<count_size;
-    uint64_t count;
-    vector<string> smers = canonical_kmers(seq, seq_size, kmer_size);
+result_query Bcqf_ec::query(string seq, int k){
+    int s = (this->quotient_size + this->remainder_size - this->count_size) / 2;
+    int n = seq.length();
 
-    for (uint64_t i=0; i < seq_size-kmer_size+1; i++){
-        count = this->query(kmer_to_hash(smers[i], kmer_size));
-        if (count < min_count) min_count = count;
+    if (k == s && s == n) { 
+        uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
+        return result_query {(int)res, (float)res, (float)(res!=0)};
     }
-    return min_count;
+    
+    int z = k-s;
+    
+    int last_smers_abundances[z+1];
+    int* kmer_abundance;
+
+    int nb_presence = 0;
+    int avg = 0;
+    int min  = std::numeric_limits<int>::max();
+
+    uint64_t current_smer = 0;
+
+    //build current_smer (s first chars)
+    for (auto i = 0; i < s-1; i++){
+        current_smer <<= 2;
+        current_smer |= nucl_encode(seq[i]);
+    } 
+
+
+    //1st kmer (s+z first chars), skipped if k==s
+    for (auto i = s-1; i < s+z-1; i++){
+        current_smer <<= 2;
+        current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
+
+        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+    }
+    
+    //all kmers
+    for (auto i = s+z-1; i < n; i++){
+        current_smer <<= 2;
+        current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
+
+        last_smers_abundances[(i-2)%(z+1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+
+        kmer_abundance = std::min_element(last_smers_abundances, last_smers_abundances+z+1);
+        if (*kmer_abundance == 0){
+            min = 0;
+        } else {
+            min = std::min(min, *kmer_abundance);
+            avg = avg + *kmer_abundance;
+            nb_presence ++;
+        }
+    }
+
+    return result_query {min, (float)(avg / (n-k+1)), (float)nb_presence/(n-k+1)};
 }
 
 uint64_t Bcqf_ec::query(uint64_t number){
@@ -310,8 +359,8 @@ bool Bcqf_ec::remove(uint64_t number, uint64_t count){
 }
 
 
-std::map<string, uint64_t> Bcqf_ec::enumerate(){
-    std::map<string, uint64_t> finalSet;
+std::map<uint64_t, uint64_t> Bcqf_ec::enumerate(){
+    std::map<uint64_t, uint64_t> finalSet;
     uint64_t curr_occ;
     
     std::pair<uint64_t, uint64_t> bounds;
@@ -332,12 +381,12 @@ std::map<string, uint64_t> Bcqf_ec::enumerate(){
                 cursor = bounds.first;
                 while (cursor != (bounds.second)){ //every remainder of the run
                     number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                    finalSet[hash_to_kmer(number, kmer_size)] = get_remainder(cursor, true) & mask_right(count_size);
+                    finalSet[number] = get_remainder(cursor, true) & mask_right(count_size);
                     cursor = get_next_quot(cursor);
                 }
 
                 number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                finalSet[hash_to_kmer(number, kmer_size)] = get_remainder(cursor, true) & mask_right(count_size);
+                finalSet[number] = get_remainder(cursor, true) & mask_right(count_size);
             }
 
             curr_occ >>= 1ULL; //next bit of occupied vector
@@ -347,6 +396,27 @@ std::map<string, uint64_t> Bcqf_ec::enumerate(){
     return finalSet;
 }
 
+
+void Bcqf_ec::resize(int n){
+    std::map<uint64_t, uint64_t> inserted_elements = this->enumerate();
+
+    this->quotient_size += n;
+    this->remainder_size -= n;
+    
+    uint64_t num_quots = 1ULL << this->quotient_size; 
+    uint64_t num_of_words = num_quots * (MET_UNIT + this->remainder_size) / MEM_UNIT; 
+
+    this->size_limit = num_quots * 0.95;
+
+    // In machine words
+    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+
+    this->filter = std::vector<uint64_t>(num_of_words);
+
+    for (auto const& elem : inserted_elements){
+        this->insert(elem.first, elem.second);
+    }
+}
 
 
 uint64_t Bcqf_ec::find_quotient_given_memory(uint64_t max_memory, uint64_t count_size){
