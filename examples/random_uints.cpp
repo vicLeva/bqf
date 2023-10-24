@@ -1,14 +1,11 @@
 /*
 	Generates n random integers and feed the cqf with them.
 */
-
-#include <iostream>
-#include <sstream>
+#include "rsqf.hpp"
 #include <random>
 #include <ctime>
 #include <getopt.h>
-#include <unordered_set>
-#include "filter.hpp"
+
 
 using namespace std;
 

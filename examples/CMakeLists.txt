@@ -8,11 +8,11 @@ add_executable(ecoli_example
 )
 
 target_link_libraries(random_uints
-	CQF
+	RSQF
 )
 
 target_link_libraries(ecoli_example
-	CQF
+	RSQF
 )
 
 target_compile_definitions(ecoli_example PUBLIC DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")

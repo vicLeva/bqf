@@ -1,18 +1,4 @@
-#include <iostream>
-#include <bitset>
-#include <stdint.h> 
-#include <cassert>
-#include <vector>
-#include <string.h>
-
 #include "additional_methods.hpp"
-
-
-#define MEM_UNIT 64ULL
-#define MET_UNIT 3ULL
-#define OFF_POS 0ULL
-#define OCC_POS 1ULL
-#define RUN_POS 2ULL
 
 
 //BITS & KMER MANIPULATION

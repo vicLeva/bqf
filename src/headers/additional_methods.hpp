@@ -1,7 +1,22 @@
 #ifndef ADDITIONAL_METHODS_HPP
 #define ADDITIONAL_METHODS_HPP
+
 #include <stdint.h> 
-#include <string.h>
+#include <string>
+#include <iostream>
+#include <bitset>
+#include <cassert>
+#include <vector>
+
+
+// STATIC VARIABLES 
+#define MEM_UNIT 64ULL
+#define BLOCK_SIZE 64ULL
+#define MET_UNIT 3ULL
+#define OFF_POS 0ULL
+#define OCC_POS 1ULL
+#define RUN_POS 2ULL
+#define SCALE_INPUT 8388608ULL
 
 /** 
  * \brief Print the bits of a given uint64 word

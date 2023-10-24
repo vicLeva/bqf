@@ -3,9 +3,24 @@
 
 #include <vector>
 #include <stdint.h> 
+#include <iostream>
+#include <bitset>
+#include <string>
+#include <cassert>
+#include <cmath>
+#include <sstream>
 #include <unordered_set>
 
 #include "additional_methods.hpp"
+
+// STATIC VARIABLES 
+#define MEM_UNIT 64ULL
+#define BLOCK_SIZE 64ULL
+#define MET_UNIT 3ULL
+#define OFF_POS 0ULL
+#define OCC_POS 1ULL
+#define RUN_POS 2ULL
+#define SCALE_INPUT 8388608ULL
 
 
 class Backpack_cqf;

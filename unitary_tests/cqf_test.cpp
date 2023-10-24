@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "filter.hpp"
-#include "bcqf_ec.hpp" 
-#include "bcqf_oom.hpp"
+#include "rsqf.hpp"
+#include "bqf_ec.hpp" 
+#include "bqf_oom.hpp"
 #include <random>
 
 using namespace std;
@@ -14,7 +14,7 @@ class RsqfTest : public ::testing::Test {
     
     usual_qf = Rsqf(2);
     small_qf = Rsqf(7, 64-7, false);
-    cqf = Bcqf_ec(4, 5, false);
+    cqf = Bqf_ec(4, 5, false);
   }
 
   // void TearDown() override {}
@@ -24,7 +24,7 @@ class RsqfTest : public ::testing::Test {
 
   Rsqf usual_qf;
   Rsqf small_qf;
-  Bcqf_ec cqf;
+  Bqf_ec cqf;
 };
 
 
@@ -312,11 +312,11 @@ class BCqfTest : public ::testing::Test {
   void SetUp() override {
     generator.seed(time(NULL));
     
-    small_cqf = Bcqf_ec(7, 64-7, 5, false);
-    cqf = Bcqf_ec(1, 5, false);
+    small_cqf = Bqf_ec(7, 64-7, 5, false);
+    cqf = Bqf_ec(1, 5, false);
     
-    small_cqf_oom = Bcqf_oom(7, 64-7, 5, false);
-    cqf_oom = Bcqf_oom(1, 5, false);
+    small_cqf_oom = Bqf_oom(7, 64-7, 5, false);
+    cqf_oom = Bqf_oom(1, 5, false);
   }
 
   // void TearDown() override {}
@@ -324,11 +324,11 @@ class BCqfTest : public ::testing::Test {
   std::default_random_engine generator;
   std::uniform_int_distribution<uint64_t> distribution;
 
-  Bcqf_ec small_cqf;
-  Bcqf_ec cqf;
+  Bqf_ec small_cqf;
+  Bqf_ec cqf;
   
-  Bcqf_oom small_cqf_oom;
-  Bcqf_oom cqf_oom;
+  Bqf_oom small_cqf_oom;
+  Bqf_oom cqf_oom;
 };
 
 

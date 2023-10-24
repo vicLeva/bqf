@@ -1,27 +1,6 @@
-#include <iostream>
-#include <bitset>
-#include <vector>
-#include <chrono>     // for std::chrono::high_resolution_clock
-#include <string.h>
-#include <cassert>
-#include <cmath>
-#include <stdint.h>
-#include <sstream>
-#include <unordered_set>
-
-
-#include "filter.hpp" 
+#include "rsqf.hpp" 
 
 //FILTER CLASS
-
-// STATIC VARIABLES 
-#define MEM_UNIT 64ULL
-#define BLOCK_SIZE 64ULL
-#define MET_UNIT 3ULL
-#define OFF_POS 0ULL
-#define OCC_POS 1ULL
-#define RUN_POS 2ULL
-#define SCALE_INPUT 8388608ULL
 
 using namespace std;
 
@@ -195,7 +174,7 @@ uint64_t Rsqf::find_quotient_given_memory(uint64_t max_memory){ //TO CHANGE, MIS
 using namespace std;
 
 void Rsqf::insert(uint64_t number){
-    if (++elements_inside == size_limit){
+    if (elements_inside+1 == size_limit){
         if (verbose){
             std::cout << "RESIZING" << std::endl;
         }
@@ -449,7 +428,7 @@ void Rsqf::resize(int n){
     this->size_limit = num_quots * 0.95;
 
     // In machine words
-    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+    this->number_blocks = std::ceil(num_quots / BLOCK_SIZE);
 
     this->filter = std::vector<uint64_t>(num_of_words);
 

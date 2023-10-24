@@ -1,20 +1,16 @@
 /*
 	Generates n random integers and feed the cqf with them.
 */
+#include "rsqf.hpp"
 
-#include <iostream>
 #include <fstream>
-#include <sstream>
 #include <random>
 #include <ctime>
 #include <getopt.h>
-#include <unordered_set>
-#include "filter.hpp"
 #include <chrono>
 #include <cstdio>
 #include <memory>
 #include <stdexcept>
-#include <string>
 #include <array>
 
 using namespace std;

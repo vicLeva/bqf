@@ -18,7 +18,7 @@ add_executable(
 
 target_link_libraries(unit_tests
   PRIVATE
-    CQF
+    RSQF
     gtest_main #main auto de googletest
   )
 

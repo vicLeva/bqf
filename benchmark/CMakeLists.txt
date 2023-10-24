@@ -4,7 +4,7 @@ add_executable(benchmark
 )
 
 target_link_libraries(benchmark
-	CQF
+	RSQF
 )
 
 target_compile_definitions(benchmark PUBLIC BENCHMARK_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
