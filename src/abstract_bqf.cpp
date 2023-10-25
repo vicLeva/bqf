@@ -290,5 +290,19 @@ uint64_t Bqf::find_quotient_given_memory(uint64_t max_memory, uint64_t count_siz
 
     }
     return 0;
+}
 
+
+void Bqf::save_on_disk(const std::string& filename) { //remove 5 
+    std::ofstream file(filename, std::ios::out | std::ios::binary);
+    if (file.is_open()) {
+        file.write(reinterpret_cast<const char*>(&this->quotient_size), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->remainder_size), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->count_size), sizeof(uint64_t));
+        uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
+        file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
+        file.close();
+    } else {
+        std::cerr << "Unable to open file for writing: " << filename << std::endl;
+    }
 }

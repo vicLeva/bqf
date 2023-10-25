@@ -1,7 +1,6 @@
 #ifndef BQF_HPP
 #define BQF_HPP
 
-#include <fstream>
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -143,17 +142,7 @@ public:
 
     virtual uint64_t process_count(uint64_t count) = 0;
 
-
-    /* void function_1();
-    void function_2();
-    // ...
-    void function_5();
-    void function_6();
-    void function_7();
-    virtual void function_8() = 0;
-    virtual void function_9() = 0;
-    virtual void function_10() = 0;
-    // ... */
+    void save_on_disk(const std::string& filename);
 };
 
 #endif

@@ -79,7 +79,7 @@ class Bqf_ec : public Bqf{
     bool remove(std::string kmer, uint64_t count = 1);
 
     
-
+    static Bqf_ec load_from_disk(const std::string& filename);
     
 
     private:
@@ -112,6 +112,7 @@ class Bqf_ec : public Bqf{
      **/
     void sub_to_counter(uint64_t position, uint64_t count);
 
+    
     
 };
 

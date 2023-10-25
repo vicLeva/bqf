@@ -27,7 +27,7 @@ Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : verbose(verbose) {
 }
 
 
-Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) { //TO CHANGE, MISS HASH INFORMATION
+Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) { 
     elements_inside = 0;
     
     // Size of the quotient/remainder to fit into max_memory MB
@@ -37,7 +37,7 @@ Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) { //TO CHANGE, 
 
     // Number of quotients must be >= MEM_UNIT
     uint64_t num_quots = 1ULL << quotient_size; //524.288
-    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
+    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
 
     // In machine words
     number_blocks = std::ceil(num_quots / BLOCK_SIZE);
@@ -1062,4 +1062,34 @@ void Rsqf::shift_bits_right_metadata(uint64_t quotient, uint64_t start_position,
 
     //OFFSET+RUNEND CURRENT BLOCK == END BLOCK
     shift_runend_right(current_shift_in_block, end_shift_in_block, current_block);
+}
+
+
+void Rsqf::save_on_disk(const std::string& filename) { //remove 5 
+    std::ofstream file(filename, std::ios::out | std::ios::binary);
+    if (file.is_open()) {
+        file.write(reinterpret_cast<const char*>(&this->quotient_size), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->remainder_size), sizeof(uint64_t));
+        uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
+        file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
+        file.close();
+    } else {
+        std::cerr << "Unable to open file for writing: " << filename << std::endl;
+    }
+}
+
+Rsqf Rsqf::load_from_disk(const std::string& filename){
+    Rsqf qf;
+    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    if (file.is_open()) {
+        file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(int64_t));
+        file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(int64_t));
+        uint64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
+        qf.filter.resize(num_words);
+        file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(int64_t) * num_words);
+        file.close();
+    } else {
+        std::cerr << "Unable to open file for reading: " << filename << std::endl;
+    }
+    return qf;
 }

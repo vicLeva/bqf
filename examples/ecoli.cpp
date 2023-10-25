@@ -35,7 +35,26 @@ int main (int argc, char * argv[]) {
         cout << ecoli_cqf.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGA", 28).minimum << endl; //24 but 25 because of FalsePositive
 
         result_query bigQuery = ecoli_cqf.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGAG", 32);
-        cout << bigQuery << endl; 
+        cout << bigQuery << endl;
+
+        
+
+        ecoli_cqf.save_on_disk("/udd/vlevallo/documents/ecoli_cqf");
+        std::cout << ecoli_cqf.block2string(0) << "\n";
+
+        Bqf_ec ecoli_cqf2 = Bqf_ec::load_from_disk("/udd/vlevallo/documents/ecoli_cqf");
+
+        uint64_t val = (3ULL << 18) + 8; 
+        ecoli_cqf2.insert(val, 1);
+
+        cout << ecoli_cqf2.query(val) << endl;
+
+        std::cout << ecoli_cqf2.block2string(0) << "\n";
+        cout << ecoli_cqf2.query("CGTATGAAAAAACGTATCCCCACTCTCC", 28).minimum << endl; //28
+        cout << ecoli_cqf2.query("CTCGTTGATACCGGGCGCCCTGCTTGCC", 28).minimum << endl; //1
+        cout << ecoli_cqf2.query("AATCTGAAAGATCACAACGAGCAGGTCA", 28).minimum << endl; //25
+        cout << ecoli_cqf2.query("TTTTTTTTTATAAAAACGAGCAGAACAA", 28).minimum << endl; //0
+
 	
 	return 0;
 }

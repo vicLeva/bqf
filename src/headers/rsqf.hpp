@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cmath>
 #include <sstream>
+#include <fstream>
 #include <unordered_set>
 
 #include "additional_methods.hpp"
@@ -509,7 +510,16 @@ class Rsqf {
      */
     uint64_t first_unshiftable_slot(uint64_t curr_quotient); //const
 
-    
+
+
+    /*  
+        ================================================================
+        FILTER ON DISK 
+        ================================================================
+    */  
+
+   void save_on_disk(const std::string& filename);
+   static Rsqf load_from_disk(const std::string& filename);
 
 };  
 

@@ -183,6 +183,21 @@ uint64_t Bqf_ec::process_count(uint64_t count){
     return (count < (1ULL << count_size) ? count : (1ULL << count_size)-1);
 }
 
-
+Bqf_ec Bqf_ec::load_from_disk(const std::string& filename){
+    Bqf_ec qf;
+    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    if (file.is_open()) {
+        file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(int64_t));
+        file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(int64_t));
+        file.read(reinterpret_cast<char*>(&qf.count_size), sizeof(int64_t));
+        uint64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
+        qf.filter.resize(num_words);
+        file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(int64_t) * num_words);
+        file.close();
+    } else {
+        std::cerr << "Unable to open file for reading: " << filename << std::endl;
+    }
+    return qf;
+}
 
 
