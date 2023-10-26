@@ -35,7 +35,7 @@ class Bqf_oom : public Bqf{
      * \param c_size The desired size of remainders counters
      * \param verbose to print on-going operations in stdout (default: false)
      */
-    Bqf_oom(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verbose=false);
+    Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb=false);
 
     /** 
      * \brief Constructor that deduces quotient and remainder sizes from the desired struct size

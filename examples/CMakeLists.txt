@@ -7,11 +7,19 @@ add_executable(ecoli_example
 	ecoli.cpp
 )
 
+add_executable(bqf
+	main_example.cpp
+)
+
 target_link_libraries(random_uints
 	RSQF
 )
 
 target_link_libraries(ecoli_example
+	RSQF
+)
+
+target_link_libraries(bqf
 	RSQF
 )
 

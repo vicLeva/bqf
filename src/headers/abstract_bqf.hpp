@@ -13,16 +13,14 @@ public:
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
     uint64_t count_size;
-
-    /** 
-     * \brief size in bits of the hashes that will be inserted
-     */
-    uint64_t hash_size;
     
     /** 
-     * \brief k, supposed to be hash_size/2
+     * \brief s, supposed to be hash_size/2
      */
+    uint64_t smer_size;
+
     uint64_t kmer_size;
+
 
     /** 
      * \brief Insert every kmer + abundance of a kmer count software output file (eg KMC)
@@ -70,7 +68,7 @@ public:
      * \param k the kmer size, k-s+1 smers will be effectively queried
      * \return the abundance of the given kmer in the filter
      */
-    result_query query(std::string seq, int k);
+    result_query query(std::string seq);
 
     /** 
      * \brief query a number from the filter.

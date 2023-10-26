@@ -4,19 +4,30 @@
 using namespace std;
 
 void Bqf::insert(string kmc_input){
-    ifstream infile(kmc_input);
+    try {
+        ifstream infile(kmc_input);
 
-    string kmer; 
-    uint64_t count;
+        if (!infile) {
+            throw std::runtime_error("File not found: " + kmc_input);
+        }
 
-    while (infile >> kmer >> count) {
-        this->insert(kmer, count);
+        string kmer; 
+        uint64_t count;
+
+        while (infile >> kmer >> count) {
+            this->insert(kmer, count);
+        }
+
+        infile.close();
+    } catch (const std::exception &e) {
+        // Gérez l'exception ici, par exemple, affichez un message d'erreur
+        std::cerr << "Error: " << e.what() << std::endl;
     }
 }   
 
 
 void Bqf::insert(string kmer, uint64_t count){
-    this->insert(kmer_to_hash(kmer, kmer_size), count);
+    this->insert(kmer_to_hash(kmer, smer_size), count);
 }
 
 void Bqf::insert(uint64_t number, uint64_t count){
@@ -118,32 +129,29 @@ void Bqf::insert(uint64_t number, uint64_t count){
     }
 }
 
-result_query Bqf::query(string seq, int k){
-    int s = (this->quotient_size + this->remainder_size - this->count_size) / 2;
+result_query Bqf::query(string seq){
+    int s = this->smer_size;
+    int k = this->kmer_size;
     int n = seq.length();
-
+    
     if (k == s && s == n) { 
         uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
         return result_query {(int)res, (float)res, (float)(res!=0)};
     }
-    
     int z = k-s;
-    
     int last_smers_abundances[z+1];
     int* kmer_abundance;
-
     int nb_presence = 0;
     int avg = 0;
     int minimum  = numeric_limits<int>::max();
 
     uint64_t current_smer = 0;
-
+    
     //build current_smer (s first chars)
     for (auto i = 0; i < s-1; i++){
         current_smer <<= 2;
         current_smer |= nucl_encode(seq[i]);
     } 
-
 
     //1st kmer (s+z first chars), skipped if k==s
     for (auto i = s-1; i < s+z-1; i++){
@@ -152,7 +160,8 @@ result_query Bqf::query(string seq, int k){
 
         last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
     }
-    
+
+
     //all kmers
     for (auto i = s+z-1; i < n; i++){
         current_smer <<= 2;
@@ -177,7 +186,6 @@ uint64_t Bqf::query(uint64_t number){
     if (elements_inside == 0) return 0;
     uint64_t quot = quotient(number);
     uint64_t rem = remainder(number);
-
     if (!is_occupied(quot)) return 0;
 
     pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
@@ -200,7 +208,6 @@ uint64_t Bqf::query(uint64_t number){
 
     return 0;
 }
-
 
 std::map<uint64_t, uint64_t> Bqf::enumerate(){
     std::map<uint64_t, uint64_t> finalSet;
@@ -293,12 +300,17 @@ uint64_t Bqf::find_quotient_given_memory(uint64_t max_memory, uint64_t count_siz
 }
 
 
-void Bqf::save_on_disk(const std::string& filename) { //remove 5 
+void Bqf::save_on_disk(const std::string& filename) { 
     std::ofstream file(filename, std::ios::out | std::ios::binary);
     if (file.is_open()) {
         file.write(reinterpret_cast<const char*>(&this->quotient_size), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->remainder_size), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->count_size), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->kmer_size), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->smer_size), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->size_limit), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->number_blocks), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&this->elements_inside), sizeof(uint64_t));
         uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
         file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
         file.close();

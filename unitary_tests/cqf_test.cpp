@@ -312,10 +312,10 @@ class BCqfTest : public ::testing::Test {
   void SetUp() override {
     generator.seed(time(NULL));
     
-    small_cqf = Bqf_ec(7, 64-7, 5, false);
+    small_cqf = Bqf_ec(7, 5, 32, 0, false);
     cqf = Bqf_ec(1, 5, false);
     
-    small_cqf_oom = Bqf_oom(7, 64-7, 5, false);
+    small_cqf_oom = Bqf_oom(7, 5, 32, 0, false);
     cqf_oom = Bqf_oom(1, 5, false);
   }
 

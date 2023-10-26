@@ -4,22 +4,23 @@ using namespace std;
 
 Bqf_ec::Bqf_ec(){}
 
-Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb){
+Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb){
     assert(q_size >= 7);
 
     verbose = verb;
 
     elements_inside = 0;
     quotient_size = q_size;
-    remainder_size = r_size + c_size;
-    count_size = c_size;
+    kmer_size = k;
+    smer_size = k-z;
+    uint64_t hash_size = 2*smer_size;   
+    count_size = c_size; 
+
+    remainder_size = hash_size - q_size + c_size;
     
     if (verbose){ 
-        cout << "q " << quotient_size << " r " << r_size << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
+        cout << "q " << quotient_size << " r " << (hash_size - q_size) << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
     }
-
-    hash_size = q_size + r_size;    
-    kmer_size = hash_size/2;
 
     uint64_t num_quots = 1ULL << quotient_size; 
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
@@ -30,7 +31,6 @@ Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t r_size, uint64_t c_size, bool verb){
     number_blocks = ceil(num_quots / BLOCK_SIZE);
 
     filter = vector<uint64_t>(num_of_words);
-    
 }
 
 
@@ -58,7 +58,7 @@ Bqf_ec::Bqf_ec(uint64_t max_memory, uint64_t c_size, bool verb){ //TO CHANGE, MI
 
 
 bool Bqf_ec::remove(string kmer, uint64_t count){
-    return this->remove(kmer_to_hash(kmer, kmer_size), count);
+    return this->remove(kmer_to_hash(kmer, smer_size), count);
 }
 
 bool Bqf_ec::remove(uint64_t number, uint64_t count){
@@ -187,12 +187,17 @@ Bqf_ec Bqf_ec::load_from_disk(const std::string& filename){
     Bqf_ec qf;
     std::ifstream file(filename, std::ios::in | std::ios::binary);
     if (file.is_open()) {
-        file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(int64_t));
-        file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(int64_t));
-        file.read(reinterpret_cast<char*>(&qf.count_size), sizeof(int64_t));
+        file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.count_size), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.kmer_size), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.smer_size), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.size_limit), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.number_blocks), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.elements_inside), sizeof(uint64_t));
         uint64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
         qf.filter.resize(num_words);
-        file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(int64_t) * num_words);
+        file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(uint64_t) * num_words);
         file.close();
     } else {
         std::cerr << "Unable to open file for reading: " << filename << std::endl;
