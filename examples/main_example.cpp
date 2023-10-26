@@ -10,6 +10,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Commands:" << std::endl;
         std::cout << "./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
         std::cout << "./bqf query -b <bqf_file> -i <reads_to_query>" << std::endl;
+        std::cout << "./bqf help" << std::endl;
         return 1;
     }
 
@@ -84,10 +85,27 @@ int main(int argc, char* argv[]) {
         std::cout << "Construction time = " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count() << "ms" << std::endl;
     } 
 	
-	else if (command == "query" && argc == 6) {
-        std::string input_bqf_file = argv[3];
-        std::string input_reads_file_to_query = argv[5];
-
+	else if (command == "query") {
+        std::string input_bqf_file;
+        std::string input_reads_file_to_query;
+        for (int i = 2; i < argc; i++) {
+            if (std::string(argv[i]) == "-b") {
+                if (i + 1 < argc) {
+                    input_bqf_file = std::stoi(argv[i + 1]);
+                } else {
+                    std::cerr << "The -b option requires a value." << std::endl;
+                    return 1;
+                }
+            } else if (std::string(argv[i]) == "-i") {
+                if (i + 1 < argc) {
+                    input_reads_file_to_query = std::stoi(argv[i + 1]);
+                } else {
+                    std::cerr << "The -i option requires a value." << std::endl;
+                    return 1;
+                }
+            } 
+        }
+        
         if (input_bqf_file.empty() || input_reads_file_to_query.empty()) {
             std::cerr << "Input file names are missing." << std::endl;
             return 1;
@@ -116,6 +134,21 @@ int main(int argc, char* argv[]) {
 
         std::cout << "Queries executed successfully." << std::endl;
         std::cout << "Load + queries time = " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count() << "ms" << std::endl;
+    
+    } else if (command == "help" || command == "h") {
+        std::cout << "Usage: ./bqf <command>" << std::endl;
+        std::cout << "Commands:" << std::endl;
+        std::cout << "./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
+        std::cout << "./bqf query -b <bqf_file> -i <reads_to_query>" << std::endl;
+        std::cout << "./bqf help" << std::endl;
+
+        std::cout << "-q is quotient size, it sets the filter size (there will be 2^q slots) so 2^(q-1) < nb_unique_elements < 2^q is needed" << std::endl;
+        std::cout << "-c is the number of bits reserved for counters of each element. 2^c will be the maximum value" << std::endl;
+        std::cout << "-k is the kmer size. The result of the query of a sequence S will be the minimum of the queries of all the kmers of S" << std::endl;
+        std::cout << "-z is fimpera parameter. kmers are queried through the query of all their smers. s = k-z and smers are effectively inserted in the filter" << std::endl;
+        std::cout << "-i is input_file, can be counted smers for \"build\" command or sequences to query for \"query\" command" << std::endl;
+        std::cout << "-o is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q)" << std::endl;
+        std::cout << "-b is the file from which the BQF is loaded" << std::endl;
     } else {
         std::cerr << "Invalid command or incorrect number of arguments." << std::endl;
         return 1;
