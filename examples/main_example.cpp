@@ -91,14 +91,14 @@ int main(int argc, char* argv[]) {
         for (int i = 2; i < argc; i++) {
             if (std::string(argv[i]) == "-b") {
                 if (i + 1 < argc) {
-                    input_bqf_file = std::stoi(argv[i + 1]);
+                    input_bqf_file = argv[i + 1];
                 } else {
                     std::cerr << "The -b option requires a value." << std::endl;
                     return 1;
                 }
             } else if (std::string(argv[i]) == "-i") {
                 if (i + 1 < argc) {
-                    input_reads_file_to_query = std::stoi(argv[i + 1]);
+                    input_reads_file_to_query = argv[i + 1];
                 } else {
                     std::cerr << "The -i option requires a value." << std::endl;
                     return 1;
