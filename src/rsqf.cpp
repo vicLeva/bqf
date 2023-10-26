@@ -262,7 +262,6 @@ void Rsqf::insert(uint64_t number){
 
 
 bool Rsqf::query(uint64_t number){
-    //std::cout << "elements_inside " << elements_inside << std::endl;
     if (elements_inside == 0) return 0;
     //get quotient q and remainder r
     uint64_t quot = quotient(number);

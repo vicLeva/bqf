@@ -11,11 +11,21 @@ void Bqf::insert(string kmc_input){
             throw std::runtime_error("File not found: " + kmc_input);
         }
 
-        string kmer; 
+        string smer; 
         uint64_t count;
 
-        while (infile >> kmer >> count) {
-            this->insert(kmer, count);
+        //1st elem, check s == smer_size
+        infile >> smer >> count;
+        if (smer.size() == this->smer_size){
+            this->insert(smer, count);
+        } else {
+            std::cerr << "BQF has been configured to welcome " << this->smer_size << "mers but trying to insert " << smer.size() << "mers, end of insertions" << std::endl;
+            return;
+        }
+        
+
+        while (infile >> smer >> count) {
+            this->insert(smer, count);
         }
 
         infile.close();
@@ -154,7 +164,7 @@ result_query Bqf::query(string seq){
     } 
 
     //1st kmer (s+z first chars), skipped if k==s
-    for (auto i = s-1; i < s+z-1; i++){
+    for (auto i = s-1; i < k-1; i++){
         current_smer <<= 2;
         current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
 
@@ -163,11 +173,11 @@ result_query Bqf::query(string seq){
 
 
     //all kmers
-    for (auto i = s+z-1; i < n; i++){
+    for (auto i = k-1; i < n; i++){
         current_smer <<= 2;
         current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
 
-        last_smers_abundances[(i-2)%(z+1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+        last_smers_abundances[(i-s+1)%(z+1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
 
         kmer_abundance = min_element(last_smers_abundances, last_smers_abundances+z+1);
         if (*kmer_abundance == 0){
