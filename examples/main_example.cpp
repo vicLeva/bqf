@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 
 			std::string read; 
 			while (infile >> read) {
-                std::cout << "read " << read << std::endl;
+                //std::cout << "query " << read << std::endl;
 				std::cout << bqf.query(read) << std::endl;
 			}
 

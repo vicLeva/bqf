@@ -199,6 +199,8 @@ Bqf_ec Bqf_ec::load_from_disk(const std::string& filename){
         qf.filter.resize(num_words);
         file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(uint64_t) * num_words);
         file.close();
+
+        qf.verbose = false;
     } else {
         std::cerr << "Unable to open file for reading: " << filename << std::endl;
     }
