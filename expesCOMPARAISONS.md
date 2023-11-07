@@ -25,6 +25,7 @@ https://github.com/frankandreace/cqf_implementation/tree/dev
 `cd build && make`  
 `./bin/bqf build -q 31 -c 5 -k 32 -z 9 -i /scratch/vlevallois/data/AHX_ACXIOSF_6_1_23_all.txt -o /scratch/vlevallois/bqf_tmp`
   - 1385s (~23min)
+  
 `./bin/bqf query -b /scratch/vlevallois/bqf_tmp -i ~/data/queries.fasta`
   - 190s for 772.322.833 positive smer queries => 4.064.857 smer/s
   - 127s for 654.974.399 negative smer queries => 5.124.313 smer/s
