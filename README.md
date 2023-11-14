@@ -35,6 +35,11 @@ From build/bin/
   + `-o` is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q)
   + `-b` is the file from which the BQF is loaded
 
+
+### Experiments details
+
+Protocol available in the [Wiki-protocol](https://github.com/vicLeva/bqf/wiki/Experiments-details-and-protocol) page of the repository
+
 ### Examples
 
   1. + `./bqf build -q 18 -z 4 -i data/ecoli_count28.txt -o /tmp/ecoli_bqf`
