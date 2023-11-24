@@ -138,7 +138,8 @@ public:
      **/
     virtual void add_to_counter(uint64_t position, uint64_t rem_count) = 0;
 
-    virtual uint64_t process_count(uint64_t count) = 0;
+    virtual uint64_t insert_process_count(uint64_t count) = 0;
+    virtual uint64_t query_process_count(uint64_t count) = 0;
 
     void save_on_disk(const std::string& filename);
 };

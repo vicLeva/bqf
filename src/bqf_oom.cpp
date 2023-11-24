@@ -154,9 +154,13 @@ void Bqf_oom::add_to_counter(uint64_t position, uint64_t remainder_w_count){
 
 
 
-uint64_t Bqf_oom::process_count(uint64_t c) {
+uint64_t Bqf_oom::insert_process_count(uint64_t c) {
     uint64_t val = bitselectasm(c, bitrankasm(c, MEM_UNIT-1));
     return val < (1ULL << count_size) ? val : (1ULL << count_size)-1;
+}
+
+uint64_t Bqf_oom::query_process_count(uint64_t c) {
+    return (1ULL << c);
 }
 
 

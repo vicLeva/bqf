@@ -97,7 +97,8 @@ class Bqf_ec : public Bqf{
      **/
     void add_to_counter(uint64_t position, uint64_t rem_count) override;
 
-    uint64_t process_count(uint64_t count) override;
+    uint64_t insert_process_count(uint64_t count) override;
+    uint64_t query_process_count(uint64_t count) override;
 
 
 

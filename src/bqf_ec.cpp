@@ -179,8 +179,12 @@ void Bqf_ec::sub_to_counter(uint64_t position, uint64_t count){
             remainder_size);
 }
 
-uint64_t Bqf_ec::process_count(uint64_t count){
+uint64_t Bqf_ec::insert_process_count(uint64_t count){
     return (count < (1ULL << count_size) ? count : (1ULL << count_size)-1);
+}
+
+uint64_t Bqf_ec::query_process_count(uint64_t count){ //nothing to do, used for bqf_oom
+    return count;
 }
 
 Bqf_ec Bqf_ec::load_from_disk(const std::string& filename){

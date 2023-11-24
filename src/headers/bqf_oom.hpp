@@ -91,7 +91,8 @@ class Bqf_oom : public Bqf{
      * \param count the abundance we want to insert/query
      * \return the highest power of 2 that is still less than count (or (2^count_size)-1 if overflow) 
      */
-    uint64_t process_count(uint64_t count) override;
+    uint64_t insert_process_count(uint64_t count) override;
+    uint64_t query_process_count(uint64_t count) override;
 
     static Bqf_oom load_from_disk(const std::string& filename);
 };
