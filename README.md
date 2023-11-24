@@ -1,6 +1,13 @@
-# cqf_implementation
+# BQF - Backpack Quotient Filter
 
 Implementation of a Counting & Backpack Quotient Filter
+
+## About
+
+A variant of the original [counting quotient filter](https://github.com/splatlab/cqf). The quotient filter is a hash table-like data structure where part of the information inserted is stored implicitly within the address in the table where it is written.\
+The BQF is more space-efficient than the CQF thanks to the way it handles the abundance of indexed elements. By having the counter attached to every slot, every fingerprint has its own count with it. This allows the structure to use less slot than the CQF for encoding the same information.\
+Because using *c* extra bits in every slots explicitly stores the 0 value, we lose space when a slot is unused. This is where [fimpera](https://github.com/lrobidou/fimpera) steps in. By considering *s-mers*, substrings of length *s* of *k-mers*, we reduce the length of fingerprints inserted, freeing space for counters, and, according to the difference between *s* and *k*, possibly freeing overall space.\
+This results to a double benefit for the BQF, **less space is needed for every slots**, and **less slots are used** (for abundances > 2), meaning we postpone the doubling up of the structure.    
 
 ## Compilation of the project
   
@@ -65,19 +72,4 @@ Then you can find a html file (`index.html`) in the so-created html directory.
 From build directory
 ```bash
 ctest
-```
-
-## Benchmark
-
-in build/
-```bash
-make && bin/benchmark && python ../benchmark/plot.py
-```
-
-
-## Flamegraph
-
-From root directory  
-```bash
-flamegraph/flamegraph.sh [quicktests|random_uints|unit_tests]
 ```
