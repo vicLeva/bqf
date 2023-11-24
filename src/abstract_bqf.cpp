@@ -51,7 +51,7 @@ void Bqf::insert(uint64_t number, uint64_t count){
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
     uint64_t rem = remainder(number);
-    uint64_t rem_count = (rem << count_size) | process_count(count); //PROCESS count
+    uint64_t rem_count = (rem << count_size) | insert_process_count(count); //PROCESS count
     //handles count > 2^c 
 
     if (verbose){
@@ -208,13 +208,13 @@ uint64_t Bqf::query(uint64_t number){
     while(position != boundary.second){
         uint64_t remainder_in_filter = get_remainder(position);
 
-        if (remainder_in_filter == rem) return get_remainder(position, true) & mask_right(count_size);
+        if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
         else if (remainder_in_filter > rem) return 0;
         position = get_next_quot(position);
     }
 
     uint64_t remainder_in_filter = get_remainder(boundary.second); 
-    if (remainder_in_filter == rem) return get_remainder(position, true) & mask_right(count_size);
+    if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
 
     return 0;
 }
@@ -241,12 +241,12 @@ std::map<uint64_t, uint64_t> Bqf::enumerate(){
                 cursor = bounds.first;
                 while (cursor != (bounds.second)){ //every remainder of the run
                     number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                    finalSet[number] = get_remainder(cursor, true) & mask_right(count_size);
+                    finalSet[number] = query_process_count(get_remainder(cursor, true) & mask_right(count_size));
                     cursor = get_next_quot(cursor);
                 }
 
                 number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
-                finalSet[number] = get_remainder(cursor, true) & mask_right(count_size);
+                finalSet[number] = query_process_count(get_remainder(cursor, true) & mask_right(count_size));
             }
 
             curr_occ >>= 1ULL; //next bit of occupied vector
