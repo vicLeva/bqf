@@ -3,11 +3,17 @@
 Implementation of a Counting & Backpack Quotient Filter
 
 ## About
+### Overview
+A variant of the original [counting quotient filter](https://github.com/splatlab/cqf). The quotient filter is a hash table-like data structure where part of the information inserted is stored implicitly within the address in the table where it is written.
+At the price of a slight non-null false positive rate ($10^{-11}$ in our experiments), The BQF is more space-efficient than the CQF thanks to the way it handles the abundance of indexed elements. In the BQF, each slot stores a fingerprint plus a counter using itself *c* bits.
+Having the counter attached to every slot, every fingerprint holds its own count. 
 
-A variant of the original [counting quotient filter](https://github.com/splatlab/cqf). The quotient filter is a hash table-like data structure where part of the information inserted is stored implicitly within the address in the table where it is written.\
-The BQF is more space-efficient than the CQF thanks to the way it handles the abundance of indexed elements. By having the counter attached to every slot, every fingerprint has its own count with it. This allows the structure to use less slot than the CQF for encoding the same information.\
-If a kmer is present twice or more, then using only one slot becomes more space-efficient than CQF encoding scheme. On the other hand, using *c* extra bits in every slots for counters induces more space used for empty slots and kmers present once. This is where [fimpera](https://github.com/lrobidou/fimpera) steps in. By considering *s-mers*, substrings of length *s* of *k-mers*, we reduce the length of fingerprints inserted, freeing space for counters, and, according to the difference between *s* and *k*, possibly freeing overall space. In return, fimpera causes some *construction false positives*, because a *k-mer* might be absent of a dataset, while all of its *s-mers* are present. This false positive case rate depends on *s*, which can't be too low (with k=32, s<15 increases the rate to 100% (**TO TEST**))\
-This results to a double benefit for the BQF, **less space is needed for every slots**, and **less slots are used** (for abundances > 2), meaning we postpone the doubling up of the structure. All of this at the cost of a negligible false positive rate if parameterized correctly.   
+Using [fimpera](https://github.com/lrobidou/fimpera), the space required by the $c$ bits per stored element does not impact the final structure size. 
+With fimpera, instead of storing *k-mers*, the structure indexes *s-mers* with $s < k$. At query time a *kmer* is considered as present if all its *smers* are present. This induces the tiny non-null false positive rate (as long as *smers* are big enough) but this frees $2 \times (k-s)$ bits per element, used for storing the count of elements.
+
+### Comparison with CQF
+If a kmer is present twice or more, then using only one slot becomes more space-efficient than CQF encoding scheme. The strategy results to a double benefit for the BQF, **less space is needed for every slots**, and **less slots are used** (for abundances > 2), meaning we postpone the doubling up of the structure when dynamically inserting elements. All of this is at the cost of a negligible false positive rate if parameterized correctly.   
+
 
 ## Compilation of the project
   
