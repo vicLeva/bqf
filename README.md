@@ -61,10 +61,12 @@ From build/bin/
 Protocol available in the [Wiki-protocol](https://github.com/vicLeva/bqf/wiki/Experiments-details-and-protocol) page of the repository
 
 ### Examples
-
-1. + `./bqf build -q 18 -z 4 -i data/ecoli_count28.txt -o /tmp/ecoli_bqf`
+  
+(binaries in build/bin/)  
+  
+1. + `./bqf build -q 18 -z 4 -i examples/data/ecoli_count28.txt -o /tmp/ecoli_bqf`
      - build a 2^18 slots filter with (32-4 = 28)-mers aiming to query 32-mers later. 5 bits for counters, max value =2^5=64  
-   + `./bqf query -b /tmp/ecoli_bqf -i data/queries.fasta`
+   + `./bqf query -b /tmp/ecoli_bqf -i examples/data/queries.fasta`
      - load bqf then query each line (=sequence) of the file given with `-i`
 
 2. + `./bqf build -q 31 -c 5 -k 32 -z 10 -i /scratch/vlevallois/data/AHX_ACXIOSF_6_1_22_all.txt -o /scratch/vlevallois/bqf_tmp`
