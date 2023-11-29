@@ -1074,6 +1074,7 @@ void Rsqf::save_on_disk(const std::string& filename) { //remove 5
         file.close();
     } else {
         std::cerr << "Unable to open file for writing: " << filename << std::endl;
+        return 1;
     }
 }
 
@@ -1089,6 +1090,7 @@ Rsqf Rsqf::load_from_disk(const std::string& filename){
         file.close();
     } else {
         std::cerr << "Unable to open file for reading: " << filename << std::endl;
+        return 1;
     }
     return qf;
 }

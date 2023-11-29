@@ -9,20 +9,21 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: ./bqf <command>" << std::endl;
         std::cout << "Commands:" << std::endl;
         std::cout << "./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
-        std::cout << "./bqf query -b <bqf_file> -i <reads_to_query>" << std::endl;
+        std::cout << "./bqf query -b <bqf_file> -i <reads_to_query> -o <results>" << std::endl;
         std::cout << "./bqf help" << std::endl;
         return 1;
     }
 
     std::string command = argv[1];
 
+    std::string input_file;
+    std::string output_file;
+
     if (command == "build") {
-        int q;
+        int q = 8;
         int c = 5;
         int k = 32;
         int z = 5;
-        std::string input_file;
-        std::string output_file;
 
         for (int i = 2; i < argc; i++) {
             if (std::string(argv[i]) == "-q") {
@@ -86,12 +87,11 @@ int main(int argc, char* argv[]) {
     } 
 	
 	else if (command == "query") {
-        std::string input_bqf_file;
         std::string input_reads_file_to_query;
-        for (int i = 2; i < argc; i++) {
+        for (int i = 3; i < argc; i++) {
             if (std::string(argv[i]) == "-b") {
                 if (i + 1 < argc) {
-                    input_bqf_file = argv[i + 1];
+                    input_file = argv[i + 1];
                 } else {
                     std::cerr << "The -b option requires a value." << std::endl;
                     return 1;
@@ -102,32 +102,46 @@ int main(int argc, char* argv[]) {
                 } else {
                     std::cerr << "The -i option requires a value." << std::endl;
                     return 1;
+                } 
+            } else if (std::string(argv[i]) == "-o") {
+                if (i + 1 < argc) {
+                    output_file = argv[i + 1];
+                } else {
+                    std::cerr << "The -o option requires an output file name." << std::endl;
+                    return 1;
                 }
             } 
         }
         
-        if (input_bqf_file.empty() || input_reads_file_to_query.empty()) {
+        if (input_file.empty() || input_reads_file_to_query.empty() || output_file.empty()) {
             std::cerr << "Input file names are missing." << std::endl;
             return 1;
         }
 
+        uint64_t i = 0;
         begin = std::chrono::steady_clock::now();
-		Bqf_ec bqf = Bqf_ec::load_from_disk(input_bqf_file);
+		Bqf_ec bqf = Bqf_ec::load_from_disk(input_file);
 
 		try {
 			std::ifstream infile(input_reads_file_to_query);
+            std::ofstream outfile(output_file);
 
 			if (!infile) {
 				throw std::runtime_error("File not found: " + input_reads_file_to_query);
 			}
+            if (!outfile) {
+				throw std::runtime_error("File can not be created: " + output_file);
+			}
 
 			std::string read; 
 			while (infile >> read) {
+                i++;
+                outFile << "Sequence" << i << " : " bqf.query(read) << "\n";
                 //std::cout << "query " << read << std::endl;
-				std::cout << bqf.query(read) << std::endl;
 			}
 
 			infile.close();
+            outfile.close();
 		} catch (const std::exception &e) {
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
