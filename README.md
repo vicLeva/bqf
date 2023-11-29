@@ -42,7 +42,7 @@ From build/bin/
 
 ```bash
 ./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>
-./bqf query -b <bqf_file> -i <reads_to_query>
+./bqf query -b <bqf_file> -i <reads_to_query> -o <result file>
 ./bqf help
 ```
 
@@ -53,7 +53,7 @@ From build/bin/
 + `-k` is the kmer size. The result of the query of a sequence S will be the minimum of the queries of all the kmers of S
 + `-z` is [fimpera](https://academic.oup.com/bioinformatics/article/39/5/btad305/7169157) parameter. kmers are queried through the query of all their smers. s = k-z and smers are effectively inserted in the filter
 + `-i` is input_file, can be counted smers for `build` command (usually from [KMC](https://github.com/refresh-bio/KMC) or equivalent) or sequences to query for `query` command (1 sequence / line)
-+ `-o` is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q)
++ `-o` is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q) in case of `build` command, for `query` command it is the results written line by line
 + `-b` is the file from which the BQF is loaded
 
 ### Experiments details
@@ -66,11 +66,11 @@ Protocol available in the [Wiki-protocol](https://github.com/vicLeva/bqf/wiki/Ex
   
 1. + `./bqf build -q 18 -z 4 -i examples/data/ecoli_count28.txt -o /tmp/ecoli_bqf`
      - build a 2^18 slots filter with (32-4 = 28)-mers aiming to query 32-mers later. 5 bits for counters, max value =2^5=64  
-   + `./bqf query -b /tmp/ecoli_bqf -i examples/data/queries.fasta`
+   + `./bqf query -b /tmp/ecoli_bqf -i examples/data/queries.fasta -o ./results`
      - load bqf then query each line (=sequence) of the file given with `-i`
 
 2. + `./bqf build -q 31 -c 5 -k 32 -z 10 -i /scratch/vlevallois/data/AHX_ACXIOSF_6_1_22_all.txt -o /scratch/vlevallois/bqf_tmp`
-   + `./bqf query -b /scratch/vlevallois/bqf_tmp -i ~/data/queries.fasta`
+   + `./bqf query -b /scratch/vlevallois/bqf_tmp -i ~/data/queries.fasta -o ./results`
 
 ## Documentation
 
