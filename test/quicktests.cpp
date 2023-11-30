@@ -11,8 +11,6 @@ PRINTING, DEBUGGING AND TESTING
 #include <vector>
 #include <algorithm>
 #include <chrono>
-#include "sys/types.h"
-#include "sys/sysinfo.h"
 
 #include "filter.hpp" 
 
