@@ -20,3 +20,4 @@ build/
 
 benchmark/statsFiles/*
 benchmark/figs/*
+.DS_Store
