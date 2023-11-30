@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
 			std::string read; 
 			while (infile >> read) {
                 i++;
-                outFile << "Sequence" << i << " : " bqf.query(read) << "\n";
+                outfile << "Sequence" << i << " : " bqf.query(read) << "\n";
                 //std::cout << "query " << read << std::endl;
 			}
 
