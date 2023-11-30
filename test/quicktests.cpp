@@ -10,8 +10,6 @@ PRINTING, DEBUGGING AND TESTING
 #include <ctime>
 #include <getopt.h>
 #include <chrono>
-#include "sys/types.h"
-#include "sys/sysinfo.h"
 
 
 
