@@ -1,5 +1,7 @@
 #include "additional_methods.hpp"
 
+#include "./generic/bitrankasm.hpp"
+#include "./generic/bitselectasm.hpp"
 
 //BITS & KMER MANIPULATION
 
@@ -45,37 +47,44 @@ uint64_t get_quot_from_block_shift(uint64_t block, uint64_t shift){
     return block*MEM_UNIT + shift;
 }
 
-uint64_t bitselectasm(uint64_t num, uint64_t rank){
-    /*if( !((rank != 0) && (rank <= MEM_UNIT)) ) { 
-        std::cout << "rank " << rank << "\n";
-    }
-    assert((rank != 0) && (rank <= MEM_UNIT));*/
-    uint64_t i = 1ULL << (rank - 1); // i = 2^rank
-
-    // SELECT(v,i) = TZCNT(PDEP(2^rank,num))     
-	asm("pdep %[num], %[mask], %[num]"
-			: [num] "+r" (num)
-			: [mask] "r" (i));
-
-	asm("tzcnt %[bit], %[index]"
-			: [index] "=r" (i)
-			: [bit] "g" (num)
-			: "cc");
-
-	return i;
+uint64_t bitselectasm(uint64_t num, uint64_t rank)
+{
+#if defined(__aarch64__) || defined(_M_ARM64)
+    return bitselectasm_u64_arm(num, rank);
+#else
+    return bitselectasm_u64_builtin(num, rank);
+#endif
+//    uint64_t i = 1ULL << (rank - 1); // i = 2^rank
+//    asm("pdep %[num], %[mask], %[num]"
+//            : [num] "+r" (num)
+//            : [mask] "r" (i));
+//
+//    asm("tzcnt %[bit], %[index]"
+//            : [index] "=r" (i)
+//            : [bit] "g" (num)
+//            : "cc");
+//
+//    return i;
 }
 
-uint64_t bitrankasm(uint64_t val, uint64_t pos) {
-    assert(pos < MEM_UNIT);
-	val = val & ((2ULL << pos) - 1);
-
-    // POPCOUNT(v & (2^i − 1)
-	asm("popcnt %[val], %[val]"
-			: [val] "+r" (val)
-			:
-			: "cc");
-	return val;
+uint64_t bitrankasm(uint64_t val, uint64_t pos)
+{
+#if defined(__aarch64__) || defined(_M_ARM64)
+    return bitrankasm_arm(val, pos);
+#else
+    return bitrankasm_u64_builtin(val, pos);
+#endif
+//    assert(pos < MEM_UNIT);
+//    val = val & ((2ULL << pos) - 1);
+//
+//    // POPCOUNT(v & (2^i − 1)
+//    asm("popcnt %[val], %[val]"
+//            : [val] "+r" (val)
+//            :
+//            : "cc");
+//    return val;
 }
+
 
 uint64_t get_bit_from_word(uint64_t word, uint64_t pos_bit){
     return ((word >> pos_bit) & 0b1);
