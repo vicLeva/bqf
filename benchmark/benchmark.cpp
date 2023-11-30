@@ -37,7 +37,7 @@ void writeQueryTimes(vector<int> & vec){
 	uniform_int_distribution<uint64_t> distribution;
 	uint64_t val;
 
-	std::chrono::_V2::system_clock::time_point t1, t2;
+	std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2;
 	
 
 	for (int i=0; i<len; i++){ //for each qf
@@ -102,8 +102,7 @@ void writeInsertTimes(int q){
 	uniform_int_distribution<uint64_t> distribution;
 	uint64_t val;
 
-	std::chrono::_V2::system_clock::time_point t1, t2;
-	
+	std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2;
 	
 	uint64_t load = 0;
 	for (float perc=1; perc<96; perc++){ //for each load factor (1-95%)
