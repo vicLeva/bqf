@@ -1074,7 +1074,7 @@ void Rsqf::save_on_disk(const std::string& filename) { //remove 5
         file.close();
     } else {
         std::cerr << "Unable to open file for writing: " << filename << std::endl;
-        return 1;
+        exit( EXIT_FAILURE );
     }
 }
 
