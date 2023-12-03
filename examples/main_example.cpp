@@ -87,8 +87,9 @@ int main(int argc, char* argv[]) {
     } 
 	
 	else if (command == "query") {
+
         std::string input_reads_file_to_query;
-        for (int i = 3; i < argc; i++) {
+        for (int i = 2; i < argc; i++) {
             if (std::string(argv[i]) == "-b") {
                 if (i + 1 < argc) {
                     input_file = argv[i + 1];
@@ -115,7 +116,12 @@ int main(int argc, char* argv[]) {
         
         if (input_file.empty() || input_reads_file_to_query.empty()) {
             std::cerr << "Input file names are missing." << std::endl;
-            return 1;
+            std::cerr << "- input_file.empty()                = " << input_file.empty() << std::endl;
+            std::cerr << "- input_file                        = " << input_file         << std::endl;
+            std::cerr << "- input_reads_file_to_query.empty() = " << input_reads_file_to_query.empty() << std::endl;
+            std::cerr << "- input_reads_file_to_query         = " << input_reads_file_to_query         << std::endl;
+            std::cerr << "Error location : file = [" << __FILE__ << "] @ line " << __LINE__ << std::endl;
+            return EXIT_FAILURE;
         }
 
         uint64_t i = 0;
@@ -127,9 +133,13 @@ int main(int argc, char* argv[]) {
             std::ofstream outfile(output_file);
 
 			if (!infile) {
+                std::cerr << "Exception happened..." << std::endl;
+                std::cerr << "Error location : file = [" << __FILE__ << "] @ line " << __LINE__ << std::endl;
 				throw std::runtime_error("File not found: " + input_reads_file_to_query);
 			}
             if (!outfile) {
+                std::cerr << "Exception happened..." << std::endl;
+                std::cerr << "Error location : file = [" << __FILE__ << "] @ line " << __LINE__ << std::endl;
 				throw std::runtime_error("File can not be created: " + output_file);
 			}
 
