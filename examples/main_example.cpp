@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
             } 
         }
         
-        if (input_file.empty() || input_reads_file_to_query.empty() || output_file.empty()) {
+        if (input_file.empty() || input_reads_file_to_query.empty()) {
             std::cerr << "Input file names are missing." << std::endl;
             return 1;
         }
