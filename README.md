@@ -1,68 +1,70 @@
-# BQF - Backpack Quotient Filter
+## BQF - Backpack Quotient Filter
 
-Implementation of a Counting & Backpack Quotient Filter
+## Overview
 
-## About
+The Backpack Quotient Filter (BQF) is an indexing data structure with abundance. Although the data can be anything, it's been thought to index genomic datasets. 
+The BQF is a dynamic structure, with a correct hash function it can add, delete and enumerate elements. Thus the structure can resize itself when needed. The main features are **indexing** (building the BQF over a dataset *D*) and **querying** (searching for a sequence in *D*)
 
-The [docs](docs) directory contains slides used to present the BQF during [SeqBim2023](https://seqbim.cnrs.fr/seqbim-2023/).
+The BQF is able to index metagenomics datasets (low redundancy, high complexity datasets) with an average of 25 bits per element. This value tends to lower as the datasets grow. Compared to the main variant, the [Counting Quotient Filter](https://github.com/splatlab/cqf) (CQF), the BQF is 4 to 5 times smaller according to our [experiments](#Experiments-results).
 
-### Overview
+It relies on a hash-table-like structure called Quotient Filter. Part of the information inserted is stored implicitly within the address in the table where it is written
 
-A variant of the original [counting quotient filter](https://github.com/splatlab/cqf). The quotient filter is a hash table-like data structure where part of the information inserted is stored implicitly within the address in the table where it is written.
-At the price of a slight non-null false positive rate ($10^{-11}$ in our experiments), The BQF is more space-efficient than the CQF thanks to the way it handles the abundance of indexed elements. In the BQF, each slot stores a fingerprint plus a counter using itself *c* bits.
-Having the counter attached to every slot, every fingerprint holds its own count. 
+## ToC
 
-Using [fimpera](https://github.com/lrobidou/fimpera), the space required by the $c$ bits per stored element does not impact the final structure size. 
-With fimpera, instead of storing *k-mers*, the structure indexes *s-mers* with $s < k$. At query time a *kmer* is considered as present if all its *smers* are present. This induces the tiny non-null false positive rate (as long as *smers* are big enough) but this frees $2 \times (k-s)$ bits per element, used for storing the count of elements.
+ + [Installation](#Installation)
+ + [Tool usage](#Tool-usage)
+ + [Examples](#Examples)
+ + [API Documentation](#Documentation)
+ + [Unitary tests](#Unitary-tests)
+ + [Slides presentation](#Slides-presentation)
+ + [Paper experiments results](#Experiments-results)
 
-### Comparison with CQF
-
-If a kmer is present twice or more, then using only one slot becomes more space-efficient than CQF encoding scheme. The strategy results to a double benefit for the BQF, **less space is needed for every slots**, and **less slots are used** (for abundances > 2), meaning we postpone the doubling up of the structure when dynamically inserting elements. All of this is at the cost of a negligible false positive rate if parameterized correctly.   
-
-## Compilation of the project
-
-From the project root
+## Installation
 
 ```bash
-cmake -B build
-cd build && make 
+git clone git@github.com:vicLeva/bqf.git
+cd bqf
+mkdir build && cd build
+cmake ..
+make 
 ```
 
-## Tool
+## Binary usage 
 
-From build/bin/
+From `bqf/build/`
 
-### Usage
+```
+./bin/bqf [TOOL] [PARAMETERS]
 
-```bash
-./bqf <command> [parameters]
+[TOOL] : 
+    build           Build a BQF from a counted s-mers file
+    query           Query sequence(s) in a BQF
+    help            Display commands and parameters
+
+
+[PARAMETERS] : build
+    -q  (default = 8)   Quotient size, defines BQF's size (2^q slots). For n distinct s-mers to index, it is advised to initialize q to ceil(log2(n)). In other terms : log2(n) < q is recommanded with smallest q possible
+
+    -c  (default = 5)   Counters size, number of bits used to encode abundances. Max value is (2^c)-1. Incrementing c from x to x+1 will increase BQF's size of 2^q bits
+
+    -k  (default = 32)  k-mer size. When querying a sequence S in BQF, all substrings of size k of S are queried.
+
+    -z  (default = 11)  Fimpera parameter. BQF inserts s-mers, of size s=k-z. Abundances of k-mers are virtualized through abundances of s-mers. Increasing z by 1 lowers BQF size by 2(2^q) bits but increases false positive rate. Negligible at first, it increases exponentially around z=15 (with k=32).
+
+    -i  [mandatory]     Input file path. Must be counted s-mers. Output of KMC (https://github.com/refresh-bio/KMC) execution is recommanded.
+
+    -o  [mandatory]     Output file path. Binary BQF on disk.
+
+
+[PARAMETERS] : query
+    -b  [mandatory]     BQF file path.
+
+    -i  [mandatory]     Input file path. Sequences to query in the BQF, 1 per line or .fasta format.
+
+    -o  [mandatory]     Output file path. Results of queries, 1 per line. Results are formated this way (min:X, max:X, average:X, presence ratio:X). min, max and average are k-mers abundances statistics of the queried sequence S. presence ratio is the ratio of present k-mers over all k-mers of S.
 ```
 
-### Commands:
-
-```bash
-./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>
-./bqf query -b <bqf_file> -i <reads_to_query> -o <result file>
-./bqf help
-```
-
-### Parameters
-
-+ `-q` is quotient size, it sets the filter size (there will be 2^q slots) so 2^(q-1) < nb_unique_elements < 2^q is needed
-+ `-c` is the number of bits reserved for counters of each element. 2^c will be the maximum value
-+ `-k` is the kmer size. The result of the query of a sequence S will be the minimum of the queries of all the kmers of S
-+ `-z` is [fimpera](https://academic.oup.com/bioinformatics/article/39/5/btad305/7169157) parameter. kmers are queried through the query of all their smers. s = k-z and smers are effectively inserted in the filter
-+ `-i` is input_file, can be counted smers for `build` command (usually from [KMC](https://github.com/refresh-bio/KMC) or equivalent) or sequences to query for `query` command (1 sequence / line)
-+ `-o` is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q) in case of `build` command, for `query` command it is the results written line by line
-+ `-b` is the file from which the BQF is loaded
-
-### Experiments details
-
-Protocol available in the [Wiki-protocol](https://github.com/vicLeva/bqf/wiki/Experiments-details-and-protocol) page of the repository
-
-### Examples
-  
-(binaries in build/bin/)  
+## Examples 
   
 1. + `./bqf build -q 18 -z 4 -i examples/data/ecoli_count28.txt -o /tmp/ecoli_bqf`
      - build a 2^18 slots filter with (32-4 = 28)-mers aiming to query 32-mers later. 5 bits for counters, max value =2^5=64  
@@ -71,6 +73,7 @@ Protocol available in the [Wiki-protocol](https://github.com/vicLeva/bqf/wiki/Ex
 
 2. + `./bqf build -q 31 -c 5 -k 32 -z 10 -i /scratch/vlevallois/data/AHX_ACXIOSF_6_1_22_all.txt -o /scratch/vlevallois/bqf_tmp`
    + `./bqf query -b /scratch/vlevallois/bqf_tmp -i ~/data/queries.fasta -o ./results`
+
 
 ## Documentation
 
@@ -84,8 +87,17 @@ Then you can find a html file (`index.html`) in the so-created html directory.
 
 ## Unitary tests
 
-From build directory
+From `build/` directory
 
 ```bash
 ctest
 ```
+
+## Slides presentation
+
+Available [here](https://vicleva.github.io/) (talks section) or through this [download link](https://vicleva.github.io/assets/slides/presentation_seqbim_2023.pdf) (from [SeqBim2023](https://seqbim.cnrs.fr/seqbim-2023/) conference).
+
+
+## Experiments results
+
+All datasets used and experiments done are detailed in the [wiki](https://github.com/vicLeva/bqf/wiki) or directly by this [link](https://github.com/vicLeva/bqf/wiki/Experiments-details-and-protocol-for-BQF-paper-results).
