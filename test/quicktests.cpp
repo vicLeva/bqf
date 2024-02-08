@@ -10,6 +10,8 @@ PRINTING, DEBUGGING AND TESTING
 #include <ctime>
 #include <getopt.h>
 #include <chrono>
+#include "sys/types.h"
+#include "sys/sysinfo.h"
 
 
 
@@ -301,101 +303,70 @@ void test_time_fill_cqf(int q, int n){
 }
 
 
-void experiments(){
+void nb_false_positive(){
   std::cout << "START EXPERIMENT\n";
 
-  std::vector<std::string> random32MerList; //pour requêtes positives 
-  std::vector<std::string> randomQueryList; //pour requetes situation réelles
-  std::vector<std::string> positive32MerList; //requêtes supposément négatives
-
-  auto ttot = std::chrono::high_resolution_clock::now(); //timer build structure + inserts
-
-  //Bqf_ec cqf(q, c, k, z, debug_print); 
-  //on choisit q tel que : 2^(q-1) < #nb_kmers_uniques_insérés < 2^q
-  //on choisit r tel que : taille_hash - q (avec taille_hash = 2s = 2*taille_s-mers)
-  //on choisit c selon la précision voulue sur les compteurs et l'espace qu'on souhaite économiser
-
-  Bqf_ec cqf(31, 5, 32, 5, false); 
-  //Insertion des s-mers comptés avec KMC
-  //cqf.insert("/scratch/vlevallois/data/AHX_ACXIOSF_6_1_28_all.txt");
-  cqf.insert("/scratch/vlevallois/data/AHX_ACXIOSF_6_1_27_all.txt");
-	
-  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms (inserts)\n"; 
-    
-
-
-  //Verification (pour l'expé) des sur-estimations / sous-estimations avec les valeurs de 32-mers commptés,
-  //qu'on essaie de retrouver via les 27-mers insérés dans le BQF
-  /*
-  std::ifstream infile("/scratch/vlevallois/data/AHX_ACXIOSF_6_1_32_all.txt");
-
-  std::cout << "start verif" << std::endl;
-  std::string a;
-  uint64_t b;
-
-  int surestim = 0;
-  int totsurestim = 0;
-  int bug = 0;
-  
-  int i = 0;
-  uint64_t query;
-  int count_limit = 0;
-
-  while (infile >> a >> b) {
-      if (i < 100000){
-          positive32MerList.push_back(a);
+  std::cout << "gut_32 ========================================================================\n";
+  Bqf_ec bqf = Bqf_ec::load_from_disk("/scratch/vlevallois/bqf_gut_32");
+  auto ttot = std::chrono::high_resolution_clock::now(); //timer build structure + inserts 
+  //verif taux de fp
+  std::ifstream infile("/scratch/vlevallois/data/neg_queries.fasta");
+  std::string kmer;
+  uint64_t nb_fp = 0;
+  while (infile >> kmer) {
+      if (bqf.query(kmer).minimum > 0){
+        nb_fp ++;
       }
-      i++;
-
-      query = cqf.query(a);
-      if (query > b){
-          surestim ++;
-          totsurestim += query - b;
-      } 
-      if (query < b && b < 31 && query !=-1){
-          std::cout << a << " a--b " << b << "  vs query : " << query << std::endl;
-          bug ++;
-      } 
-      if (b > 31){
-          count_limit ++;
-      } 
   }
+  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms to check all 1 billion random kmers\n";
+  std::cout << "nb de FP sur 1billion neg (supposément) queries : " << nb_fp << "\n";
+
+  std::cout << "gut_19 ========================================================================\n";
+  bqf = Bqf_ec::load_from_disk("/scratch/vlevallois/bqf_gut_19");
+  ttot = std::chrono::high_resolution_clock::now(); //timer build structure + inserts 
+  //verif taux de fp
+  infile.clear();
+  infile.seekg(0, infile.beg);
+  nb_fp = 0;
+  while (infile >> kmer) {
+      if (bqf.query(kmer).minimum > 0){
+        nb_fp ++;
+      }
+  }
+  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms to check all 1 billion random kmers\n";
+  std::cout << "nb de FP sur 1billion neg (supposément) queries : " << nb_fp << "\n";
+
   
-  std::cout << "nb elems inserted : " << i << std::endl;
-  std::cout << "nb count limited : " << count_limit << std::endl;
-  std::cout << "nb surestim : " << surestim << std::endl;
-  std::cout << "avg surestim : " << totsurestim / (double)surestim << std::endl;
-  std::cout << "nb bug : " << bug << std::endl;
-  std::cout << "end verif" << std::endl;
-
-  ttot = std::chrono::high_resolution_clock::now();
-  for (const auto& mer : positive32MerList) {
-      cqf.query(mer);
-  }
-  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms (100k 32-mers positive query)\n";
-  */
-
-  ttot = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < 10000; ++i) {
-      std::string random32Mer = generateRandomKMer(32);
-      random32MerList.push_back(random32Mer);
-  }
-  for (const auto& mer : random32MerList) {
-	    cqf.query(mer);
-  }
-  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms (100k 32-mers negative (random) query)\n";
-
-  ttot = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < 10; ++i) {
-      std::string randomQuery = generateRandomKMer(100);
-      randomQueryList.push_back(randomQuery);
-  }
-  for (const auto& mer : randomQueryList) {
-	    cout << cqf.query(mer) << endl;
-  }
-  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms (100k 32-mers negative (random) query)\n";
 }
 
+void experiments(){
+  std::cout << "START EXPERIMENTs\n";
+
+
+  Bqf_ec bqf = Bqf_ec::load_from_disk("/scratch/vlevallois/bqf_gut_19");
+  std::cout << "/scratch/vlevallois/bqf_gut\n";
+
+  auto ttot = std::chrono::high_resolution_clock::now(); //pos queries 
+    
+  std::ifstream infile("/scratch/vlevallois/data/gut_reads.fasta");
+  std::string read;
+
+  while (infile >> read) {
+      bqf.query(read);
+  }
+
+  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms for pos queries\n";
+
+  ttot = std::chrono::high_resolution_clock::now(); //pos queries 
+    
+  std::ifstream infile2("/scratch/vlevallois/data/neg_reads.fasta");
+
+  while (infile2 >> read) {
+      bqf.query(read);
+  }
+
+  std::cout << to_string( std::chrono::duration<double, std::milli>( std::chrono::high_resolution_clock::now() - ttot ).count()) << " ms for neg queries\n";
+}
 
 int main(int argc, char** argv) {
     //test_one_cqf();
@@ -404,10 +375,14 @@ int main(int argc, char** argv) {
 
     //test_lots_of_full_cqf_enumerate();
 
-    ////test_lots_of_full_cqf_remove();
+    //test_lots_of_full_cqf_remove();
 
     //test_time_fill_cqf(22, 1);
 
+    //nb_false_positive();
+
     experiments();
+
+
 
 }
