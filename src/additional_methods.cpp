@@ -173,7 +173,7 @@ string decode(uint64_t revhash, uint64_t k){
 }
 
 
-
+// Thomas Wang's integer hash functions. See <https://gist.github.com/lh3/59882d6b96166dfc3d8d> for a snapshot.
 uint64_t bfc_hash_64(uint64_t key, uint64_t mask) {
 	key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
 	key = key ^ key >> 24;
