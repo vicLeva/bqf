@@ -57,6 +57,7 @@ public:
      */
     void insert(uint64_t number, uint64_t count = 1);
 
+    void query(std::ifstream& infile, std::ofstream& outfile);
 
     /** 
      * \brief query a sequence from the filter.
