@@ -5,7 +5,7 @@
 The Backpack Quotient Filter (BQF) is an indexing data structure with abundance. Although the data can be anything, it's been thought to index genomic datasets. 
 The BQF is a dynamic structure, with a correct hash function it can add, delete and enumerate elements. Thus the structure can resize itself when needed. The main features are **indexing** (building the BQF over a dataset *D*) and **querying** (searching for a sequence in *D*)
 
-The BQF is able to index metagenomics datasets (low redundancy, high complexity datasets) with an average of 25 bits per element. This value tends to lower as the datasets grow. Compared to the main variant, the [Counting Quotient Filter](https://github.com/splatlab/cqf) (CQF), the BQF is 4 to 5 times smaller according to our [experiments](#Experiments-results).
+The BQF is able to index metagenomics datasets (low redundancy, high complexity datasets) with an average of 25 bits per element. This value tends to lower as the datasets grow. Compared to the main variant, the [Counting Quotient Filter](https://github.com/splatlab/cqf) (CQF), the BQF is 4 to 5 times smaller according to our [experiments](https://github.com/vicLeva/bqf/wiki/Experiments-details-and-protocol-for-BQF-paper-results).
 
 It relies on a hash-table-like structure called Quotient Filter. Part of the information inserted is stored implicitly within the address in the table where it is written
 
@@ -65,14 +65,28 @@ From `bqf/build/`
 ```
 
 ## Examples 
-  
-1. + `./bqf build -q 18 -z 4 -i examples/data/ecoli_count28.txt -o /tmp/ecoli_bqf`
-     - build a 2^18 slots filter with (32-4 = 28)-mers aiming to query 32-mers later. 5 bits for counters, max value =2^5=64  
-   + `./bqf query -b /tmp/ecoli_bqf -i examples/data/queries.fasta -o ./results`
-     - load bqf then query each line (=sequence) of the file given with `-i`
 
-2. + `./bqf build -q 31 -c 5 -k 32 -z 10 -i /scratch/vlevallois/data/AHX_ACXIOSF_6_1_22_all.txt -o /scratch/vlevallois/bqf_tmp`
-   + `./bqf query -b /scratch/vlevallois/bqf_tmp -i ~/data/queries.fasta -o ./results`
+(KMC step example with Dataset XX, count 32-mers)
+
+``` bash 
+kmc -k [32] -m24 -ci2 -v XX.fastq XX.res tmp_working_dir
+kmc_tools dump XX.res XX_counted
+rm XX.res.kmc_*
+```
+
+From `bqf/build/`
+  
+1. + `./bin/bqf build -q 18 -z 4 -i ../examples/data/ecoli_28_counted -o /tmp/ecoli_bqf`
+     - build a 2^18 slots filter with (32-4 = 28)-mers aiming to query 32-mers later. 5 bits for counters, max value =2^5=64  
+   + `./bin/bqf query -b /tmp/ecoli_bqf -i ../examples/data/queries.fasta -o ./results.out`
+     - load bqf then query each sequence of the file given with `-i`
+
+   + (`rm /tmp/ecoli_bqf`)
+
+
+Real scale data example with [this dataset](ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR172/ERR1726642/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.fastq.gz) from Tara Oceans metagenomic project (7.7GB). Assuming 19-mers have been counted with KMC.
+2. + `./bin/bqf build -q 29 -c 5 -k 32 -z 13 -i /path/to/6_1_19_counted -o /path/to/6_1_bqf`
+   + `./bin/bqf query -b /path/to/6_1_bqf -i ../examples/data/queries.fasta -o ./results.out`
 
 
 ## Documentation

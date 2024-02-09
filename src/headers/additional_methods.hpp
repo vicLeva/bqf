@@ -219,7 +219,7 @@ uint64_t canonical(uint64_t smer, size_t size);
 
 std::string canonical(const std::string& smer, size_t s);
 
-struct result_query {int minimum; float average; float kmer_present_ratio;};
+struct result_query {int minimum; int maximum; float average; float kmer_present_ratio;};
 std::ostream& operator<<(std::ostream& os, result_query const& res);
 
 

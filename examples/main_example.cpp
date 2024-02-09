@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cout << "Usage: ./bqf <command>" << std::endl;
         std::cout << "Commands:" << std::endl;
-        std::cout << "./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
+        std::cout << "./bqf build [-q <quotient size=8>] [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
         std::cout << "./bqf query -b <bqf_file> -i <reads_to_query> -o <results>" << std::endl;
         std::cout << "./bqf help" << std::endl;
         return 1;
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
         int q = 8;
         int c = 5;
         int k = 32;
-        int z = 5;
+        int z = 11;
 
         for (int i = 2; i < argc; i++) {
             if (std::string(argv[i]) == "-q") {
@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (q <= 8 || c <= 0) {
-            std::cerr << "Values of q, and c must be greater than 8, and 0." << std::endl;
+        if (q <= 7 || c <= 0) {
+            std::cerr << "Values of q, and c must be greater than 7, and 0." << std::endl;
             return 1;
         }
 
@@ -124,7 +124,6 @@ int main(int argc, char* argv[]) {
             return EXIT_FAILURE;
         }
 
-        uint64_t i = 0;
         begin = std::chrono::steady_clock::now();
 		Bqf_ec bqf = Bqf_ec::load_from_disk(input_file);
 
@@ -143,15 +142,8 @@ int main(int argc, char* argv[]) {
 				throw std::runtime_error("File can not be created: " + output_file);
 			}
 
-			std::string read; 
-			while (infile >> read) {
-                i++;
-                outfile << "Sequence" << i << " : " << bqf.query(read) << "\n";
-                //std::cout << "query " << read << std::endl;
-			}
-
-			infile.close();
-            outfile.close();
+            bqf.query(infile, outfile);
+			
 		} catch (const std::exception &e) {
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
@@ -164,15 +156,15 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: ./bqf <command>" << std::endl;
         std::cout << "Commands:" << std::endl;
         std::cout << "./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
-        std::cout << "./bqf query -b <bqf_file> -i <reads_to_query>" << std::endl;
+        std::cout << "./bqf query -b <bqf_file> -i <reads_to_query> -o <results_file>" << std::endl;
         std::cout << "./bqf help" << std::endl;
 
-        std::cout << "-q is quotient size, it sets the filter size (there will be 2^q slots) so 2^(q-1) < nb_unique_elements < 2^q is needed" << std::endl;
-        std::cout << "-c is the number of bits reserved for counters of each element. 2^c will be the maximum value" << std::endl;
-        std::cout << "-k is the kmer size. The result of the query of a sequence S will be the minimum of the queries of all the kmers of S" << std::endl;
+        std::cout << "-q is quotient size, it sets the filter size (there will be 2^q slots) so 2^(q-1) < nb_unique_elements < 2^q is higly recommanded" << std::endl;
+        std::cout << "-c is the number of bits reserved for counters of each element. (2^c)-1 will be the maximum value" << std::endl;
+        std::cout << "-k is the kmer size. The result of the query of a sequence S will be determined by the queries of all the kmers of S" << std::endl;
         std::cout << "-z is fimpera parameter. kmers are queried through the query of all their smers. s = k-z and smers are effectively inserted in the filter" << std::endl;
-        std::cout << "-i is input_file, can be counted smers for \"build\" command or sequences to query for \"query\" command" << std::endl;
-        std::cout << "-o is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q)" << std::endl;
+        std::cout << "-i is input_file, can be counted smers for \"build\" tool or sequences to query for \"query\" tool" << std::endl;
+        std::cout << "-o is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q) for \"build\" tool or sequences results file for \"query\" tool" << std::endl;
         std::cout << "-b is the file from which the BQF is loaded" << std::endl;
     } else {
         std::cerr << "Invalid command or incorrect number of arguments." << std::endl;

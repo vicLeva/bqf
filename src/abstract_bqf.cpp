@@ -139,6 +139,34 @@ void Bqf::insert(uint64_t number, uint64_t count){
     }
 }
 
+void Bqf::query(std::ifstream& infile, std::ofstream& outfile){
+    std::string seq; 
+    uint64_t i = 1;
+
+    std::getline(infile, seq); 
+    if (seq[0] == '>'){ //conventionnal fasta
+        std::getline(infile, seq);
+        outfile << "Sequence" << i << " : " << this->query(seq) << "\n";
+        while (!infile.eof()) {
+            std::getline(infile, seq);  // skip first header line
+            std::getline(infile, seq);
+
+            outfile << "Sequence" << i++ << " : " << this->query(seq) << "\n";
+        }
+    } else { //1 seq / line
+        outfile << "Sequence" << i << " : " << this->query(seq) << "\n";
+        while (!infile.eof()) {
+            std::getline(infile, seq);
+            outfile << "Sequence" << i++ << " : " << this->query(seq) << "\n";
+        }
+    }
+
+    infile.close();
+    outfile.close();
+}
+
+
+
 result_query Bqf::query(string seq){
     int s = this->smer_size;
     int k = this->kmer_size;
@@ -153,7 +181,8 @@ result_query Bqf::query(string seq){
     int* kmer_abundance;
     int nb_presence = 0;
     int avg = 0;
-    int minimum  = numeric_limits<int>::max();
+    int minimum = numeric_limits<int>::max();
+    int maximum = 0;
 
     uint64_t current_smer = 0;
     
@@ -184,12 +213,13 @@ result_query Bqf::query(string seq){
             minimum = 0;
         } else {
             minimum = std::min(minimum, *kmer_abundance);
+            maximum = std::max(maximum, *kmer_abundance);
             avg = avg + *kmer_abundance;
             nb_presence ++;
         }
     }
 
-    return result_query {minimum, (float)(avg / (n-k+1)), (float)nb_presence/(n-k+1)};
+    return result_query {minimum, maximum, (float)(avg / (n-k+1)), (float)nb_presence/(n-k+1)};
 }
 
 uint64_t Bqf::query(uint64_t number){

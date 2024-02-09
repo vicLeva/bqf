@@ -279,5 +279,5 @@ std::string canonical(const std::string& smer, size_t s){
 }
 
 std::ostream& operator<<(std::ostream& os, result_query const& res) {
-    return os << "(min:" << res.minimum << ", average:" << res.average << ", presence ratio:" << res.kmer_present_ratio << ")" << endl;
+    return os << "(min:" << res.minimum << ", max:" << res.maximum << ", average:" << res.average << ", presence ratio:" << res.kmer_present_ratio << ")" << endl;
 }
