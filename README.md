@@ -7,7 +7,7 @@ The BQF is a dynamic structure, with a correct hash function it can add, delete 
 
 The BQF is able to index metagenomics datasets (low redundancy, high complexity datasets) with an average of 25 bits per element. This value tends to lower as the datasets grow. Compared to the main variant, the [Counting Quotient Filter](https://github.com/splatlab/cqf) (CQF), the BQF is 4 to 5 times smaller according to our [experiments](https://github.com/vicLeva/bqf/wiki/Experiments-details-and-protocol-for-BQF-paper-results).
 
-It relies on a hash-table-like structure called Quotient Filter. Part of the information inserted is stored implicitly within the address in the table where it is written
+It relies on a hash-table-like structure called Quotient Filter. Part of the information inserted is stored implicitly within the address in the table where it is written. You are going to read about *k*-mers and *s*-mers, both are words of size *k* or *s* with *k* $\geq$ *s*. BQF inserts and query *s*-mers but virtualizes the presence of *k*-mers at query time. In other words, a query sequence is broken down into *k*-mers, and each *k*-mer is virtually queried through all of its *s*-mers.  
 
 ## ToC
 
