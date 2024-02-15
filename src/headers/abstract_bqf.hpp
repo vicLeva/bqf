@@ -7,8 +7,12 @@
 
 #include "rsqf.hpp"
 
+/**
+ * \brief Abstract class of BQF, user can use else Bqf_ec or Bqf_oom
+ *
+ */
 class Bqf : public Rsqf {
-public:
+private:
     /** 
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
@@ -142,6 +146,10 @@ public:
     virtual uint64_t insert_process_count(uint64_t count) = 0;
     virtual uint64_t query_process_count(uint64_t count) = 0;
 
+    /** 
+     * \brief Serializes BQF on disk without compression, can be loaded later for queries.
+     * 
+     **/
     void save_on_disk(const std::string& filename);
 };
 

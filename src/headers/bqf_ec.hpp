@@ -9,7 +9,7 @@
 
 
 /**
- * \brief Represents a variant of the CQF: The Backpack counting filter
+ * \brief Represents a Backpack quotient filter - exact count version
  *
  * This class implements a counting rank & select quotient filter, it supports insert, remove, query and
  * enumerate operations. It can be instantiated by giving the constructor a memory limit (in MB)
@@ -78,7 +78,10 @@ class Bqf_ec : public Bqf{
      **/
     bool remove(std::string kmer, uint64_t count = 1);
 
-    
+    /** 
+     * \brief loads a BQF_ec from a binary representation on disk
+     * 
+     **/
     static Bqf_ec load_from_disk(const std::string& filename);
     
 

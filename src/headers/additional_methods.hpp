@@ -219,7 +219,16 @@ uint64_t canonical(uint64_t smer, size_t size);
 
 std::string canonical(const std::string& smer, size_t s);
 
-struct result_query {int minimum; int maximum; float average; float kmer_present_ratio;};
+/** 
+ * \struct result_query
+ * \brief Result of a sequence query : statistics over all kmers queries of this sequence
+ */
+struct result_query {
+  int minimum; ///< minimum of all kmer abundances queried
+  int maximum; ///< maximum of all kmer abundances queried
+  float average; ///< average of all kmer abundances queried
+  float kmer_present_ratio; ///< Ratio of present kmers (abundance > 0) over all kmers of queried sequence
+};
 std::ostream& operator<<(std::ostream& os, result_query const& res);
 
 
