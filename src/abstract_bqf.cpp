@@ -174,7 +174,7 @@ result_query Bqf::query(string seq){
     
     if (k == s && s == n) { 
         uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
-        return result_query {(int)res, (float)res, (float)(res!=0)};
+        return result_query {(int)res, (int)res, (float)res, (float)(res!=0)};
     }
     int z = k-s;
     int last_smers_abundances[z+1];
