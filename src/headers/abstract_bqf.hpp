@@ -12,7 +12,7 @@
  *
  */
 class Bqf : public Rsqf {
-private:
+public:
     /** 
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
