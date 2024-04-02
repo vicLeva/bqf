@@ -9,7 +9,7 @@ enable_testing()
 
 # C++ options
 add_compile_options(-Wall -Ofast -g -fpermissive -march=native -mtune=native) # for x86 based host
-#add_compile_options(-Wall -Ofast -g -fpermissive -cpu=native -mtune=native) # for ARM based host
+#add_compile_options(-Wall -Ofast -g -fpermissive -mcpu=native -mtune=native) # for ARM based host
 
 # move all the binaries and libraries into dedicated directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
