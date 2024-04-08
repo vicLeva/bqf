@@ -147,16 +147,14 @@ void Bqf::query(std::ifstream& infile, std::ofstream& outfile){
     if (seq[0] == '>'){ //conventionnal fasta
         std::getline(infile, seq);
         outfile << "Sequence" << i << " : " << this->query(seq) << "\n";
-        while (!infile.eof()) {
-            std::getline(infile, seq);  // skip first header line
+        while (std::getline(infile, seq)) { // skip first header line
             std::getline(infile, seq);
 
             outfile << "Sequence" << i++ << " : " << this->query(seq) << "\n";
         }
     } else { //1 seq / line
         outfile << "Sequence" << i << " : " << this->query(seq) << "\n";
-        while (!infile.eof()) {
-            std::getline(infile, seq);
+        while (std::getline(infile, seq)) {
             outfile << "Sequence" << i++ << " : " << this->query(seq) << "\n";
         }
     }
