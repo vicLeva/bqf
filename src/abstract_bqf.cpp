@@ -281,6 +281,8 @@ std::map<uint64_t, uint64_t> Bqf::enumerate(){
         }
     }
 
+    assert(finalSet.size() == this->elements_inside);
+
     return finalSet;
 }
 
@@ -300,6 +302,8 @@ void Bqf::resize(int n){
     this->number_blocks = std::ceil(num_quots / BLOCK_SIZE);
 
     this->filter = std::vector<uint64_t>(num_of_words);
+
+    this->elements_inside = 0;
 
     for (auto const& elem : inserted_elements){
         this->insert(elem.first, elem.second);
