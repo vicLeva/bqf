@@ -61,8 +61,8 @@ std::pair<std::string, std::string> showDifferences(std::string s1, std::string 
       ss1 << "\033[1;32m" << s1[i] << "\033[0m";
       ss2 << "\033[1;31m" << s2[i] << "\033[0m";
     } else if (s1[i] == '1'){
-      ss1 << "\033[1;33m" << s1[i] << "\033[0m";
-      ss2 << "\033[1;33m" << s2[i] << "\033[0m";
+      ss1 << "\033[;33m" << s1[i] << "\033[0m";
+      ss2 << "\033[;33m" << s2[i] << "\033[0m";
     } else {
       ss1 << s1[i];
       ss2 << s2[i];
@@ -73,7 +73,7 @@ std::pair<std::string, std::string> showDifferences(std::string s1, std::string 
 
 void prettyPrint(Bqf* bqf){
   std::string str = prettyFilter(bqf);
-  str = std::regex_replace(str, std::regex("1"), "\033[1;33m1\033[0m");
+  str = std::regex_replace(str, std::regex("1"), "\033[;33m1\033[0m");
   std::cout << str;
 }
 
@@ -126,7 +126,7 @@ std::string makeKmer(uint q, uint r, uint shift, uint k){
 }
 
 template <typename F>
-void test(bool debug, F* insert, std::string name, uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z){
+void test(bool printExceptations, F* insert, std::string name, uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z){
   // Setting the parameters
   Bqf_ec old = Bqf_ec(q_size, c_size, k, z, false);
   Bqf_ec revised = Bqf_ec(q_size, c_size, k, z, false);
@@ -135,7 +135,7 @@ void test(bool debug, F* insert, std::string name, uint64_t q_size, uint64_t c_s
   (*insert)(&old, q_size, k, z);
   (*insert)(&revised, q_size, k, z);
 
-  if (debug){
+  if (printExceptations){
     std::cout << "Before resize :" << std::endl;
     prettyPrint(&revised);
   }
@@ -149,9 +149,9 @@ void test(bool debug, F* insert, std::string name, uint64_t q_size, uint64_t c_s
   revised.new_resize(1);
   double revisedTime = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - revisedStart).count();
 
-  if (debug){
-    std::cout << "After resize :" << std::endl;
-    prettyPrint(&revised);
+  if (printExceptations){
+    std::cout << "Expected resize :" << std::endl;
+    prettyPrint(&old);
   }
 
   // Verification
@@ -159,23 +159,23 @@ void test(bool debug, F* insert, std::string name, uint64_t q_size, uint64_t c_s
   std::cout << std::setw(50) << std::left <<name << " : " << result << " (old time : " << std::to_string(oldTime) << "ms, revised time : " << revisedTime << "ms)" << std::endl;
 }
 
-void testEmpty(bool debug){
+void testEmpty(bool printExceptations){
   auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {};
-  test(debug, &insert, "Test Empty", 8, 2, 8, 2);
+  test(printExceptations, &insert, "Test Empty", 8, 2, 8, 2);
 }
 
-void testOneInsert(bool debug){
+void testOneInsert(bool printExceptations){
   auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
-    bqf->insert(makeKmer(0, 0b1000, q_size, k - z), 1);
+    bqf->insert(makeKmer(1, 0b1000, q_size, k - z), 1);
   };
-  test(debug, &insert, "Test One Insert 1", 8, 2, 8, 2);
-  test(debug, &insert, "Test One Insert 2", 9, 2, 6, 1);
-  test(debug, &insert, "Test One Insert 3", 10, 2, 10, 2);
+  test(printExceptations, &insert, "Test One Insert 1", 8, 2, 8, 2);
+  test(false, &insert, "Test One Insert 2", 9, 2, 6, 1);
+  test(false, &insert, "Test One Insert 3", 10, 2, 10, 2);
 }
 
-void testOneRun(bool debug){
+void testOneRun(bool printExceptations){
   auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
-    uint64_t q = 0;
+    uint64_t q = 2;
     bqf->insert(makeKmer(q, 0b0000, q_size, k - z), 1);
     bqf->insert(makeKmer(q, 0b1000, q_size, k - z), 2);
     bqf->insert(makeKmer(q, 0b0100, q_size, k - z), 3);
@@ -185,13 +185,13 @@ void testOneRun(bool debug){
     bqf->insert(makeKmer(q, 0b0101, q_size, k - z), 3);
     bqf->insert(makeKmer(q, 0b0011, q_size, k - z), 4);
   };
-  test(debug, &insert, "Test One Run 1", 8, 2, 8, 2);
-  test(debug, &insert, "Test One Run 2", 9, 2, 6, 1);
-  test(debug, &insert, "Test One Run 3", 11, 1, 9, 2);
+  test(printExceptations, &insert, "Test One Run 1", 8, 2, 8, 2);
+  test(false, &insert, "Test One Run 2", 9, 2, 6, 1);
+  test(false, &insert, "Test One Run 3", 11, 1, 9, 2);
 }
 
 
-void testOneRunBackToZero(bool debug){
+void testOneRunBackToZero(bool printExceptations){
   auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
     uint64_t q = (1 << q_size) - 2;
     bqf->insert(makeKmer(q, 0b0000, q_size, k - z), 1);
@@ -203,15 +203,15 @@ void testOneRunBackToZero(bool debug){
     bqf->insert(makeKmer(q, 0b0101, q_size, k - z), 1);
     bqf->insert(makeKmer(q, 0b0011, q_size, k - z), 1);
   };
-  test(debug, &insert, "Test One Run Back To Zero 1", 8, 2, 8, 2);
-  test(debug, &insert, "Test One Run Back To Zero 2", 9, 2, 6, 1);
-  test(debug, &insert, "Test One Run Back To Zero 3", 10, 1, 9, 2);
+  test(printExceptations, &insert, "Test One Run Back To Zero 1", 8, 2, 8, 2);
+  test(false, &insert, "Test One Run Back To Zero 2", 9, 2, 6, 1);
+  test(false, &insert, "Test One Run Back To Zero 3", 10, 1, 9, 2);
 }
 
-void testTwoRunsWithOverlap(bool debug){
+void testTwoRunsWithOverlap(bool printExceptations){
   auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
-    uint64_t q1 = 0;
-    uint64_t q2 = 2;
+    uint64_t q1 = 2;
+    uint64_t q2 = 4;
     bqf->insert(makeKmer(q1, 0b0000, q_size, k - z), 1);
     bqf->insert(makeKmer(q1, 0b1000, q_size, k - z), 1);
     bqf->insert(makeKmer(q1, 0b0100, q_size, k - z), 1);
@@ -229,17 +229,17 @@ void testTwoRunsWithOverlap(bool debug){
     bqf->insert(makeKmer(q2, 0b0101, q_size, k - z), 2);
     bqf->insert(makeKmer(q2, 0b0011, q_size, k - z), 2);
   };
-  test(debug, &insert, "Test Two Run With Overlap 1", 8, 2, 8, 2);
-  test(debug, &insert, "Test Two Run With Overlap 2", 9, 2, 6, 1);
-  test(debug, &insert, "Test Two Run With Overlap 3", 10, 2, 10, 1);
+  test(printExceptations, &insert, "Test Two Run With Overlap 1", 8, 2, 8, 2);
+  test(false, &insert, "Test Two Run With Overlap 2", 9, 2, 6, 1);
+  test(false, &insert, "Test Two Run With Overlap 3", 10, 2, 10, 1);
 }
 
-void testManyRunsWithOverlap(bool debug){
+void testManyRunsWithOverlap(bool printExceptations){
   auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
-    uint64_t q1 = 0;
-    uint64_t q2 = 2;
-    uint64_t q3 = 4;
-    uint64_t q4 = 6;
+    uint64_t q1 = 2;
+    uint64_t q2 = 4;
+    uint64_t q3 = 6;
+    uint64_t q4 = 8;
     bqf->insert(makeKmer(q1, 0b0000, q_size, k - z), 1);
     bqf->insert(makeKmer(q1, 0b1000, q_size, k - z), 1);
     bqf->insert(makeKmer(q1, 0b0100, q_size, k - z), 1);
@@ -273,12 +273,12 @@ void testManyRunsWithOverlap(bool debug){
     bqf->insert(makeKmer(q4, 0b0101, q_size, k - z), 4);
     bqf->insert(makeKmer(q4, 0b0011, q_size, k - z), 4);
   };
-  test(debug, &insert, "Test Many Run With Overlap 1", 8, 2, 8, 2);
-  test(debug, &insert, "Test Many Run With Overlap 2", 9, 2, 6, 1);
-  test(debug, &insert, "Test Many Run With Overlap 3", 10, 3, 10, 3);
+  test(printExceptations, &insert, "Test Many Run With Overlap 1", 8, 3, 8, 2);
+  test(false, &insert, "Test Many Run With Overlap 2", 9, 2, 6, 1);
+  test(false, &insert, "Test Many Run With Overlap 3", 10, 3, 10, 3);
 }
 
-void testTwoRunsWithOverlapBackToZero(bool debug){
+void testTwoRunsWithOverlapBackToZero(bool printExceptations){
   auto insert1 = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
     uint64_t q1 = (1 << q_size) - 4;
     uint64_t q2 = (1 << q_size) - 2;
@@ -319,15 +319,40 @@ void testTwoRunsWithOverlapBackToZero(bool debug){
     bqf->insert(makeKmer(q2, 0b0101, q_size, k - z), 2);
     bqf->insert(makeKmer(q2, 0b0011, q_size, k - z), 2);
   };
-  test(debug, &insert1, "Test Two Run With Overlap Back To Zero 1-1", 8, 2, 8, 2);
-  test(debug, &insert1, "Test Two Run With Overlap Back To Zero 1-2", 9, 2, 7, 2);
-  test(debug, &insert1, "Test Two Run With Overlap Back To Zero 1-3", 10, 3, 5, 1);
-  test(debug, &insert2, "Test Two Run With Overlap Back To Zero 2-1", 8, 2, 8, 2);
-  test(debug, &insert2, "Test Two Run With Overlap Back To Zero 2-2", 9, 2, 7, 2);
-  test(debug, &insert2, "Test Two Run With Overlap Back To Zero 2-3", 10, 3, 5, 1);
+  auto insert3 = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
+    uint64_t q1 = (1 << q_size) - 8;
+    uint64_t q2 = (1 << q_size) - 4;
+    bqf->insert(makeKmer(q1, 0b0000, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b1000, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b0100, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b0010, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b0001, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b1001, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b0101, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b0011, q_size, k - z), 1);
+    bqf->insert(makeKmer(q1, 0b1111, q_size, k - z), 1);
+    bqf->insert(makeKmer(q2, 0b0000, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b1000, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b0100, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b0010, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b0001, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b1001, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b0101, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b0011, q_size, k - z), 2);
+    bqf->insert(makeKmer(q2, 0b1111, q_size, k - z), 2);
+  };
+  test(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-1", 8, 2, 8, 2);
+  test(false, &insert1, "Test Two Run With Overlap Back To Zero 1-2", 9, 2, 7, 2);
+  test(false, &insert1, "Test Two Run With Overlap Back To Zero 1-3", 10, 3, 5, 1);
+  test(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-1", 8, 2, 8, 2);
+  test(false, &insert2, "Test Two Run With Overlap Back To Zero 2-2", 9, 2, 7, 2);
+  test(false, &insert2, "Test Two Run With Overlap Back To Zero 2-3", 10, 3, 5, 1);
+  test(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-1", 8, 2, 8, 2);
+  test(false, &insert3, "Test Two Run With Overlap Back To Zero 3-2", 9, 2, 7, 2);
+  test(false, &insert3, "Test Two Run With Overlap Back To Zero 3-3", 10, 3, 5, 1);
 }
 
-void testManyRunsWithOverlapBackToZero(bool debug){
+void testManyRunsWithOverlapBackToZero(bool printExceptations){
   auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
     uint64_t q1 = (1 << q_size) - 4;
     uint64_t q2 = (1 << q_size) - 2;
@@ -366,9 +391,9 @@ void testManyRunsWithOverlapBackToZero(bool debug){
     bqf->insert(makeKmer(q4, 0b0101, q_size, k - z), 4);
     bqf->insert(makeKmer(q4, 0b0011, q_size, k - z), 4);
   };
-  test(debug, &insert, "Test Many Run With Overlap Back To Zero 1", 8, 2, 8, 2);
-  test(debug, &insert, "Test Many Run With Overlap Back To Zero 2", 9, 2, 6, 1);
-  test(debug, &insert, "Test Many Run With Overlap Back To Zero 3", 10, 3, 10, 3);
+  test(printExceptations, &insert, "Test Many Run With Overlap Back To Zero 1", 8, 3, 8, 2);
+  test(false, &insert, "Test Many Run With Overlap Back To Zero 2", 9, 2, 6, 1);
+  test(false, &insert, "Test Many Run With Overlap Back To Zero 3", 10, 3, 10, 3);
 }
 
 std::string generateRandomKMer(int k, std::mt19937* gen) {
@@ -386,29 +411,32 @@ std::string generateRandomKMer(int k, std::mt19937* gen) {
   return randomKMer;
 }
 
-void testRandomInserts(bool debug){
-  auto insert = [](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
+void testRandomInserts(bool printExceptations){
+  std::random_device rd;
+  uint_fast32_t seed = rd();
+
+  auto insert = [seed](Bqf* bqf, uint64_t q_size, uint64_t k, uint64_t z) {
     std::mt19937 gen;
-    gen.seed(123456);
+    gen.seed(seed);
     while(bqf->elements_inside < bqf->size_limit - 1) {
       bqf->insert(generateRandomKMer(k, &gen), 1);
     }
   };
-  test(debug, &insert, "Test Random Inserts 1", 8, 2, 8, 2);
-  test(debug, &insert, "Test Random Inserts 2", 9, 2, 6, 1);
-  test(debug, &insert, "Test Random Inserts 3", 10, 3, 7, 2);
+  test(printExceptations, &insert, "Test Random Inserts 1", 8, 2, 8, 2);
+  test(false, &insert, "Test Random Inserts 2", 9, 2, 6, 1);
+  test(false, &insert, "Test Random Inserts 3", 10, 3, 7, 2);
 }
 
 int main() {
   std::cout << "RESIZING TESTS :" << std::endl;
-  bool debug = false;
-  testEmpty(debug);
-  testOneInsert(debug);
-  testOneRun(debug);
-  testOneRunBackToZero(debug);
-  testTwoRunsWithOverlap(debug);
-  testManyRunsWithOverlap(debug);
-  testTwoRunsWithOverlapBackToZero(debug);
-  testManyRunsWithOverlapBackToZero(debug);
-  testRandomInserts(debug);
+  bool printExceptations = false;
+  testEmpty(printExceptations);
+  testOneInsert(printExceptations);
+  testOneRun(printExceptations);
+  testOneRunBackToZero(printExceptations);
+  testTwoRunsWithOverlap(printExceptations);
+  testManyRunsWithOverlap(printExceptations);
+  testTwoRunsWithOverlapBackToZero(printExceptations);
+  testManyRunsWithOverlapBackToZero(printExceptations);
+  testRandomInserts(printExceptations);
 }
