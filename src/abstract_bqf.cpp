@@ -310,6 +310,28 @@ void Bqf::resize(int n){
     }
 }
 
+void Bqf::new_resize(int n){
+    std::map<uint64_t, uint64_t> inserted_elements = this->enumerate();
+
+    this->quotient_size += n;
+    this->remainder_size -= n;
+    
+    uint64_t num_quots = 1ULL << this->quotient_size; 
+    uint64_t num_of_words = num_quots * (MET_UNIT + this->remainder_size) / MEM_UNIT; 
+
+    this->size_limit = num_quots * 0.95;
+
+    // In machine words
+    this->number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+
+    this->filter = std::vector<uint64_t>(num_of_words);
+
+    this->elements_inside = 0;
+
+    for (auto const& elem : inserted_elements){
+        this->insert(elem.first, elem.second);
+    }
+}
 
 uint64_t Bqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
     uint64_t block = get_block_id(position);
