@@ -256,7 +256,6 @@ std::map<uint64_t, uint64_t> Bqf::enumerate(){
 
     uint64_t quotient;
     uint64_t number;
-
    
     for(uint block = 0; block < number_blocks; ++block){
         curr_occ = get_occupied_word(block);
@@ -311,25 +310,99 @@ void Bqf::resize(int n){
 }
 
 void Bqf::new_resize(int n){
-    std::map<uint64_t, uint64_t> inserted_elements = this->enumerate();
-
-    this->quotient_size += n;
-    this->remainder_size -= n;
+    std::map<uint64_t, uint64_t> finalSet;
+    uint64_t curr_occ;
     
-    uint64_t num_quots = 1ULL << this->quotient_size; 
-    uint64_t num_of_words = num_quots * (MET_UNIT + this->remainder_size) / MEM_UNIT; 
+    std::pair<uint64_t, uint64_t> bounds;
+    uint64_t cursor;
+    uint64_t endCursor;
 
-    this->size_limit = num_quots * 0.95;
+    uint64_t quotient;
+    uint64_t remainder;
+    // uint64_t count;
+    uint64_t addedQ;
+    uint64_t nextRemainder;
+    uint64_t nextQuotient;
 
-    // In machine words
-    this->number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+    // compter les insertions ?
+    // uint64_t inserted[n];
 
-    this->filter = std::vector<uint64_t>(num_of_words);
+    // uint64_t fu_slot = first_unused_slot(quot);
+    
+        // cursor = @;
+        // while (count != 0){
+        //     count = get_remainder(cursor, true) & mask_right(count_size);
+        //     cursor = get_next_quot(cursor);
+        // }
+    
 
-    this->elements_inside = 0;
+    std::cout << "before resize" << endl;
+    for(uint block = 0; block < number_blocks; ++block){
+        curr_occ = get_occupied_word(block);
+        if (curr_occ == 0) continue;
 
-    for (auto const& elem : inserted_elements){
-        this->insert(elem.first, elem.second);
+        for (uint64_t i=0; i<BLOCK_SIZE; i++){
+            if (curr_occ & 1ULL){ //occupied
+                quotient = block*BLOCK_SIZE + i;
+                bounds = get_run_boundaries(quotient);
+                cursor = bounds.first;
+                endCursor = get_next_quot(bounds.second);
+                
+                std::cout << "Run at Q = " << quotient << " [" << bounds.first << " - " << (int64_t)(bounds.first - quotient) << "] :";
+                
+                while (cursor != endCursor){ //every remainder of the run
+                    remainder = get_remainder(cursor, true);
+                    // count = remainder & mask_right(count_size);
+                    remainder = remainder >> count_size;
+                    addedQ = remainder & mask_right(n);
+                    nextRemainder = remainder >> n;
+                    nextQuotient = ((addedQ << (this->quotient_size + n - 1)) | quotient);
+
+                    std::cout << remainder << "(" << nextRemainder << " " << nextQuotient << ") ";
+
+                    cursor = get_next_quot(cursor);
+                }
+                std::cout << std::endl;
+            }
+
+            curr_occ >>= 1ULL; //next bit of occupied vector
+        }
+    }
+
+    resize(n);
+
+
+    std::cout << "after resize" << endl;
+    for(uint block = 0; block < number_blocks; ++block){
+        curr_occ = get_occupied_word(block);
+        if (curr_occ == 0) continue;
+
+        for (uint64_t i=0; i<BLOCK_SIZE; i++){
+            if (curr_occ & 1ULL){ //occupied
+                quotient = block*BLOCK_SIZE + i;
+                bounds = get_run_boundaries(quotient);
+                cursor = bounds.first;
+
+                std::cout << "Run at Q = " << quotient << " [" << bounds.first << " - " << (int64_t)(bounds.first - quotient) << "] :";
+                
+                while (cursor != (bounds.second)){ //every remainder of the run
+                    remainder = get_remainder(cursor, true);
+                    // count = remainder & mask_right(count_size);
+                    remainder = remainder >> count_size;
+
+                    std::cout << remainder << " ";
+
+                    cursor = get_next_quot(cursor);
+                }
+                remainder = get_remainder(cursor, true);
+                // count = remainder & mask_right(count_size);
+                remainder = remainder >> count_size;
+
+                std::cout << remainder << endl;
+            }
+
+            curr_occ >>= 1ULL; //next bit of occupied vector
+        }
     }
 }
 
