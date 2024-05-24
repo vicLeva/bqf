@@ -101,7 +101,8 @@ public:
     std::map<uint64_t, uint64_t> enumerate();
 
     //tmp public
-    virtual void resize(int n); //virtual for now
+    void resize(int n);
+    void new_resize(int n);
 
 
     /** 
