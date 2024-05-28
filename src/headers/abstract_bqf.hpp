@@ -102,7 +102,6 @@ public:
 
     //tmp public
     void resize(int n);
-    void new_resize(int n);
 
 
     /** 

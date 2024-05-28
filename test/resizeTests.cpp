@@ -9,6 +9,29 @@
 #include <functional>
 #include <random>
 
+void mock_resize(Bqf* bqf, int n){
+    std::map<uint64_t, uint64_t> inserted_elements = bqf->enumerate();
+
+    bqf->quotient_size += n;
+    bqf->remainder_size -= n;
+    
+    uint64_t num_quots = 1ULL << bqf->quotient_size; 
+    uint64_t num_of_words = num_quots * (MET_UNIT + bqf->remainder_size) / MEM_UNIT; 
+
+    bqf->size_limit = num_quots * 0.95;
+
+    // In machine words
+    bqf->number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+
+    bqf->filter = std::vector<uint64_t>(num_of_words);
+
+    bqf->elements_inside = 0;
+
+    for (auto const& elem : inserted_elements){
+        bqf->insert(elem.first, elem.second);
+    }
+}
+
 std::string prettyFilter(Bqf* bqf){
   std::stringstream ss;
   ss << "OFF   : ";
@@ -77,38 +100,38 @@ void prettyPrint(Bqf* bqf){
   std::cout << str;
 }
 
-bool compare(Bqf* old, Bqf* revised){
+bool compare(Bqf* mock, Bqf* resize){
   bool ok = true;
-  if (old->quotient_size != revised->quotient_size) {
+  if (mock->quotient_size != resize->quotient_size) {
     ok = false;
-    std::cout << "different quotient_size : " << old->quotient_size << " and " << revised->quotient_size << std::endl;
+    std::cout << "different quotient_size : " << mock->quotient_size << " and " << resize->quotient_size << std::endl;
   }
-  if (old->remainder_size != revised->remainder_size) {
+  if (mock->remainder_size != resize->remainder_size) {
     ok = false;
-    std::cout << "different remainder_size : " << old->remainder_size << " and " << revised->remainder_size << std::endl;
+    std::cout << "different remainder_size : " << mock->remainder_size << " and " << resize->remainder_size << std::endl;
   }
-  if (old->size_limit != revised->size_limit) {
+  if (mock->size_limit != resize->size_limit) {
     ok = false;
-    std::cout << "different size_limit : " << old->size_limit << " and " << revised->size_limit << std::endl;
+    std::cout << "different size_limit : " << mock->size_limit << " and " << resize->size_limit << std::endl;
   }
-  if (old->number_blocks != revised->number_blocks) {
+  if (mock->number_blocks != resize->number_blocks) {
     ok = false;
-    std::cout << "different number_blocks : " << old->number_blocks << " and " << revised->number_blocks << std::endl;
+    std::cout << "different number_blocks : " << mock->number_blocks << " and " << resize->number_blocks << std::endl;
   }
-  if (old->elements_inside != revised->elements_inside) {
+  if (mock->elements_inside != resize->elements_inside) {
     ok = false;
-    std::cout << "different elements_inside : " << old->elements_inside << " and " << revised->elements_inside << std::endl;
+    std::cout << "different elements_inside : " << mock->elements_inside << " and " << resize->elements_inside << std::endl;
   }
-  if (old->filter.size() != revised->filter.size()) {
+  if (mock->filter.size() != resize->filter.size()) {
     ok = false;
-    std::cout << "wrong filter size : " << old->filter.size() << " and " << revised->filter.size() << std::endl;
+    std::cout << "wrong filter size : " << mock->filter.size() << " and " << resize->filter.size() << std::endl;
   }
   
   if(ok){
-    std::string strOld = prettyFilter(old);
-    std::string strRevised = prettyFilter(revised);
-    if (strOld != strRevised){
-      std::pair<std::string, std::string> strs = showDifferences(strOld, strRevised);
+    std::string strmock = prettyFilter(mock);
+    std::string strresize = prettyFilter(resize);
+    if (strmock != strresize){
+      std::pair<std::string, std::string> strs = showDifferences(strmock, strresize);
       std::cout << "filters have different values : " << std::endl;
       std::cout << "expected filter : " << std::endl;
       std::cout << strs.first;
@@ -128,35 +151,35 @@ std::string makeKmer(uint q, uint r, uint shift, uint k){
 template <typename F>
 void test(bool printExceptations, F* insert, std::string name, uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z){
   // Setting the parameters
-  Bqf_ec old = Bqf_ec(q_size, c_size, k, z, false);
-  Bqf_ec revised = Bqf_ec(q_size, c_size, k, z, false);
+  Bqf_ec mock = Bqf_ec(q_size, c_size, k, z, false);
+  Bqf_ec resize = Bqf_ec(q_size, c_size, k, z, false);
 
   // Inserting kmers
-  (*insert)(&old, q_size, k, z);
-  (*insert)(&revised, q_size, k, z);
+  (*insert)(&mock, q_size, k, z);
+  (*insert)(&resize, q_size, k, z);
 
   if (printExceptations){
     std::cout << "Before resize :" << std::endl;
-    prettyPrint(&revised);
+    prettyPrint(&resize);
   }
   
   // Calculating times
-  auto oldStart = std::chrono::high_resolution_clock::now();
-  old.resize(1);
-  double oldTime = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - oldStart).count();
+  auto mockStart = std::chrono::high_resolution_clock::now();
+  mock_resize(&mock, 1);
+  double mockTime = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - mockStart).count();
   
-  auto revisedStart = std::chrono::high_resolution_clock::now();
-  revised.new_resize(1);
-  double revisedTime = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - revisedStart).count();
+  auto resizeStart = std::chrono::high_resolution_clock::now();
+  resize.resize(1);
+  double resizeTime = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - resizeStart).count();
 
   if (printExceptations){
     std::cout << "Expected resize :" << std::endl;
-    prettyPrint(&old);
+    prettyPrint(&mock);
   }
 
   // Verification
-  std::string result = compare(&old, &revised)? "\033[1;32mPassed\033[0m" : "\033[1;31mFailed\033[0m";
-  std::cout << std::setw(50) << std::left <<name << " : " << result << " (old time : " << std::to_string(oldTime) << "ms, revised time : " << std::to_string(revisedTime) << "ms x" << std::to_string(oldTime/revisedTime) << ")" << std::endl;
+  std::string result = compare(&mock, &resize)? "\033[1;32mPassed\033[0m" : "\033[1;31mFailed\033[0m";
+  std::cout << std::setw(50) << std::left <<name << " : " << result << " (mock time : " << std::to_string(mockTime) << "ms, resize time : " << std::to_string(resizeTime) << "ms x" << std::to_string(mockTime/resizeTime) << ")" << std::endl;
 }
 
 void testEmpty(bool printExceptations){
