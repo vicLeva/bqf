@@ -156,7 +156,7 @@ void test(bool printExceptations, F* insert, std::string name, uint64_t q_size, 
 
   // Verification
   std::string result = compare(&old, &revised)? "\033[1;32mPassed\033[0m" : "\033[1;31mFailed\033[0m";
-  std::cout << std::setw(50) << std::left <<name << " : " << result << " (old time : " << std::to_string(oldTime) << "ms, revised time : " << revisedTime << "ms)" << std::endl;
+  std::cout << std::setw(50) << std::left <<name << " : " << result << " (old time : " << std::to_string(oldTime) << "ms, revised time : " << std::to_string(revisedTime) << "ms x" << std::to_string(oldTime/revisedTime) << ")" << std::endl;
 }
 
 void testEmpty(bool printExceptations){
@@ -422,9 +422,9 @@ void testRandomInserts(bool printExceptations){
       bqf->insert(generateRandomKMer(k, &gen), 1);
     }
   };
-  test(printExceptations, &insert, "Test Random Inserts 1", 8, 2, 8, 2);
-  test(false, &insert, "Test Random Inserts 2", 9, 2, 6, 1);
-  test(false, &insert, "Test Random Inserts 3", 10, 3, 7, 2);
+  test(printExceptations, &insert, "Test Random Inserts 1 seed : " + std::to_string(seed), 8, 2, 8, 2);
+  test(false, &insert, "Test Random Inserts 2 seed : " + std::to_string(seed), 9, 2, 6, 1);
+  test(false, &insert, "Test Random Inserts 3 seed : " + std::to_string(seed), 10, 3, 7, 2);
 }
 
 int main() {
@@ -438,5 +438,5 @@ int main() {
   testManyRunsWithOverlap(printExceptations);
   testTwoRunsWithOverlapBackToZero(printExceptations);
   testManyRunsWithOverlapBackToZero(printExceptations);
-  // testRandomInserts(printExceptations);
+  testRandomInserts(printExceptations);
 }

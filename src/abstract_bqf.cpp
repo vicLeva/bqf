@@ -1,4 +1,5 @@
 #include "abstract_bqf.hpp" 
+#include <stdio.h>
 
 
 using namespace std;
@@ -310,100 +311,178 @@ void Bqf::resize(int n){
 }
 
 void Bqf::new_resize(int n){
-    std::map<uint64_t, uint64_t> finalSet;
+    const uint64_t new_quotient_size = quotient_size + n;
+    const uint64_t new_remainder_size = remainder_size - n;
+
+    const uint64_t num_quots = 1ULL << new_quotient_size; 
+    const uint64_t num_of_words = num_quots * (MET_UNIT + new_remainder_size) / MEM_UNIT;
+
+    // In machine words
+    const uint64_t new_number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+    std::vector<uint64_t> new_filter = std::vector<uint64_t>(num_of_words);
+
+    uint64_t current_block;
     uint64_t curr_occ;
-    
+
     std::pair<uint64_t, uint64_t> bounds;
     uint64_t cursor;
     uint64_t endCursor;
 
     uint64_t quotient;
     uint64_t remainder;
-    // uint64_t count;
-    uint64_t addedQ;
-    uint64_t nextRemainder;
-    uint64_t nextQuotient;
+    uint64_t count;
 
-    // compter les insertions ?
-    // uint64_t inserted[n];
+    uint64_t new_quotient;
+    uint64_t added_quotient_bits;
 
-    // uint64_t fu_slot = first_unused_slot(quot);
-    
-        // cursor = @;
-        // while (count != 0){
-        //     count = get_remainder(cursor, true) & mask_right(count_size);
-        //     cursor = get_next_quot(cursor);
-        // }
-    
+    uint64_t new_block;
+    uint64_t pos_in_block;
+    uint64_t pos;
 
-    std::cout << "before resize" << endl;
-    for(uint block = 0; block < number_blocks; ++block){
-        curr_occ = get_occupied_word(block);
-        if (curr_occ == 0) continue;
+    const uint gap_size = (1 << n);
+    std::pair<uint64_t, bool> *gaps = new std::pair<uint64_t, bool>[gap_size];
 
+    // for(uint i = 0; i < gap_size; ++i){
+    //     gaps[i].first = 0;
+    //     gaps[i].second = false;
+    // }
+
+    // starting position
+    const uint64_t start = first_unused_slot(0);
+    const uint64_t block_start = get_block_id(start);
+
+    for(uint block = 0; block <= number_blocks; ++block){
+        // getting the true block
+        current_block = block_start + block;
+        if (current_block >= number_blocks){
+            current_block -= number_blocks;
+        }
+
+        // inversing the gaps when going back to 0
+        if(block != 0 && current_block == 0){
+            for(uint i = 0; i < ((gap_size + 1)/2); ++i){
+                pos = gaps[gap_size - 1 - i].first;
+                gaps[gap_size - 1 - i].first = gaps[i].first;
+                gaps[i].first = pos;
+            }
+        }
+
+        // the occupied word of the block
+        curr_occ = get_occupied_word(current_block);
+
+        // skip if whole block is empty
+        if (curr_occ == 0) {
+            for(uint i = 0; i < gap_size; ++i){
+                // setting the offsets
+                new_block = ((i << (new_quotient_size - 1)) / BLOCK_SIZE) | current_block;
+                pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
+                new_filter[pos] = gaps[i].first;
+
+                // substracting / resetting values
+                if(gaps[i].first >= BLOCK_SIZE){
+                    gaps[i].first -= BLOCK_SIZE;
+                } else {
+                    gaps[i].first = 0;
+                }
+                gaps[i].second = false;
+            }
+            continue;
+        }
+
+        // inserting the elements in the new filter
         for (uint64_t i=0; i<BLOCK_SIZE; i++){
+            // start
+            if(block == 0 && i == 0){
+                pos = (start % MEM_UNIT);
+                i = pos;
+                curr_occ >>= pos;
+            }
+
+            quotient = current_block*BLOCK_SIZE + i;
+
+            // end
+            if(block == number_blocks && quotient == start){
+                break;
+            }
+            
             if (curr_occ & 1ULL){ //occupied
-                quotient = block*BLOCK_SIZE + i;
                 bounds = get_run_boundaries(quotient);
                 cursor = bounds.first;
                 endCursor = get_next_quot(bounds.second);
-                
-                std::cout << "Run at Q = " << quotient << " [" << bounds.first << " - " << (int64_t)(bounds.first - quotient) << "] :";
-                
+
                 while (cursor != endCursor){ //every remainder of the run
                     remainder = get_remainder(cursor, true);
-                    // count = remainder & mask_right(count_size);
+                    count = remainder & mask_right(count_size);
                     remainder = remainder >> count_size;
-                    addedQ = remainder & mask_right(n);
-                    nextRemainder = remainder >> n;
-                    nextQuotient = ((addedQ << (this->quotient_size + n - 1)) | quotient);
+                    added_quotient_bits = remainder & mask_right(n);
 
-                    std::cout << remainder << "(" << nextRemainder << " " << nextQuotient << ") ";
+                    remainder = ((remainder >> n) << count_size) | count;
+                    new_quotient = ((added_quotient_bits << (new_quotient_size - 1)) | quotient) + gaps[added_quotient_bits].first;
+                    if (new_quotient >= num_quots){
+                        new_quotient -= num_quots;
+                    }
+
+                    // set the remainder
+                    new_block = get_block_id(new_quotient);
+                    pos_in_block = get_shift_in_block(new_quotient);
+                    pos = new_block * ((MET_UNIT+new_remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*new_remainder_size;
+                    set_bits(new_filter, pos, remainder, new_remainder_size);
+
+                    gaps[added_quotient_bits].first++;
+                    gaps[added_quotient_bits].second = true;
 
                     cursor = get_next_quot(cursor);
                 }
-                std::cout << std::endl;
+
+
+                for(uint g = 0; g < gap_size; ++g){
+                    if (gaps[g].second) {
+                        // setting the occupied
+                        new_quotient = (g << (new_quotient_size - 1)) | quotient;
+                        new_block = get_block_id(new_quotient);
+                        pos = (new_block *(MET_UNIT+new_remainder_size)) + OCC_POS;
+                        new_filter[pos] |= (1ULL << new_quotient);
+
+                        // setting the runend
+                        new_quotient += gaps[g].first - 1;
+                        if (new_quotient >= num_quots){
+                            new_quotient -= num_quots;
+                        }
+                        new_block = get_block_id(new_quotient);
+                        pos = (new_block *(MET_UNIT+new_remainder_size)) + RUN_POS;
+                        new_filter[pos] |= (1ULL << new_quotient);
+                    }
+                }
+            }
+
+            // setting the offset 
+            if (i == 0){
+                for(uint i = 0; i < gap_size; ++i){
+                    new_block = ((i << (new_quotient_size - 1)) / BLOCK_SIZE) | current_block;
+                    pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
+                    new_filter[pos] = gaps[i].first;
+                }
+            }
+
+            // substracting and resetting the gaps
+            for(uint i = 0; i < gap_size; ++i){
+                if(gaps[i].first > 0){
+                    gaps[i].first--;
+                }
+                gaps[i].second = false;
             }
 
             curr_occ >>= 1ULL; //next bit of occupied vector
         }
     }
 
-    resize(n);
+    this->quotient_size = new_quotient_size;
+    this->remainder_size = new_remainder_size;
 
+    this->size_limit = num_quots * 0.95;
 
-    std::cout << "after resize" << endl;
-    for(uint block = 0; block < number_blocks; ++block){
-        curr_occ = get_occupied_word(block);
-        if (curr_occ == 0) continue;
-
-        for (uint64_t i=0; i<BLOCK_SIZE; i++){
-            if (curr_occ & 1ULL){ //occupied
-                quotient = block*BLOCK_SIZE + i;
-                bounds = get_run_boundaries(quotient);
-                cursor = bounds.first;
-
-                std::cout << "Run at Q = " << quotient << " [" << bounds.first << " - " << (int64_t)(bounds.first - quotient) << "] :";
-                
-                while (cursor != (bounds.second)){ //every remainder of the run
-                    remainder = get_remainder(cursor, true);
-                    // count = remainder & mask_right(count_size);
-                    remainder = remainder >> count_size;
-
-                    std::cout << remainder << " ";
-
-                    cursor = get_next_quot(cursor);
-                }
-                remainder = get_remainder(cursor, true);
-                // count = remainder & mask_right(count_size);
-                remainder = remainder >> count_size;
-
-                std::cout << remainder << endl;
-            }
-
-            curr_occ >>= 1ULL; //next bit of occupied vector
-        }
-    }
+    this->number_blocks = new_number_blocks;
+    this->filter = new_filter;
 }
 
 uint64_t Bqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
