@@ -315,8 +315,9 @@ void Bqf::resize(int n){
     uint64_t pos_in_block;
     uint64_t pos;
 
-    const uint gap_size = (1 << n);
-    std::pair<uint64_t, bool> *gaps = new std::pair<uint64_t, bool>[gap_size];
+    // init the gaps
+    const uint gaps_size = (1 << n);
+    std::pair<uint32_t, bool> *gaps = new std::pair<uint32_t, bool>[gaps_size];
 
     // starting position
     const uint64_t start = first_unused_slot(0);
@@ -331,8 +332,8 @@ void Bqf::resize(int n){
 
         // shifting the gaps when going back to 0
         if(block != 0 && current_block == 0){
-            pos = gaps[gap_size - 1].first;
-            for(uint i = gap_size - 1; i > 0; --i){
+            pos = gaps[gaps_size - 1].first;
+            for(uint i = gaps_size - 1; i > 0; --i){
                 gaps[i].first = gaps[i - 1].first;
             }
             gaps[0].first = pos;
@@ -343,7 +344,7 @@ void Bqf::resize(int n){
 
         // skip if whole block is empty
         if (curr_occ == 0) {
-            for(uint i = 0; i < gap_size; ++i){
+            for(uint i = 0; i < gaps_size; ++i){
                 // setting the offsets
                 new_block = ((i << quotient_size) / BLOCK_SIZE) | current_block;
                 pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
@@ -384,14 +385,16 @@ void Bqf::resize(int n){
                 while (cursor != endCursor){ //every remainder of the run
                     remainder = get_remainder(cursor, true);
                     count = remainder & mask_right(count_size);
-                    remainder = remainder >> count_size;
+                    remainder >>= count_size;
                     added_quotient_bits = remainder & mask_right(n);
 
+                    // new remainder and new quotient
                     remainder = ((remainder >> n) << count_size) | count;
                     new_quotient = ((added_quotient_bits << quotient_size) | quotient) + gaps[added_quotient_bits].first;
                     if (new_quotient >= num_quots){
                         new_quotient -= num_quots;
                     }
+
                     // set the remainder
                     new_block = get_block_id(new_quotient);
                     pos_in_block = get_shift_in_block(new_quotient);
@@ -406,7 +409,7 @@ void Bqf::resize(int n){
                 }
 
 
-                for(uint i = 0; i < gap_size; ++i){
+                for(uint i = 0; i < gaps_size; ++i){
                     if (gaps[i].second) {
                         // setting the occupied
                         new_quotient = (i << quotient_size) | quotient;
@@ -428,7 +431,7 @@ void Bqf::resize(int n){
 
             // setting the offset 
             if (i == 0){
-                for(uint i = 0; i < gap_size; ++i){
+                for(uint i = 0; i < gaps_size; ++i){
                     new_block = ((i << quotient_size) / BLOCK_SIZE) | current_block;
                     pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
                     new_filter[pos] = gaps[i].first;
@@ -436,7 +439,7 @@ void Bqf::resize(int n){
             }
 
             // substracting and resetting the gaps
-            for(uint i = 0; i < gap_size; ++i){
+            for(uint i = 0; i < gaps_size; ++i){
                 if(gaps[i].first > 0){
                     gaps[i].first--;
                 }
