@@ -316,7 +316,8 @@ void Bqf::resize(int n){
 
     // init the gaps
     const uint gaps_size = (1 << n);
-    std::pair<uint32_t, bool> *gaps = new std::pair<uint32_t, bool>[gaps_size];
+    std::pair<uint32_t, bool> gaps[gaps_size];
+    std::fill(gaps, gaps + gaps_size, std::make_pair(0, false));
 
     // starting position
     const uint64_t start = first_unused_slot(0);
