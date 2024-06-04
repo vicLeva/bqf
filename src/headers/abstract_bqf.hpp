@@ -101,7 +101,7 @@ public:
     std::map<uint64_t, uint64_t> enumerate();
 
     //tmp public
-    void resize(int n);
+    void resize(uint n);
 
 
     /** 

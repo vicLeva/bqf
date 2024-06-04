@@ -286,7 +286,9 @@ std::map<uint64_t, uint64_t> Bqf::enumerate(){
     return finalSet;
 }
 
-void Bqf::resize(int n){
+void Bqf::resize(uint n){
+    if(n == 0) return;
+
     const uint64_t new_quotient_size = this->quotient_size + n;
     const uint64_t new_remainder_size = this->remainder_size - n;
 
@@ -382,11 +384,13 @@ void Bqf::resize(int n){
                 cursor = bounds.first;
                 endCursor = this->get_next_quot(bounds.second);
 
-                while (cursor != endCursor){ //every remainder of the run
+                while (cursor != endCursor){ // every remainder of the run
                     remainder = this->get_remainder(cursor, true);
                     count = remainder & mask_right(this->count_size);
                     remainder >>= this->count_size;
                     added_quotient_bits = remainder & mask_right(n);
+
+                    assert(added_quotient_bits >= 0 && added_quotient_bits < gaps_size);
 
                     // new remainder and new quotient
                     remainder = ((remainder >> n) << this->count_size) | count;
