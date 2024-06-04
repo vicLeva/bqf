@@ -56,7 +56,7 @@
 // std::pair<std::string, std::string> showDifferences(std::string s1, std::string s2){
 //   std::stringstream ss1;
 //   std::stringstream ss2;
-//   for(std::string::size_type i = 0; i < s1.size(); ++i) {
+//   for(std::size_type i = 0; i < s1.size(); ++i) {
 //     if (s1[i] != s2[i]){
 //       ss1 << "\033[1;32m" << s1[i] << "\033[0m";
 //       ss2 << "\033[1;31m" << s2[i] << "\033[0m";
@@ -379,9 +379,20 @@ std::string make_kmer(uint q, uint r, uint shift, uint k){
   return hash_to_kmer(rebuild_number(q, r, shift), k);
 }
 
+template <typename F>
+void test_multiple(bool printExceptations, F* insert, std::string test_name, uint* success, uint* total, double* avg){
+  uint i = 0;
+  test(printExceptations, insert, test_name + std::to_string(++i), 8, 2, 8, 2, 1, success, total, avg);
+  test(printExceptations, insert, test_name + std::to_string(++i), 10, 2, 12, 4, 1, success, total, avg);
+  test(printExceptations, insert, test_name + std::to_string(++i), 12, 2, 17, 5, 1, success, total, avg);
+  test(printExceptations, insert, test_name + std::to_string(++i), 8, 2, 8, 2, 2, success, total, avg);
+  test(printExceptations, insert, test_name + std::to_string(++i), 8, 2, 8, 2, 3, success, total, avg);
+  test(printExceptations, insert, test_name + std::to_string(++i), 8, 2, 8, 2, 0, success, total, avg);
+}
+
 void testEmpty(bool printExceptations, uint* success, uint* total, double* avg){
   auto insert = [](Bqf* bqf) {};
-  test(printExceptations, &insert, "Test Empty", 8, 2, 8, 2, 1, success, total, avg);
+  test_multiple(printExceptations, &insert, "Test Empty ", success, total, avg);
 }
 
 void testOneInsert(bool printExceptations, uint* success, uint* total, double* avg){
@@ -391,17 +402,8 @@ void testOneInsert(bool printExceptations, uint* success, uint* total, double* a
   auto insert2 = [](Bqf* bqf) {
     bqf->insert(make_kmer(1, 0b1001, bqf->quotient_size, bqf->smer_size), 1);
   };
-  test(printExceptations, &insert1, "Test One Insert 1-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test One Insert 1-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test One Insert 1-3", 10, 2, 10, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test One Insert 1-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert1, "Test One Insert 1-5", 8, 2, 8, 2, 3, success, total, avg);
-
-  test(printExceptations, &insert2, "Test One Insert 2-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test One Insert 2-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test One Insert 2-3", 10, 2, 10, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test One Insert 2-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert2, "Test One Insert 2-5", 8, 2, 8, 2, 3, success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test One Insert 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test One Insert 2-", success, total, avg);
 }
 
 void testOneRun(bool printExceptations, uint* success, uint* total, double* avg){
@@ -427,17 +429,8 @@ void testOneRun(bool printExceptations, uint* success, uint* total, double* avg)
     bqf->insert(make_kmer(q, 0b0101, bqf->quotient_size, bqf->smer_size), 3);
     bqf->insert(make_kmer(q, 0b1110, bqf->quotient_size, bqf->smer_size), 4);
   };
-  test(printExceptations, &insert1, "Test One Run 1-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test One Run 1-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test One Run 1-3", 11, 1, 9, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test One Run 1-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert1, "Test One Run 1-5", 8, 2, 8, 2, 3, success, total, avg);
-
-  test(printExceptations, &insert2, "Test One Run 2-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test One Run 2-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test One Run 2-3", 11, 1, 9, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test One Run 2-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert2, "Test One Run 2-5", 8, 2, 8, 2, 3, success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test One Run 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test One Run 2-", success, total, avg);
 }
 
 
@@ -454,11 +447,7 @@ void testOneRunBackToZero(bool printExceptations, uint* success, uint* total, do
     bqf->insert(make_kmer(q, 0b1111, bqf->quotient_size, bqf->smer_size), 1);
     bqf->insert(make_kmer(q, 0b1011, bqf->quotient_size, bqf->smer_size), 1);
   };
-  test(printExceptations, &insert, "Test One Run Back To Zero 1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert, "Test One Run Back To Zero 2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert, "Test One Run Back To Zero 3", 10, 1, 9, 2, 1, success, total, avg);
-  test(printExceptations, &insert, "Test One Run Back To Zero 4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert, "Test One Run Back To Zero 5", 8, 2, 8, 2, 3, success, total, avg);
+  test_multiple(printExceptations, &insert, "Test One Run Back To Zero ", success, total, avg);
 }
 
 void testTwoRunsWithOverlap(bool printExceptations, uint* success, uint* total, double* avg){
@@ -506,17 +495,8 @@ void testTwoRunsWithOverlap(bool printExceptations, uint* success, uint* total, 
     bqf->insert(make_kmer(q2, 0b1101, bqf->quotient_size, bqf->smer_size), 2);
     bqf->insert(make_kmer(q2, 0b1111, bqf->quotient_size, bqf->smer_size), 2);
   };
-  test(printExceptations, &insert1, "Test Two Run With Overlap 1-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap 1-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap 1-3", 10, 2, 10, 1, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap 1-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap 1-5", 8, 2, 8, 2, 3, success, total, avg);
-
-  test(printExceptations, &insert2, "Test Two Run With Overlap 2-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap 2-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap 2-3", 10, 2, 10, 1, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap 2-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap 2-5", 8, 2, 8, 2, 3, success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test Two Run With Overlap 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test Two Run With Overlap 2-", success, total, avg);
 }
 
 void testManyRunsWithOverlap(bool printExceptations, uint* success, uint* total, double* avg){
@@ -596,17 +576,8 @@ void testManyRunsWithOverlap(bool printExceptations, uint* success, uint* total,
     bqf->insert(make_kmer(q4, 0b0011, bqf->quotient_size, bqf->smer_size), 4);
     bqf->insert(make_kmer(q4, 0b1111, bqf->quotient_size, bqf->smer_size), 4);
   };
-  test(printExceptations, &insert1, "Test Many Run With Overlap 1-1", 8, 3, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Many Run With Overlap 1-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Many Run With Overlap 1-3", 10, 3, 10, 3, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Many Run With Overlap 1-4", 8, 3, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert1, "Test Many Run With Overlap 1-5", 8, 3, 8, 2, 3, success, total, avg);
-
-  test(printExceptations, &insert2, "Test Many Run With Overlap 2-1", 8, 3, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Many Run With Overlap 2-2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Many Run With Overlap 2-3", 10, 3, 10, 3, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Many Run With Overlap 2-4", 8, 3, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert2, "Test Many Run With Overlap 2-5", 8, 3, 8, 2, 3, success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test Many Run With Overlap 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test Many Run With Overlap 2-", success, total, avg);
 }
 
 void testTwoRunsWithOverlapBackToZero(bool printExceptations, uint* success, uint* total, double* avg){
@@ -692,29 +663,11 @@ void testTwoRunsWithOverlapBackToZero(bool printExceptations, uint* success, uin
     bqf->insert(make_kmer(q2, 0b0101, bqf->quotient_size, bqf->smer_size), 2);
     bqf->insert(make_kmer(q2, 0b0011, bqf->quotient_size, bqf->smer_size), 2);
   };
-  test(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-2", 9, 2, 11, 2, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-3", 10, 3, 20, 1, 1, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-5", 8, 2, 8, 2, 3, success, total, avg);
 
-  test(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-2", 9, 2, 11, 2, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-3", 10, 3, 20, 1, 1, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-5", 8, 2, 8, 2, 3, success, total, avg);
-
-  test(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-2", 9, 2, 11, 2, 1, success, total, avg);
-  test(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-3", 10, 3, 20, 1, 1, success, total, avg);
-  test(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-5", 8, 2, 8, 2, 3, success, total, avg);
-
-  test(printExceptations, &insert4, "Test Two Run With Overlap Back To Zero 4-1", 8, 2, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert4, "Test Two Run With Overlap Back To Zero 4-2", 9, 2, 11, 2, 1, success, total, avg);
-  test(printExceptations, &insert4, "Test Two Run With Overlap Back To Zero 4-3", 10, 3, 20, 1, 1, success, total, avg);
-  test(printExceptations, &insert4, "Test Two Run With Overlap Back To Zero 4-4", 8, 2, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert4, "Test Two Run With Overlap Back To Zero 4-5", 8, 2, 8, 2, 3, success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-", success, total, avg);
+  test_multiple(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-", success, total, avg);
+  test_multiple(printExceptations, &insert4, "Test Two Run With Overlap Back To Zero 4-", success, total, avg);
 }
 
 void testManyRunsWithOverlapBackToZero(bool printExceptations, uint* success, uint* total, double* avg){
@@ -756,11 +709,7 @@ void testManyRunsWithOverlapBackToZero(bool printExceptations, uint* success, ui
     bqf->insert(make_kmer(q4, 0b0101, bqf->quotient_size, bqf->smer_size), 4);
     bqf->insert(make_kmer(q4, 0b0011, bqf->quotient_size, bqf->smer_size), 4);
   };
-  test(printExceptations, &insert, "Test Many Run With Overlap Back To Zero 1", 8, 3, 8, 2, 1, success, total, avg);
-  test(printExceptations, &insert, "Test Many Run With Overlap Back To Zero 2", 9, 2, 6, 1, 1, success, total, avg);
-  test(printExceptations, &insert, "Test Many Run With Overlap Back To Zero 3", 10, 3, 10, 3, 1, success, total, avg);
-  test(printExceptations, &insert, "Test Many Run With Overlap Back To Zero 4", 8, 3, 8, 2, 2, success, total, avg);
-  test(printExceptations, &insert, "Test Many Run With Overlap Back To Zero 5", 8, 3, 8, 2, 3, success, total, avg);
+  test_multiple(printExceptations, &insert, "Test Many Run With Overlap Back To Zero ", success, total, avg);
 }
 
 std::string generateRandomKMer(int k, std::mt19937* gen) {
