@@ -82,28 +82,26 @@ int main() {
     Bqf_ec mock = Bqf_ec(q, c, k, z, false);
     Bqf_ec resize = Bqf_ec(q, c, k, z, false);
 
-    std::string path = "/udd/nbuchin/Documents/";
-    std::ofstream myfile;
-    myfile.open (path + "perf_resize.csv"); // std::ios_base::app to append
-    myfile << "Quotient size, Number of inserted elements, Old time, new time\n";
+    // std::string path = "/home/genouest/genscale/nbuchin/docs/";
+    // std::ofstream myfile;
+    // myfile.open (path + "perf_resize.csv"); // std::ios_base::app to append
+    std::cout << "Quotient size, Number of inserted elements, Old time, new time" << std::endl;
 
-    std::cout << "Perfs done for :";
-    std::cout.flush();
+    // std::cout << "Perfs done for :";
+    // std::cout.flush();
 
     while(resize.remainder_size != 0){
         Perf p = time_for_n_insertions(&mock, &resize);
 
-        std::cout << ' ' << p.q_size;
-        std::cout.flush();
+        //std::cout << ' ' << p.q_size;
+        //std::cout.flush();
 
-        myfile << (p.q_size - 1) << ',' << p.inserted_elements << ',' << p.mock_time << ',' << p.resize_time << std::endl;
+        std::cout << (p.q_size - 1) << ',' << (p.inserted_elements + 1) << ',' << p.mock_time << ',' << p.resize_time << std::endl;
         
-        if(p.q_size == 30)
-            break;
     }
 
-    myfile.close();
-    std::cout << std::endl;
+    // myfile.close();
+    // std::cout << std::endl;
 
     //checking the bqfs
     bool same = true;
@@ -113,8 +111,8 @@ int main() {
             break;
         }
     }
-    std::cout << "same stuff : " << (same? "yes!" : "fuck") << std::endl;
+    std::cout << "same stuff : " << (same? "yes!" : "no...") << std::endl;
 
-    mock.save_on_disk(path + "mock_bqf");
-    resize.save_on_disk(path + "resize_bqf");
+    // mock.save_on_disk(path + "mock_bqf");
+    // resize.save_on_disk(path + "resize_bqf");
 }
