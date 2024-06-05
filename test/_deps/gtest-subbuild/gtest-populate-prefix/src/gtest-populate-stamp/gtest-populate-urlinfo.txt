@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=/home/genouest/genscale/nbuchin/.conda/envs/condaenv2/bin/cmake;-P;/home/genouest/genscale/nbuchin/bqf/test/_deps/gtest-subbuild/gtest-populate-prefix/src/gtest-populate-stamp/download-gtest-populate.cmake;COMMAND;/home/genouest/genscale/nbuchin/.conda/envs/condaenv2/bin/cmake;-P;/home/genouest/genscale/nbuchin/bqf/test/_deps/gtest-subbuild/gtest-populate-prefix/src/gtest-populate-stamp/verify-gtest-populate.cmake;COMMAND;/home/genouest/genscale/nbuchin/.conda/envs/condaenv2/bin/cmake;-P;/home/genouest/genscale/nbuchin/bqf/test/_deps/gtest-subbuild/gtest-populate-prefix/src/gtest-populate-stamp/extract-gtest-populate.cmake
+source_dir=/home/genouest/genscale/nbuchin/bqf/test/_deps/gtest-src
+work_dir=/home/genouest/genscale/nbuchin/bqf/test/_deps
+url(s)=https://github.com/google/googletest/archive/refs/tags/v1.13.0.tar.gz
+hash=
+no_extract=
+
