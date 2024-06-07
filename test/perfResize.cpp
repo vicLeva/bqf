@@ -38,12 +38,12 @@ std::string generateRandomKMer(int kmer_size) {
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> dis(0, alphabetSize - 1);
 
-    std::string randomKMer;
+    std::stringstream randomKmer;
     for (int i = 0; i < kmer_size; ++i) {
-        randomKMer += alphabet[dis(gen)];
+        randomKmer << alphabet[dis(gen)];
     }
 
-    return randomKMer;
+    return randomKmer.str();
 }
 
 struct Perf
@@ -75,21 +75,15 @@ Perf time_for_n_insertions(Bqf_ec* mock, Bqf_ec* resize){
 }
 
 int main() {
-    const uint64_t q = 8;
+    const uint64_t q = 20;
     const uint64_t c = 5;
     const uint64_t k = 32;
     const uint64_t z = 11;
     Bqf_ec mock = Bqf_ec(q, c, k, z, false);
     Bqf_ec resize = Bqf_ec(q, c, k, z, false);
-
-    // std::string path = "/home/genouest/genscale/nbuchin/docs/";
-    // std::ofstream myfile;
-    // myfile.open (path + "perf_resize.csv"); // std::ios_base::app to append
+    
     std::cout << "Quotient size, Number of inserted elements, Old time, new time" << std::endl;
-
-    // std::cout << "Perfs done for :";
-    // std::cout.flush();
-
+    
     while(resize.remainder_size != 0){
         Perf p = time_for_n_insertions(&mock, &resize);
 
@@ -97,22 +91,21 @@ int main() {
         //std::cout.flush();
 
         std::cout << (p.q_size - 1) << ',' << (p.inserted_elements + 1) << ',' << p.mock_time << ',' << p.resize_time << std::endl;
-        
+       
+    	//checking the bqfs
+    	bool same = true;
+    	for (uint i = 0; i < mock.filter.size(); ++i){
+        	if (mock.filter[i] != resize.filter[i]) {
+            	same = false;
+            	break;
+        	}
+    	}
+    	std::cout << "same stuff : " << (same? "yes!" : "no...") << std::endl; 
+    
+    	if(resize.quotient_size == 25) return 0;
     }
 
     // myfile.close();
     // std::cout << std::endl;
 
-    //checking the bqfs
-    bool same = true;
-    for (uint i = 0; i < mock.filter.size(); ++i){
-        if (mock.filter[i] != resize.filter[i]) {
-            same = false;
-            break;
-        }
-    }
-    std::cout << "same stuff : " << (same? "yes!" : "no...") << std::endl;
-
-    // mock.save_on_disk(path + "mock_bqf");
-    // resize.save_on_disk(path + "resize_bqf");
 }
