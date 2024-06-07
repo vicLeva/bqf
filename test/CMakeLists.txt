@@ -8,9 +8,6 @@ add_executable(resizeTests
 add_executable(perfResize
 	perfResize.cpp
 )
-add_executable(memTest
-	testing.cpp
-)
 
 target_link_libraries(quicktests
 	RSQF
@@ -21,12 +18,8 @@ target_link_libraries(resizeTests
 target_link_libraries(perfResize
 	RSQF
 )
-target_link_libraries(memTest
-	RSQF
-)
 
 target_compile_definitions(quicktests PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 target_compile_definitions(resizeTests PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 target_compile_definitions(perfResize PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
-target_compile_definitions(memTest PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 
