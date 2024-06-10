@@ -35,7 +35,7 @@ int main() {
     const uint64_t q = 8;
     const uint64_t c = 5;
     const uint64_t k = 32;
-    const uint64_t z = 32 - 19;
+    const uint64_t z = 11;
     const uint64_t kmer_size = (k - z);
     Bqf_ec mock = Bqf_ec(q, c, k, z, false);
     Bqf_ec resize = Bqf_ec(q, c, k, z, false);
@@ -43,9 +43,9 @@ int main() {
     // rdm stuff
     const char alphabet[] = "ACGT";
     const int alphabetSize = sizeof(alphabet) - 1;
-    static std::random_device rd;
-    static std::mt19937 gen(rd()); // random seed
-    static std::uniform_int_distribution<> dis(0, alphabetSize - 1);
+    std::random_device rd;
+    std::mt19937 gen(rd()); // random seed
+    std::uniform_int_distribution<> dis(0, alphabetSize - 1);
     std::stringstream randomKmer;
     std::string kmer;
 
@@ -56,7 +56,7 @@ int main() {
         // fill up
         while(resize.elements_inside < resize.size_limit - 1) {
             // making random kmers
-            for (int i = 0; i < kmer_size; ++i) {
+            for (uint64_t i = 0; i < kmer_size; ++i) {
                 randomKmer << alphabet[dis(gen)];
             }
 
