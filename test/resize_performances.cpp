@@ -31,7 +31,7 @@ void mock_resize(Bqf* bqf, int n){
 }
 
 int main() {
-    const uint64_t q = 12;
+    const uint64_t q = 8;
     const uint64_t c = 5;
     const uint64_t k = 32;
     const uint64_t z = 11;
@@ -40,7 +40,7 @@ int main() {
     Bqf_ec resize = Bqf_ec(q, c, k, z, false);
     
     std::random_device rd;
-    std::mt19937 gen(rd()); // random seed
+    std::mt19937_64 gen(rd()); // random seed
     std::uniform_int_distribution<uint64_t> dis(0ULL, (1ULL << (2 * kmer_size)) - 1ULL);
     uint64_t hashed_kmer;
 
@@ -66,7 +66,7 @@ int main() {
 
         std::cout << (resize.quotient_size - 1) << ',' << (resize.elements_inside + 1) << ',' << mockTime << ',' << resizeTime << std::endl;
 
-        
+        if(resize.quotient_size == 30) break;
 
         // resize.save_on_disk("./bqfs/rdm_resize_q" + std::to_string(resize.quotient_size));
         // mock.save_on_disk("./bqfs/rdm_mock_q" + std::to_string(mock.quotient_size));
