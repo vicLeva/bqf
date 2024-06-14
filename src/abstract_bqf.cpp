@@ -459,6 +459,7 @@ void Bqf::resize(uint n){
     this->size_limit = num_quots * 0.95;
 
     this->number_blocks = new_number_blocks;
+    
     this->filter.swap(new_filter);
 }
 

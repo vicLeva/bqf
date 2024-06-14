@@ -66,8 +66,6 @@ int main() {
 
         std::cout << (resize.quotient_size - 1) << ',' << (resize.elements_inside + 1) << ',' << mockTime << ',' << resizeTime << std::endl;
 
-        if(resize.quotient_size == 30) break;
-
         // resize.save_on_disk("./bqfs/rdm_resize_q" + std::to_string(resize.quotient_size));
         // mock.save_on_disk("./bqfs/rdm_mock_q" + std::to_string(mock.quotient_size));
     }
