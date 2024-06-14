@@ -9,13 +9,6 @@ add_executable(resize_performances
 	resize_performances.cpp
 )
 
-add_executable(resize_performances1
-	resize_performances1.cpp
-)
-add_executable(resize_performances2
-	resize_performances2.cpp
-)
-
 target_link_libraries(quicktests
 	RSQF
 )
@@ -26,16 +19,7 @@ target_link_libraries(resize_performances
 	RSQF
 )
 
-target_link_libraries(resize_performances1
-	RSQF
-)
-target_link_libraries(resize_performances2
-	RSQF
-)
-
 target_compile_definitions(quicktests PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 target_compile_definitions(resize_tests PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 target_compile_definitions(resize_performances PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
-target_compile_definitions(resize_performances1 PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
-target_compile_definitions(resize_performances2 PUBLIC TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 
