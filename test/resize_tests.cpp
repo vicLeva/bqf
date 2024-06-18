@@ -450,7 +450,7 @@ void testOneRunBackToZero(bool printExceptations, uint* success, uint* total, do
   test_multiple(printExceptations, &insert, "Test One Run Back To Zero ", success, total, avg);
 }
 
-void testTwoRunsWithOverlap(bool printExceptations, uint* success, uint* total, double* avg){
+void testSimpleCluster(bool printExceptations, uint* success, uint* total, double* avg){
   auto insert1 = [](Bqf* bqf) {
     const uint64_t q1 = 2;
     const uint64_t q2 = 4;
@@ -495,11 +495,11 @@ void testTwoRunsWithOverlap(bool printExceptations, uint* success, uint* total, 
     bqf->insert(make_kmer(q2, 0b1101, bqf->quotient_size, bqf->smer_size), 2);
     bqf->insert(make_kmer(q2, 0b1111, bqf->quotient_size, bqf->smer_size), 2);
   };
-  test_multiple(printExceptations, &insert1, "Test Two Run With Overlap 1-", success, total, avg);
-  test_multiple(printExceptations, &insert2, "Test Two Run With Overlap 2-", success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test Simple Cluster 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test Simple Cluster 2-", success, total, avg);
 }
 
-void testManyRunsWithOverlap(bool printExceptations, uint* success, uint* total, double* avg){
+void testComplexCluster(bool printExceptations, uint* success, uint* total, double* avg){
   auto insert1 = [](Bqf* bqf) {
     const uint64_t q1 = 2;
     const uint64_t q2 = 4;
@@ -576,11 +576,11 @@ void testManyRunsWithOverlap(bool printExceptations, uint* success, uint* total,
     bqf->insert(make_kmer(q4, 0b0011, bqf->quotient_size, bqf->smer_size), 4);
     bqf->insert(make_kmer(q4, 0b1111, bqf->quotient_size, bqf->smer_size), 4);
   };
-  test_multiple(printExceptations, &insert1, "Test Many Run With Overlap 1-", success, total, avg);
-  test_multiple(printExceptations, &insert2, "Test Many Run With Overlap 2-", success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test Complex Cluster 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test Complex Cluster 2-", success, total, avg);
 }
 
-void testTwoRunsWithOverlapBackToZero(bool printExceptations, uint* success, uint* total, double* avg){
+void testSimpleClusterBackToZero(bool printExceptations, uint* success, uint* total, double* avg){
   auto insert1 = [](Bqf* bqf) {
     const uint64_t q1 = (1 << bqf->quotient_size) - 4;
     const uint64_t q2 = (1 << bqf->quotient_size) - 2;
@@ -664,13 +664,13 @@ void testTwoRunsWithOverlapBackToZero(bool printExceptations, uint* success, uin
     bqf->insert(make_kmer(q2, 0b0011, bqf->quotient_size, bqf->smer_size), 2);
   };
 
-  test_multiple(printExceptations, &insert1, "Test Two Run With Overlap Back To Zero 1-", success, total, avg);
-  test_multiple(printExceptations, &insert2, "Test Two Run With Overlap Back To Zero 2-", success, total, avg);
-  test_multiple(printExceptations, &insert3, "Test Two Run With Overlap Back To Zero 3-", success, total, avg);
-  test_multiple(printExceptations, &insert4, "Test Two Run With Overlap Back To Zero 4-", success, total, avg);
+  test_multiple(printExceptations, &insert1, "Test Simple Cluster Back To Zero 1-", success, total, avg);
+  test_multiple(printExceptations, &insert2, "Test Simple Cluster Back To Zero 2-", success, total, avg);
+  test_multiple(printExceptations, &insert3, "Test Simple Cluster Back To Zero 3-", success, total, avg);
+  test_multiple(printExceptations, &insert4, "Test Simple Cluster Back To Zero 4-", success, total, avg);
 }
 
-void testManyRunsWithOverlapBackToZero(bool printExceptations, uint* success, uint* total, double* avg){
+void testComplexClusterBackToZero(bool printExceptations, uint* success, uint* total, double* avg){
   auto insert = [](Bqf* bqf) {
     const uint64_t q1 = (1 << bqf->quotient_size) - 4;
     const uint64_t q2 = (1 << bqf->quotient_size) - 2;
@@ -709,7 +709,7 @@ void testManyRunsWithOverlapBackToZero(bool printExceptations, uint* success, ui
     bqf->insert(make_kmer(q4, 0b0101, bqf->quotient_size, bqf->smer_size), 4);
     bqf->insert(make_kmer(q4, 0b0011, bqf->quotient_size, bqf->smer_size), 4);
   };
-  test_multiple(printExceptations, &insert, "Test Many Run With Overlap Back To Zero ", success, total, avg);
+  test_multiple(printExceptations, &insert, "Test Complex Cluster Back To Zero ", success, total, avg);
 }
 
 std::string generateRandomKMer(int k, std::mt19937* gen) {
@@ -766,10 +766,10 @@ int main() {
   testOneInsert(printExceptations, &success, &total, &avg);
   testOneRun(printExceptations, &success, &total, &avg);
   testOneRunBackToZero(printExceptations, &success, &total, &avg);
-  testTwoRunsWithOverlap(printExceptations, &success, &total, &avg);
-  testManyRunsWithOverlap(printExceptations, &success, &total, &avg);
-  testTwoRunsWithOverlapBackToZero(printExceptations, &success, &total, &avg);
-  testManyRunsWithOverlapBackToZero(printExceptations, &success, &total, &avg);
+  testSimpleCluster(printExceptations, &success, &total, &avg);
+  testComplexCluster(printExceptations, &success, &total, &avg);
+  testSimpleClusterBackToZero(printExceptations, &success, &total, &avg);
+  testComplexClusterBackToZero(printExceptations, &success, &total, &avg);
 
   std::cout << std::endl << "\033[1;37mRESIZING RANDOM TESTS\033[0m : " << std::endl;
 
