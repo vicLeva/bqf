@@ -288,6 +288,8 @@ std::map<uint64_t, uint64_t> Bqf::enumerate(){
 
 void Bqf::resize(uint n){
     if(n == 0) return;
+    
+    assert(n <= this->remainder_size);
 
     const uint64_t new_quotient_size = this->quotient_size + n;
     const uint64_t new_remainder_size = this->remainder_size - n;
