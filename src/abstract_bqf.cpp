@@ -97,41 +97,30 @@ void Bqf::insert(uint64_t number, uint64_t count){
         //find the place where the remainder should be inserted / all similar to a query
         //getting position where to start shifting right
         uint64_t starting_position = boundary.first;
-        uint64_t remainder_in_filter = get_remainder(starting_position); 
+        uint64_t remainder_in_filter;
         
-        if (starting_position == boundary.second){ //1 element run
-            if (remainder_in_filter < rem) {
-                starting_position = get_next_quot(starting_position);
-            }
-            else if (remainder_in_filter == rem){ 
-                    add_to_counter(starting_position, rem_count);
-                    return;
-            }
-        }
-        else{
-            while(starting_position != boundary.second){
-                remainder_in_filter = get_remainder(starting_position); 
-                if (remainder_in_filter > rem) {
-                    break;
-                }
-                else if (remainder_in_filter == rem){ 
-                    add_to_counter(starting_position, rem_count);
-                    return;
-                }
-                starting_position = get_next_quot(starting_position);
-            }
-
-
-            //last iter, before or after last element
+        while(starting_position != boundary.second){
             remainder_in_filter = get_remainder(starting_position); 
-            if (remainder_in_filter < rem) {
-                starting_position = get_next_quot(starting_position);
+            if (remainder_in_filter > rem) {
+                break;
             }
             else if (remainder_in_filter == rem){ 
                 add_to_counter(starting_position, rem_count);
                 return;
             }
-        }        
+            starting_position = get_next_quot(starting_position);
+        }
+
+
+        //last iter, before or after last element
+        remainder_in_filter = get_remainder(starting_position); 
+        if (remainder_in_filter < rem) {
+            starting_position = get_next_quot(starting_position);
+        }
+        else if (remainder_in_filter == rem){ 
+            add_to_counter(starting_position, rem_count);
+            return;
+        } 
         
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
