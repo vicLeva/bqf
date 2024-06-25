@@ -50,9 +50,9 @@ void Bqf::insert(uint64_t number, uint64_t count){
     }
 
     //get quotient q and remainder r
-    uint64_t quot = quotient(number);
-    uint64_t rem = remainder(number);
-    uint64_t rem_count = (rem << count_size) | insert_process_count(count); //PROCESS count
+    const uint64_t quot = quotient(number);
+    const uint64_t rem = remainder(number);
+    const uint64_t rem_count = (rem << count_size) | insert_process_count(count); //PROCESS count
     //handles count > 2^c 
 
     if (verbose){
@@ -93,39 +93,33 @@ void Bqf::insert(uint64_t number, uint64_t count){
         if (verbose){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
         }
-        
-        //find the place where the remainder should be inserted / all similar to a query
-        //getting position where to start shifting right
-        uint64_t starting_position = boundary.first;
+
+        uint64_t start = boundary.first;
+        uint64_t end = boundary.second;
+        uint64_t middle = (start + end) / 2;
         uint64_t remainder_in_filter;
         
-        while(starting_position != boundary.second){
-            remainder_in_filter = get_remainder(starting_position); 
-            if (remainder_in_filter > rem) {
+        while (start <= end) {
+            middle = (start + end) / 2;
+            remainder_in_filter = get_remainder(middle);
+
+            if (remainder_in_filter == rem)
+                return add_to_counter(middle, rem_count);
+            else if (start == end){
+                if (remainder_in_filter < rem)
+                    middle += 1;
                 break;
             }
-            else if (remainder_in_filter == rem){ 
-                add_to_counter(starting_position, rem_count);
-                return;
-            }
-            starting_position = get_next_quot(starting_position);
+            else if (remainder_in_filter < rem)
+                start = middle + 1;
+            else
+                end = middle - 1;
         }
 
-
-        //last iter, before or after last element
-        remainder_in_filter = get_remainder(starting_position); 
-        if (remainder_in_filter < rem) {
-            starting_position = get_next_quot(starting_position);
-        }
-        else if (remainder_in_filter == rem){ 
-            add_to_counter(starting_position, rem_count);
-            return;
-        } 
-        
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
         elements_inside++;
-        shift_left_and_set_circ(starting_position, fu_slot, rem_count);
+        shift_left_and_set_circ(middle, fu_slot, rem_count);
     }
 }
 
@@ -212,27 +206,30 @@ result_query Bqf::query(string seq){
 
 uint64_t Bqf::query(uint64_t number){
     if (elements_inside == 0) return 0;
-    uint64_t quot = quotient(number);
-    uint64_t rem = remainder(number);
+    const uint64_t quot = quotient(number);
+    const uint64_t rem = remainder(number);
     if (!is_occupied(quot)) return 0;
 
     pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
-    // TODO:
-    // OPTIMIZE TO LOG LOG SEARCH ?
+    uint64_t start = boundary.first;
+    uint64_t end = boundary.second;
+    uint64_t middle;
+    uint64_t remainder_in_filter;
 
-    uint64_t position = boundary.first;
+    while (start <= end) {
+        middle = (start + end) / 2;
+        remainder_in_filter = get_remainder(middle);
 
-    while(position != boundary.second){
-        uint64_t remainder_in_filter = get_remainder(position);
-
-        if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
-        else if (remainder_in_filter > rem) return 0;
-        position = get_next_quot(position);
+        if (remainder_in_filter == rem) 
+            return query_process_count(get_remainder(middle, true) & mask_right(count_size));
+        else if (start == end)
+            return 0;
+        else if (remainder_in_filter < rem)
+            start = middle + 1;
+        else
+            end = middle - 1;
     }
-
-    uint64_t remainder_in_filter = get_remainder(boundary.second); 
-    if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
 
     return 0;
 }
