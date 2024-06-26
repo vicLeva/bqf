@@ -87,39 +87,60 @@ void Bqf::insert(uint64_t number, uint64_t count){
         if (verbose){
             cout << "occupied" << endl;
         }
+
         //getting boundaries of the run
-        pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+        const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
         if (verbose){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
         }
 
-        uint64_t start = boundary.first;
-        uint64_t end = boundary.second;
-        uint64_t middle = (start + end) / 2;
-        uint64_t remainder_in_filter;
+        // nb of quotients
+        const uint64_t quots = (1ULL << this->quotient_size);
+
+        // dichotomous search and insertion
+        uint64_t left = boundary.first;
+        if (left < quot)   
+            left += quots;
+
+        uint64_t right = boundary.second;
+        if (right < quot) 
+            right += quots;
+
+        uint64_t middle = (left + right) / 2 ;
+        uint64_t position = middle;
+        if (position >= quots)
+            position -= quots;
         
-        while (start <= end) {
-            middle = (start + end) / 2;
-            remainder_in_filter = get_remainder(middle);
+        uint64_t remainder_in_filter;
+
+        assert(left <= right);
+
+        while (left <= right) {
+            middle = ceil((left + right) / 2);
+            position = middle;
+            if (position >= quots)
+                position -= quots;
+            remainder_in_filter = get_remainder(position);
 
             if (remainder_in_filter == rem)
-                return add_to_counter(middle, rem_count);
-            else if (start == end){
+                return add_to_counter(position, rem_count);
+            else if (left == right){
                 if (remainder_in_filter < rem)
-                    middle += 1;
+                    position = get_next_quot(position);
                 break;
             }
-            else if (remainder_in_filter < rem)
-                start = middle + 1;
+            else if (remainder_in_filter > rem)
+                right = middle;
             else
-                end = middle - 1;
+                left = middle + 1;
+            
         }
 
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
         elements_inside++;
-        shift_left_and_set_circ(middle, fu_slot, rem_count);
+        shift_left_and_set_circ(position, fu_slot, rem_count);
     }
 }
 
@@ -210,27 +231,43 @@ uint64_t Bqf::query(uint64_t number){
     const uint64_t rem = remainder(number);
     if (!is_occupied(quot)) return 0;
 
-    pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+    const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+    const uint64_t quots = (1ULL << this->quotient_size);
 
-    uint64_t start = boundary.first;
-    uint64_t end = boundary.second;
-    uint64_t middle;
+    // dichotomous search
+    uint64_t left = boundary.first;
+    if (left < quot)   
+        left += quots;
+
+    uint64_t right = boundary.second;
+    if (right < quot) 
+        right += quots;
+
+    uint64_t middle = (left + right) / 2 ;
+    uint64_t position = middle;
+    if (position >= quots)
+        position -= quots;
+    
     uint64_t remainder_in_filter;
 
-    while (start <= end) {
-        middle = (start + end) / 2;
-        remainder_in_filter = get_remainder(middle);
+    assert(left <= right);
+
+    while (left <= right) {
+        middle = ceil((left + right) / 2);
+        position = middle;
+        if (position >= quots)
+            position -= quots;
+        remainder_in_filter = get_remainder(position);
 
         if (remainder_in_filter == rem) 
-            return query_process_count(get_remainder(middle, true) & mask_right(count_size));
-        else if (start == end)
+            return query_process_count(get_remainder(position, true) & mask_right(count_size));
+        else if (left == right)
             return 0;
-        else if (remainder_in_filter < rem)
-            start = middle + 1;
+        else if (remainder_in_filter > rem)
+            right = middle;
         else
-            end = middle - 1;
+            left = middle + 1;
     }
-
     return 0;
 }
 
