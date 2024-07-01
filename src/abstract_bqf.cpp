@@ -107,7 +107,7 @@ void Bqf::insert(uint64_t number, uint64_t count){
         if (right < quot) 
             right += quots;
 
-        uint64_t middle = (left + right) / 2 ;
+        uint64_t middle = ceil((left + right) / 2);
         uint64_t position = middle;
         if (position >= quots)
             position -= quots;
@@ -171,20 +171,20 @@ void Bqf::query(std::ifstream& infile, std::ofstream& outfile){
 
 
 result_query Bqf::query(string seq){
-    int s = this->smer_size;
-    int k = this->kmer_size;
-    int n = seq.length();
+    const uint64_t s = this->smer_size;
+    const uint64_t k = this->kmer_size;
+    const uint64_t n = seq.length();
     
     if (k == s && s == n) { 
-        uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
+        const uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
         return result_query {(int)res, (int)res, (float)res, (float)(res!=0)};
     }
-    int z = k-s;
+    const uint z = k-s;
     int last_smers_abundances[z+1];
     int* kmer_abundance;
-    int nb_presence = 0;
-    int avg = 0;
-    int minimum = numeric_limits<int>::max();
+    uint nb_presence = 0;
+    uint avg = 0;
+    int minimum = numeric_limits<uint>::max();
     int maximum = 0;
 
     uint64_t current_smer = 0;
@@ -240,10 +240,10 @@ uint64_t Bqf::query(uint64_t number){
         left += quots;
 
     uint64_t right = boundary.second;
-    if (right < quot) 
+    if (right < quot)
         right += quots;
 
-    uint64_t middle = (left + right) / 2 ;
+    uint64_t middle = ceil((left + right) / 2);
     uint64_t position = middle;
     if (position >= quots)
         position -= quots;
@@ -489,9 +489,9 @@ void Bqf::resize(uint n){
 }
 
 uint64_t Bqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
-    uint64_t block = get_block_id(position);
-    uint64_t pos_in_block = get_shift_in_block(position);
-    uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
+    const uint64_t block = get_block_id(position);
+    const uint64_t pos_in_block = get_shift_in_block(position);
+    const uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
 
     if (w_counter) return get_bits(filter, pos, remainder_size);
     else return get_bits(filter, pos, remainder_size) >> count_size;
@@ -530,7 +530,7 @@ void Bqf::save_on_disk(const std::string& filename) {
         file.write(reinterpret_cast<const char*>(&this->size_limit), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->number_blocks), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->elements_inside), sizeof(uint64_t));
-        uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
+        const uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
         file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
         file.close();
     } else {
