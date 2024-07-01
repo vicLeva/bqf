@@ -171,9 +171,9 @@ void Bqf::query(std::ifstream& infile, std::ofstream& outfile){
 
 
 result_query Bqf::query(string seq){
-    const uint64_t s = this->smer_size;
-    const uint64_t k = this->kmer_size;
-    const uint64_t n = seq.length();
+    const int s = this->smer_size;
+    const int k = this->kmer_size;
+    const int n = seq.length();
     
     if (k == s && s == n) { 
         const uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
