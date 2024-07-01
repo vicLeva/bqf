@@ -13,7 +13,7 @@ Bqf_oom::Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool 
     quotient_size = q_size;
     kmer_size = k;
     smer_size = k-z;
-    uint64_t hash_size = 2*smer_size;   
+    const uint64_t hash_size = 2*smer_size;   
     count_size = c_size; 
 
     remainder_size = hash_size - q_size + c_size;
@@ -24,8 +24,8 @@ Bqf_oom::Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool 
     }
 
 
-    uint64_t num_quots = 1ULL << quotient_size; 
-    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
+    const uint64_t num_quots = 1ULL << quotient_size; 
+    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
 
     size_limit = num_quots * 0.95;
 
@@ -48,8 +48,8 @@ Bqf_oom::Bqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){ //TO CHANGE, 
     count_size = c_size;
 
     // Number of quotients must be >= MEM_UNIT
-    uint64_t num_quots = 1ULL << quotient_size; //524.288
-    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
+    const uint64_t num_quots = 1ULL << quotient_size; //524.288
+    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
 
     // In machine words
     number_blocks = ceil(num_quots / BLOCK_SIZE);
@@ -67,8 +67,8 @@ bool Bqf_oom::remove(uint64_t number){
 
     if (elements_inside == 0) return 0;
     //get quotient q and remainder r
-    uint64_t quot = quotient(number);
-    uint64_t rem = remainder(number);
+    const uint64_t quot = quotient(number);
+    const uint64_t rem = remainder(number);
 
     if (verbose){
         cout << "[REMOVE] quot " << quot << endl;
@@ -77,7 +77,7 @@ bool Bqf_oom::remove(uint64_t number){
 
     if (is_occupied(quot) == false) return 0;
 
-    pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+    const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
     // TODO:
     // OPTIMIZE TO LOG LOG SEARCH ?
@@ -106,7 +106,7 @@ bool Bqf_oom::remove(uint64_t number){
     if (!found) return 0; //not found
 
     // GET FIRST UNSHIFTABLE SLOT (first quot = runend(quot) or unused)
-    uint64_t end_slot = first_unshiftable_slot(quot);
+    const uint64_t end_slot = first_unshiftable_slot(quot);
 
     if (verbose){
         cout << "[REMOVE] FUS " << end_slot << endl;
@@ -176,7 +176,7 @@ Bqf_oom Bqf_oom::load_from_disk(const std::string& filename){
         file.read(reinterpret_cast<char*>(&qf.size_limit), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.number_blocks), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.elements_inside), sizeof(uint64_t));
-        uint64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
+        uconst int64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
         qf.filter.resize(num_words);
         file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(int64_t) * num_words);
         file.close();
