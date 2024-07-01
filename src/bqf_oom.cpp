@@ -176,7 +176,7 @@ Bqf_oom Bqf_oom::load_from_disk(const std::string& filename){
         file.read(reinterpret_cast<char*>(&qf.size_limit), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.number_blocks), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.elements_inside), sizeof(uint64_t));
-        uconst int64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
+        const int64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
         qf.filter.resize(num_words);
         file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(int64_t) * num_words);
         file.close();
