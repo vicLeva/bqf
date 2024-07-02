@@ -1,5 +1,7 @@
 ## BQF - Backpack Quotient Filter
 
++ **Preprint** : https://www.biorxiv.org/content/10.1101/2024.02.15.580441v1
+
 ## Overview
 
 The Backpack Quotient Filter (BQF) is an indexing data structure with abundance. Although the data can be anything, it's been thought to index genomic datasets. 
