@@ -1,6 +1,6 @@
 ## BQF - Backpack Quotient Filter
 
-+ **Preprint** : https://www.biorxiv.org/content/10.1101/2024.02.15.580441v1
+**Preprint** : https://www.biorxiv.org/content/10.1101/2024.02.15.580441v1
 
 ## Overview
 
