@@ -532,23 +532,20 @@ void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient
 
             // next_remainder is the previous remainder that was on the 2 words
             to_shift = (to_shift >> complementary_shift) | (keep << left_word_shift);
-            next_remainder = to_shift;
 
-            // calculating the new word
-            start_quotient += ceil((double)left_word_shift/remainder_size);
-            start_quotient %= (1 << quotient_size);
-            curr_word_pos = get_remainder_word_position(start_quotient);
-            curr_word_shift = get_remainder_shift_position(start_quotient);
+            curr_word_shift = complementary_shift;
         } else {
-            next_remainder = to_shift;
-
-            // we advance by 1 word
-            curr_word_pos += 1;
-            if (curr_word_pos % (MET_UNIT + remainder_size) == 0)
-                curr_word_pos += 3;
-            curr_word_pos %= filter.size();
             curr_word_shift = 0;
         }
+
+        // updating the next remainder
+        next_remainder = to_shift;
+
+        // we advance by 1 position
+        curr_word_pos += 1;
+        if (curr_word_pos % (MET_UNIT + remainder_size) == 0)
+            curr_word_pos += 3;
+        curr_word_pos %= filter.size();
     }
 
     // mask of what we keep
