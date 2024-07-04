@@ -184,7 +184,7 @@ result_query Bqf::query(string seq){
     int* kmer_abundance;
     uint nb_presence = 0;
     uint avg = 0;
-    int minimum = numeric_limits<uint>::max();
+    int minimum = numeric_limits<int>::max();
     int maximum = 0;
 
     uint64_t current_smer = 0;
