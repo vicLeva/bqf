@@ -341,10 +341,10 @@ void Bqf::resize(uint n){
     uint64_t pos_in_block;
     uint64_t pos;
 
-    // init the offsets
-    const uint offsets_size = (1 << n);
-    std::pair<uint32_t, bool> offsets[offsets_size];
-    std::fill(offsets, offsets + offsets_size, std::make_pair(0, false));
+    // init the offset_counters
+    const uint offset_counters_size = (1 << n);
+    std::pair<uint32_t, bool> offset_counters[offset_counters_size];
+    std::fill(offset_counters, offset_counters + offset_counters_size, std::make_pair(0, false));
 
     // starting position
     const uint64_t start = first_unused_slot(0);
@@ -357,13 +357,13 @@ void Bqf::resize(uint n){
             current_block -= this->number_blocks;
         }
 
-        // shifting the offsets when going back to 0
+        // shifting the offset_counters when going back to 0
         if(block != 0 && current_block == 0){
-            pos = offsets[offsets_size - 1].first;
-            for(uint i = offsets_size - 1; i > 0; --i){
-                offsets[i].first = offsets[i - 1].first;
+            pos = offset_counters[offset_counters_size - 1].first;
+            for(uint i = offset_counters_size - 1; i > 0; --i){
+                offset_counters[i].first = offset_counters[i - 1].first;
             }
-            offsets[0].first = pos;
+            offset_counters[0].first = pos;
         }
 
         // the occupied word of the block
@@ -371,19 +371,19 @@ void Bqf::resize(uint n){
 
         // skip if whole block is empty
         if (curr_occ == 0) {
-            for(uint i = 0; i < offsets_size; ++i){
+            for(uint i = 0; i < offset_counters_size; ++i){
                 // setting the offsets
                 new_block = ((i << this->quotient_size) / BLOCK_SIZE) | current_block;
                 pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
-                new_filter[pos] = offsets[i].first;
+                new_filter[pos] = offset_counters[i].first;
 
-                // substracting / resetting values
-                if(offsets[i].first >= BLOCK_SIZE){
-                    offsets[i].first -= BLOCK_SIZE;
+                // substracting / resetting values of offset_counters
+                if(offset_counters[i].first >= BLOCK_SIZE){
+                    offset_counters[i].first -= BLOCK_SIZE;
                 } else {
-                    offsets[i].first = 0;
+                    offset_counters[i].first = 0;
                 }
-                offsets[i].second = false;
+                offset_counters[i].second = false;
             }
             continue;
         }
@@ -415,11 +415,11 @@ void Bqf::resize(uint n){
                     remainder >>= this->count_size;
                     added_quotient_bits = remainder & mask_right(n);
 
-                    assert(added_quotient_bits >= 0 && added_quotient_bits < offsets_size);
+                    assert(added_quotient_bits >= 0 && added_quotient_bits < offset_counters_size);
 
                     // new remainder and new quotient
                     remainder = ((remainder >> n) << this->count_size) | count;
-                    new_quotient = ((added_quotient_bits << this->quotient_size) | quotient) + offsets[added_quotient_bits].first;
+                    new_quotient = ((added_quotient_bits << this->quotient_size) | quotient) + offset_counters[added_quotient_bits].first;
                     if (new_quotient >= num_quots){
                         new_quotient -= num_quots;
                     }
@@ -430,15 +430,15 @@ void Bqf::resize(uint n){
                     pos = new_block * ((MET_UNIT+new_remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*new_remainder_size;
                     set_bits(new_filter, pos, remainder, new_remainder_size);
 
-                    offsets[added_quotient_bits].first++;
-                    offsets[added_quotient_bits].second = true;
+                    offset_counters[added_quotient_bits].first++;
+                    offset_counters[added_quotient_bits].second = true;
 
                     cursor = this->get_next_quot(cursor);
                 }
 
 
-                for(uint i = 0; i < offsets_size; ++i){
-                    if (offsets[i].second) {
+                for(uint i = 0; i < offset_counters_size; ++i){
+                    if (offset_counters[i].second) {
                         // setting the occupied
                         new_quotient = (i << this->quotient_size) | quotient;
                         new_block = get_block_id(new_quotient);
@@ -446,7 +446,7 @@ void Bqf::resize(uint n){
                         new_filter[pos] |= (1ULL << new_quotient);
 
                         // setting the runend
-                        new_quotient += offsets[i].first - 1;
+                        new_quotient += offset_counters[i].first - 1;
                         if (new_quotient >= num_quots){
                             new_quotient -= num_quots;
                         }
@@ -459,19 +459,19 @@ void Bqf::resize(uint n){
 
             // setting the offset 
             if (i == 0){
-                for(uint i = 0; i < offsets_size; ++i){
+                for(uint i = 0; i < offset_counters_size; ++i){
                     new_block = ((i << this->quotient_size) / BLOCK_SIZE) | current_block;
                     pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
-                    new_filter[pos] = offsets[i].first;
+                    new_filter[pos] = offset_counters[i].first;
                 }
             }
 
-            // substracting and resetting the offsets
-            for(uint i = 0; i < offsets_size; ++i){
-                if(offsets[i].first > 0){
-                    offsets[i].first--;
+            // substracting and resetting the offset_counters
+            for(uint i = 0; i < offset_counters_size; ++i){
+                if(offset_counters[i].first > 0){
+                    offset_counters[i].first--;
                 }
-                offsets[i].second = false;
+                offset_counters[i].second = false;
             }
 
             curr_occ >>= 1ULL; //next bit of occupied vector
