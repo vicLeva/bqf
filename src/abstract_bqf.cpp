@@ -50,9 +50,9 @@ void Bqf::insert(uint64_t number, uint64_t count){
     }
 
     //get quotient q and remainder r
-    uint64_t quot = quotient(number);
-    uint64_t rem = remainder(number);
-    uint64_t rem_count = (rem << count_size) | insert_process_count(count); //PROCESS count
+    const uint64_t quot = quotient(number);
+    const uint64_t rem = remainder(number);
+    const uint64_t rem_count = (rem << count_size) | insert_process_count(count); //PROCESS count
     //handles count > 2^c 
 
     if (verbose){
@@ -87,56 +87,60 @@ void Bqf::insert(uint64_t number, uint64_t count){
         if (verbose){
             cout << "occupied" << endl;
         }
+
         //getting boundaries of the run
-        pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+        const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
         if (verbose){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
         }
+
+        // nb of quotients
+        const uint64_t quots = (1ULL << this->quotient_size);
+
+        // dichotomous search and insertion
+        uint64_t left = boundary.first;
+        if (left < quot)   
+            left += quots;
+
+        uint64_t right = boundary.second;
+        if (right < quot) 
+            right += quots;
+
+        uint64_t middle = ceil((left + right) / 2);
+        uint64_t position = middle;
+        if (position >= quots)
+            position -= quots;
         
-        //find the place where the remainder should be inserted / all similar to a query
-        //getting position where to start shifting right
-        uint64_t starting_position = boundary.first;
-        uint64_t remainder_in_filter = get_remainder(starting_position); 
-        
-        if (starting_position == boundary.second){ //1 element run
-            if (remainder_in_filter < rem) {
-                starting_position = get_next_quot(starting_position);
+        uint64_t remainder_in_filter;
+
+        assert(left <= right);
+
+        while (left <= right) {
+            middle = ceil((left + right) / 2);
+            position = middle;
+            if (position >= quots)
+                position -= quots;
+            remainder_in_filter = get_remainder(position);
+
+            if (remainder_in_filter == rem)
+                return add_to_counter(position, rem_count);
+            else if (left == right){
+                if (remainder_in_filter < rem)
+                    position = get_next_quot(position);
+                break;
             }
-            else if (remainder_in_filter == rem){ 
-                    add_to_counter(starting_position, rem_count);
-                    return;
-            }
+            else if (remainder_in_filter > rem)
+                right = middle;
+            else
+                left = middle + 1;
+            
         }
-        else{
-            while(starting_position != boundary.second){
-                remainder_in_filter = get_remainder(starting_position); 
-                if (remainder_in_filter > rem) {
-                    break;
-                }
-                else if (remainder_in_filter == rem){ 
-                    add_to_counter(starting_position, rem_count);
-                    return;
-                }
-                starting_position = get_next_quot(starting_position);
-            }
 
-
-            //last iter, before or after last element
-            remainder_in_filter = get_remainder(starting_position); 
-            if (remainder_in_filter < rem) {
-                starting_position = get_next_quot(starting_position);
-            }
-            else if (remainder_in_filter == rem){ 
-                add_to_counter(starting_position, rem_count);
-                return;
-            }
-        }        
-        
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
         elements_inside++;
-        shift_left_and_set_circ(starting_position, fu_slot, rem_count);
+        shift_left_and_set_circ(position, fu_slot, rem_count);
     }
 }
 
@@ -167,19 +171,19 @@ void Bqf::query(std::ifstream& infile, std::ofstream& outfile){
 
 
 result_query Bqf::query(string seq){
-    int s = this->smer_size;
-    int k = this->kmer_size;
-    int n = seq.length();
+    const int s = this->smer_size;
+    const int k = this->kmer_size;
+    const int n = seq.length();
     
     if (k == s && s == n) { 
-        uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
+        const uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
         return result_query {(int)res, (int)res, (float)res, (float)(res!=0)};
     }
-    int z = k-s;
+    const uint z = k-s;
     int last_smers_abundances[z+1];
     int* kmer_abundance;
-    int nb_presence = 0;
-    int avg = 0;
+    uint nb_presence = 0;
+    uint avg = 0;
     int minimum = numeric_limits<int>::max();
     int maximum = 0;
 
@@ -223,28 +227,47 @@ result_query Bqf::query(string seq){
 
 uint64_t Bqf::query(uint64_t number){
     if (elements_inside == 0) return 0;
-    uint64_t quot = quotient(number);
-    uint64_t rem = remainder(number);
+    const uint64_t quot = quotient(number);
+    const uint64_t rem = remainder(number);
     if (!is_occupied(quot)) return 0;
 
-    pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+    const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+    const uint64_t quots = (1ULL << this->quotient_size);
 
-    // TODO:
-    // OPTIMIZE TO LOG LOG SEARCH ?
+    // dichotomous search
+    uint64_t left = boundary.first;
+    if (left < quot)   
+        left += quots;
 
-    uint64_t position = boundary.first;
+    uint64_t right = boundary.second;
+    if (right < quot)
+        right += quots;
 
-    while(position != boundary.second){
-        uint64_t remainder_in_filter = get_remainder(position);
+    uint64_t middle = ceil((left + right) / 2);
+    uint64_t position = middle;
+    if (position >= quots)
+        position -= quots;
+    
+    uint64_t remainder_in_filter;
 
-        if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
-        else if (remainder_in_filter > rem) return 0;
-        position = get_next_quot(position);
+    assert(left <= right);
+
+    while (left <= right) {
+        middle = ceil((left + right) / 2);
+        position = middle;
+        if (position >= quots)
+            position -= quots;
+        remainder_in_filter = get_remainder(position);
+
+        if (remainder_in_filter == rem) 
+            return query_process_count(get_remainder(position, true) & mask_right(count_size));
+        else if (left == right)
+            return 0;
+        else if (remainder_in_filter > rem)
+            right = middle;
+        else
+            left = middle + 1;
     }
-
-    uint64_t remainder_in_filter = get_remainder(boundary.second); 
-    if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
-
     return 0;
 }
 
@@ -318,10 +341,10 @@ void Bqf::resize(uint n){
     uint64_t pos_in_block;
     uint64_t pos;
 
-    // init the offsets
-    const uint offsets_size = (1 << n);
-    std::pair<uint32_t, bool> offsets[offsets_size];
-    std::fill(offsets, offsets + offsets_size, std::make_pair(0, false));
+    // init the offset_counters
+    const uint offset_counters_size = (1 << n);
+    std::pair<uint32_t, bool> offset_counters[offset_counters_size];
+    std::fill(offset_counters, offset_counters + offset_counters_size, std::make_pair(0, false));
 
     // starting position
     const uint64_t start = first_unused_slot(0);
@@ -334,13 +357,13 @@ void Bqf::resize(uint n){
             current_block -= this->number_blocks;
         }
 
-        // shifting the offsets when going back to 0
+        // shifting the offset_counters when going back to 0
         if(block != 0 && current_block == 0){
-            pos = offsets[offsets_size - 1].first;
-            for(uint i = offsets_size - 1; i > 0; --i){
-                offsets[i].first = offsets[i - 1].first;
+            pos = offset_counters[offset_counters_size - 1].first;
+            for(uint i = offset_counters_size - 1; i > 0; --i){
+                offset_counters[i].first = offset_counters[i - 1].first;
             }
-            offsets[0].first = pos;
+            offset_counters[0].first = pos;
         }
 
         // the occupied word of the block
@@ -348,19 +371,19 @@ void Bqf::resize(uint n){
 
         // skip if whole block is empty
         if (curr_occ == 0) {
-            for(uint i = 0; i < offsets_size; ++i){
+            for(uint i = 0; i < offset_counters_size; ++i){
                 // setting the offsets
                 new_block = ((i << this->quotient_size) / BLOCK_SIZE) | current_block;
                 pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
-                new_filter[pos] = offsets[i].first;
+                new_filter[pos] = offset_counters[i].first;
 
-                // substracting / resetting values
-                if(offsets[i].first >= BLOCK_SIZE){
-                    offsets[i].first -= BLOCK_SIZE;
+                // substracting / resetting values of offset_counters
+                if(offset_counters[i].first >= BLOCK_SIZE){
+                    offset_counters[i].first -= BLOCK_SIZE;
                 } else {
-                    offsets[i].first = 0;
+                    offset_counters[i].first = 0;
                 }
-                offsets[i].second = false;
+                offset_counters[i].second = false;
             }
             continue;
         }
@@ -392,11 +415,11 @@ void Bqf::resize(uint n){
                     remainder >>= this->count_size;
                     added_quotient_bits = remainder & mask_right(n);
 
-                    assert(added_quotient_bits >= 0 && added_quotient_bits < offsets_size);
+                    assert(added_quotient_bits >= 0 && added_quotient_bits < offset_counters_size);
 
                     // new remainder and new quotient
                     remainder = ((remainder >> n) << this->count_size) | count;
-                    new_quotient = ((added_quotient_bits << this->quotient_size) | quotient) + offsets[added_quotient_bits].first;
+                    new_quotient = ((added_quotient_bits << this->quotient_size) | quotient) + offset_counters[added_quotient_bits].first;
                     if (new_quotient >= num_quots){
                         new_quotient -= num_quots;
                     }
@@ -407,15 +430,15 @@ void Bqf::resize(uint n){
                     pos = new_block * ((MET_UNIT+new_remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*new_remainder_size;
                     set_bits(new_filter, pos, remainder, new_remainder_size);
 
-                    offsets[added_quotient_bits].first++;
-                    offsets[added_quotient_bits].second = true;
+                    offset_counters[added_quotient_bits].first++;
+                    offset_counters[added_quotient_bits].second = true;
 
                     cursor = this->get_next_quot(cursor);
                 }
 
 
-                for(uint i = 0; i < offsets_size; ++i){
-                    if (offsets[i].second) {
+                for(uint i = 0; i < offset_counters_size; ++i){
+                    if (offset_counters[i].second) {
                         // setting the occupied
                         new_quotient = (i << this->quotient_size) | quotient;
                         new_block = get_block_id(new_quotient);
@@ -423,7 +446,7 @@ void Bqf::resize(uint n){
                         new_filter[pos] |= (1ULL << new_quotient);
 
                         // setting the runend
-                        new_quotient += offsets[i].first - 1;
+                        new_quotient += offset_counters[i].first - 1;
                         if (new_quotient >= num_quots){
                             new_quotient -= num_quots;
                         }
@@ -436,19 +459,19 @@ void Bqf::resize(uint n){
 
             // setting the offset 
             if (i == 0){
-                for(uint i = 0; i < offsets_size; ++i){
+                for(uint i = 0; i < offset_counters_size; ++i){
                     new_block = ((i << this->quotient_size) / BLOCK_SIZE) | current_block;
                     pos = (new_block *(MET_UNIT+new_remainder_size)) + OFF_POS;
-                    new_filter[pos] = offsets[i].first;
+                    new_filter[pos] = offset_counters[i].first;
                 }
             }
 
-            // substracting and resetting the offsets
-            for(uint i = 0; i < offsets_size; ++i){
-                if(offsets[i].first > 0){
-                    offsets[i].first--;
+            // substracting and resetting the offset_counters
+            for(uint i = 0; i < offset_counters_size; ++i){
+                if(offset_counters[i].first > 0){
+                    offset_counters[i].first--;
                 }
-                offsets[i].second = false;
+                offset_counters[i].second = false;
             }
 
             curr_occ >>= 1ULL; //next bit of occupied vector
@@ -466,9 +489,9 @@ void Bqf::resize(uint n){
 }
 
 uint64_t Bqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
-    uint64_t block = get_block_id(position);
-    uint64_t pos_in_block = get_shift_in_block(position);
-    uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
+    const uint64_t block = get_block_id(position);
+    const uint64_t pos_in_block = get_shift_in_block(position);
+    const uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
 
     if (w_counter) return get_bits(filter, pos, remainder_size);
     else return get_bits(filter, pos, remainder_size) >> count_size;
@@ -507,7 +530,7 @@ void Bqf::save_on_disk(const std::string& filename) {
         file.write(reinterpret_cast<const char*>(&this->size_limit), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->number_blocks), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->elements_inside), sizeof(uint64_t));
-        uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
+        const uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
         file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
         file.close();
     } else {

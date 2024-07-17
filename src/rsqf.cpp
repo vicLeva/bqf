@@ -488,30 +488,75 @@ void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient
     assert(start_quotient < ( 1ULL << quotient_size));
     assert(end_quotient < ( 1ULL << quotient_size)); 
 
+    uint64_t mask;
+    uint64_t keep;
+    uint64_t to_shift;
+
+    // to verify if we are inserting a remainder on 2 words
+    uint64_t left_word_shift;
+    uint64_t complementary_shift;
+
     uint64_t curr_word_pos = get_remainder_word_position(start_quotient);
     uint64_t curr_word_shift = get_remainder_shift_position(start_quotient);
 
-    uint64_t to_shift;
+    const uint64_t end_word_pos = get_remainder_word_position(get_next_quot(end_quotient));
+    const uint64_t end_word_shift = get_remainder_shift_position(get_next_quot(end_quotient));
 
-    while (start_quotient != end_quotient) {
-        start_quotient = get_next_quot(start_quotient);
+    while (curr_word_pos != end_word_pos){
+        // left bits we will lose after the shift
+        to_shift = (filter[curr_word_pos] & mask_left(remainder_size)) >> (64 - remainder_size);
 
-        to_shift = get_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, remainder_size);
-        set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
+        // mask of what we keep
+        mask = mask_right(curr_word_shift);
+        keep = filter[curr_word_pos] & mask;
+        // shifting operation and keeping what we dont want to be shifted
+        filter[curr_word_pos] &= ~mask;
+        filter[curr_word_pos] <<= remainder_size;
+        filter[curr_word_pos] |= keep;
+        filter[curr_word_pos] |= ((next_remainder & mask_right(remainder_size)) << curr_word_shift);
+
+        left_word_shift = 64 - curr_word_shift;
+
+        // if the next_remainder is on 2 words
+        // this can only happen if the words are consecutives
+        if(left_word_shift < remainder_size){
+            complementary_shift = remainder_size - left_word_shift;
+
+            // mask to keep the rest of the 2nd word
+            mask = mask_right(complementary_shift);
+            keep = filter[curr_word_pos + 1] & mask;
+            
+            // inserting the missing part of the next_remainder 
+            filter[curr_word_pos + 1] &= ~mask;
+            filter[curr_word_pos + 1] |= ((next_remainder & mask_right(remainder_size)) >> left_word_shift);
+
+            // next_remainder is the previous remainder that was on the 2 words
+            to_shift = (to_shift >> complementary_shift) | (keep << left_word_shift);
+
+            curr_word_shift = complementary_shift;
+        } else {
+            curr_word_shift = 0;
+        }
+
+        // updating the next remainder
         next_remainder = to_shift;
-        
-        if (curr_word_shift + remainder_size >= BLOCK_SIZE){
-            curr_word_shift = remainder_size - (BLOCK_SIZE - curr_word_shift); //(curr_word_shift + rem_size) % BLOCK_SIZE 
-            curr_word_pos = get_next_remainder_word(curr_word_pos);
-        }
-        else{
-            curr_word_shift += remainder_size;
-        }
+
+        // we advance by 1 position
+        curr_word_pos += 1;
+        if (curr_word_pos % (MET_UNIT + remainder_size) == 0)
+            curr_word_pos += 3;
+        curr_word_pos %= filter.size();
     }
 
-    set_bits(filter, curr_word_pos*BLOCK_SIZE + curr_word_shift, next_remainder, remainder_size);
+    // mask of what we keep
+    mask = mask_left(64ULL - end_word_shift) | mask_right(curr_word_shift);
+    keep = filter[curr_word_pos] & mask;
+    // shifting operation and keeping what we dont want to be shifted
+    filter[curr_word_pos] &= ~mask;
+    filter[curr_word_pos] <<= remainder_size;
+    filter[curr_word_pos] |= keep;
+    filter[curr_word_pos] |= ((next_remainder & mask_right(remainder_size)) << curr_word_shift);
 }
-
 
 void Rsqf::shift_right_and_rem_circ(uint64_t start_quotient,uint64_t end_quotient){
     assert(start_quotient < ( 1ULL << quotient_size));

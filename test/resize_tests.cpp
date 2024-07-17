@@ -127,9 +127,9 @@ std::pair<bool, std::string> debug_filters_and_compare(Bqf* bqf1, Bqf* bqf2){
 
         first = true;
         for (auto word : word_set1){
-          count = word & mask_right(bqf1->count_size);
-          remainder = (word >> bqf1->count_size) & mask_right(bqf1->remainder_size);
-          quotient = (word >> bqf1->count_size >> bqf1->remainder_size);
+          quotient = word & mask_right(bqf2->quotient_size);
+          count = (word >> bqf2->quotient_size) & mask_right(bqf2->count_size);
+          remainder = (word >> (bqf2->quotient_size + bqf2->count_size));
           if (!first){
            ss << ", "; 
           }
@@ -141,12 +141,12 @@ std::pair<bool, std::string> debug_filters_and_compare(Bqf* bqf1, Bqf* bqf2){
             same = false;
           }
         }
-        ss << ")" << std::endl << "(resize : ";
+        ss << ")" << std::endl << "(resize   : ";
         first = true;
         for (auto word : word_set2){
-          count = word & mask_right(bqf2->count_size);
-          remainder = (word >> bqf2->count_size) & mask_right(bqf2->remainder_size);
-          quotient = (word >> bqf2->count_size >> bqf2->remainder_size);
+          quotient = word & mask_right(bqf2->quotient_size);
+          count = (word >> bqf2->quotient_size) & mask_right(bqf2->count_size);
+          remainder = (word >> (bqf2->quotient_size + bqf2->count_size));
           if (!first){
            ss << ", "; 
           }
@@ -281,7 +281,7 @@ void test(bool printExceptations, F* insert, std::string test_name, const uint64
 
   if (printExceptations)
     std::cout << test_name << " before resize :" << std::endl << debug_filter(&mock) << std::endl;
-  
+
   auto mockStart = std::chrono::high_resolution_clock::now();
   mock_resize(&mock, 1);
   double mockTime = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - mockStart).count();
@@ -294,9 +294,6 @@ void test(bool printExceptations, F* insert, std::string test_name, const uint64
     std::cout << test_name << " expected resize :" << std::endl << debug_filter(&mock) << std::endl;
 
   std::pair<bool, std::string> compared = compare(&mock, &resize);
-  std::string result = compared.first? green("PASSED", true) : red("FAILED", true);
-  std::cout << std::setw(50) << std::left << test_name << " : [" << result << "] (mock time : " << std::to_string(mockTime) << "ms, resize time : " << std::to_string(resizeTime) << "ms    x" << std::to_string(mockTime/resizeTime) << ")" << std::endl;
-  
   if (!compared.first) {
     std::cout << "Params pre resize : q_size = " << q_size << ", c_size = " << c_size << ", k = " << k << ", z = " << z << std::endl;
     std::cout << "Missing elements in "<< green("green") << " and elements that shouldn't exists in " << red("red") << std::endl;
@@ -304,6 +301,10 @@ void test(bool printExceptations, F* insert, std::string test_name, const uint64
   } else {
     (*success)++;
   }
+
+  std::string result = compared.first? green("PASSED", true) : red("FAILED", true);
+  std::cout << std::setw(50) << std::left << test_name << " : [" << result << "] (mock time : " << std::to_string(mockTime) << "ms, resize time : " << std::to_string(resizeTime) << "ms    x" << std::to_string(mockTime/resizeTime) << ")" << std::endl;
+  
   (*total)++;
   (*avg)+=mockTime/resizeTime;
 }

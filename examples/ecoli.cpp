@@ -20,13 +20,13 @@ int main (int argc, char * argv[]) {
         "with 5 bits for counter, the quotient filter will weight 2^18*(3+5+38)bits = 1.5MB\n\n";
 
         Bqf_ec ecoli_cqf(18, 5, 32, 4, false);
-        ecoli_cqf.insert(cwd + "data/ecoli_count28.txt");
+        ecoli_cqf.insert(cwd + "data/ecoli_28_counted");
 
         
-        ecoli_cqf.save_on_disk("/udd/vlevallo/documents/ecoli_bqf");
+        ecoli_cqf.save_on_disk("/udd/nbuchin/Documents/ecoli_bqf");
         std::cout << ecoli_cqf.block2string(0) << "\n";
 
-        Bqf_ec ecoli_cqf2 = Bqf_ec::load_from_disk("/udd/vlevallo/documents/ecoli_bqf");
+        Bqf_ec ecoli_cqf2 = Bqf_ec::load_from_disk("/udd/nbuchin/Documents/ecoli_bqf");
 
         std::cout << ecoli_cqf2.block2string(2244) << "\n";
         cout << ecoli_cqf2.query("ACAACGTTTGCTCGATGATCGCCTGCTCATCG").minimum << endl; //30
