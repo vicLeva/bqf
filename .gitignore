@@ -11,3 +11,6 @@ CQF
 bin/
 lib/
 Testing/
+build/
+.idea/.name
+.idea/workspace.xml
