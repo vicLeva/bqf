@@ -145,6 +145,8 @@ project(kmer_sorter)
 file(GLOB_RECURSE source_files ./src/quicksort.cpp ./src/additional_methods.cpp
         ./src/progress/progressbar.cpp
         ./../src/additional_methods.cpp
+        ./src/sorting/std_4cores.cpp
+        ./src/sorting/std_2cores.cpp
         ./src/kmer_sorter.cpp)
 add_executable(kmer_sorter ${source_files})
 

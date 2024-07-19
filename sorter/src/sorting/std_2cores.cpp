@@ -56,7 +56,7 @@ void p_sort(std::vector<uint64_t>& test)
     v2.clear();
 }
 
-
+/*
 void my_sort(std::vector<uint64_t>& test)
 {
     const int size = test.size();
@@ -108,3 +108,4 @@ void my_sort(std::vector<uint64_t>& test)
 
 //    vec_print( test );
 }
+*/

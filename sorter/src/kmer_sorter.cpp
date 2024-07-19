@@ -12,6 +12,8 @@
 
 #include "progress/progressbar.h"
 
+#include "./sorting/std_2cores.hpp"
+
 void vec_copy(std::vector<uint64_t>& dst, std::vector<uint64_t>& src)
 {
     if(dst.size() != src.size())
@@ -655,19 +657,20 @@ int main(int argc, char* argv[])
     printf("(II) Number of ADN sequences : %d\n",  n_lines);
     printf("(II) Number of s-mer         : %zu\n", list_hash.size());
 
-    SaveToFile(filename + ".loaded", list_hash, s, q, r);
+//    SaveToFile(filename + ".loaded", list_hash, s, q, r);
 
     printf("(II)\n");
     printf("(II) Launching the sorting step\n");
     printf("(II) - Number of samples = %ld\n", list_hash.size());
     double start_time = omp_get_wtime();
-    std::sort( list_hash.begin(), list_hash.end() );
+//    std::sort( list_hash.begin(), list_hash.end() );
+    p_sort( list_hash );
     double end_time = omp_get_wtime();
     printf("(II) - Execution time    = %f\n", end_time - start_time);
 
     SaveToFile(filename + ".ordered", list_hash, s, q, r);
 
-    SaveToFileRAW(filename + ".hash", list_hash, s, q, r);
+//    SaveToFileRAW(filename + ".hash", list_hash, s, q, r);
 
     return 0;
 }
