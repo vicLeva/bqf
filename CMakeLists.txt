@@ -8,7 +8,7 @@ SET(CMAKE_BUILD_TYPE Release)
 enable_testing()
 
 # C++ options
-add_compile_options(-Wall -Ofast -g -fpermissive -march=native -mtune=native) # for x86 based host
+add_compile_options(-Wall -Ofast -g3 -fpermissive -march=native -mtune=native) # for x86 based host
 #add_compile_options(-Wall -Ofast -g -fpermissive -mcpu=native -mtune=native) # for ARM based host
 
 # move all the binaries and libraries into dedicated directories

@@ -19,7 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-int popcount_u32_c(const uint32_t _val)
+inline int popcount_u32_c(const uint32_t _val)
 {
     uint32_t x = _val;
     int count = 0;
@@ -34,7 +34,7 @@ int popcount_u32_c(const uint32_t _val)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-int popcount_u64_c(const uint64_t _val)
+inline int popcount_u64_c(const uint64_t _val)
 {
     uint64_t x = _val;
     int count = 0;
@@ -50,7 +50,7 @@ int popcount_u64_c(const uint64_t _val)
 //
 //
 #if defined(__SSE4_2__)
-int popcount_u32_x86(const uint32_t _val)
+inline int popcount_u32_x86(const uint32_t _val)
 {
     uint32_t val = _val;
 	asm("popcnt %[val], %[val]"	: [val] "+r" (val)	: : "cc");
@@ -63,7 +63,7 @@ int popcount_u32_x86(const uint32_t _val)
 //
 //
 #if defined(__SSE4_2__)
-int popcount_u64_x86(const uint64_t _val)
+inline int popcount_u64_x86(const uint64_t _val)
 {
     uint64_t val = _val;
 	asm("popcnt %[val], %[val]" : [val] "+r" (val) : : "cc");
@@ -76,7 +76,7 @@ int popcount_u64_x86(const uint64_t _val)
 //
 //
 #if defined(__aarch64__) || defined(_M_ARM64)
-uint32_t popcount_u32_arm(const uint32_t val)
+inline uint32_t popcount_u32_arm(const uint32_t val)
 {
     return vaddlv_u8(vcnt_u8(vcreate_u8((uint64_t) val)));
 }
@@ -87,7 +87,7 @@ uint32_t popcount_u32_arm(const uint32_t val)
 //
 //
 #if defined(__aarch64__) || defined(_M_ARM64)
-uint64_t popcount_u64_arm(const uint64_t val)
+inline uint64_t popcount_u64_arm(const uint64_t val)
 {
     return vaddlv_u8(vcnt_u8(vcreate_u8((uint64_t) val)));
 }
@@ -97,7 +97,7 @@ uint64_t popcount_u64_arm(const uint64_t val)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-uint32_t popcount_u32_builtin(const uint32_t val)
+inline uint32_t popcount_u32_builtin(const uint32_t val)
 {
     return __builtin_popcount(val);
 }
@@ -106,7 +106,7 @@ uint32_t popcount_u32_builtin(const uint32_t val)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-uint64_t popcount_u64_builtin(const uint64_t val)
+inline uint64_t popcount_u64_builtin(const uint64_t val)
 {
     return __builtin_popcountll(val);
 }

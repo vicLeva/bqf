@@ -19,7 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-int tzcnt_u32_c(uint32_t x)
+inline int tzcnt_u32_c(uint32_t x)
 {
     if (x == 0) {
         return sizeof(x) * 4; // Si x est zéro, tous les bits sont à zéro
@@ -39,7 +39,7 @@ int tzcnt_u32_c(uint32_t x)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-int tzcnt_u64_c(uint64_t x) {
+inline int tzcnt_u64_c(uint64_t x) {
     if (x == 0) {
         return sizeof(x) * 8; // Si x est zéro, tous les bits sont à zéro
     }
@@ -59,7 +59,7 @@ int tzcnt_u64_c(uint64_t x) {
 //
 //
 #if defined(__SSE4_2__)
-int tzcnt_u32_builtin(uint32_t x)
+inline int tzcnt_u32_builtin(uint32_t x)
 {
     return __builtin_ctz(x);
 }
@@ -70,7 +70,7 @@ int tzcnt_u32_builtin(uint32_t x)
 //
 //
 #if defined(__SSE4_2__)
-int tzcnt_u64_builtin(uint64_t x)
+inline int tzcnt_u64_builtin(uint64_t x)
 {
     return __builtin_ctzll(x);
 }

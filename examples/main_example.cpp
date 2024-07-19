@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        begin = std::chrono::steady_clock::now();
+        auto begin = std::chrono::steady_clock::now();
 
 		Bqf_ec bqf = Bqf_ec(q, c, k, z, false);
 		bqf.insert(input_file);
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
             return EXIT_FAILURE;
         }
 
-        begin = std::chrono::steady_clock::now();
+        auto begin = std::chrono::steady_clock::now();
 		Bqf_ec bqf = Bqf_ec::load_from_disk(input_file);
 
 		try {

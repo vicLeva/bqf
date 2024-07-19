@@ -126,26 +126,35 @@ void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t
     }
 }
 
+uint64_t nucl_encode(char nucl)
+{
+    return (nucl >> 1) & 0b11;
+}
+
+
+char nucl_decode(uint64_t & val)
+{
+    const uint64_t txt[] = {'A', 'C', 'T', 'G'};
+    return txt[val & 0b11];
+}
 uint64_t encode(string kmer){
     uint64_t encoded = 0;
-    for(char& c : kmer) {
-        if (c=='A'){
-            encoded <<= 2;
-            encoded |= 3;
-        }
-        else if (c=='C'){
-            encoded <<= 2;
-            encoded |= 2;
-        }
-        else if (c=='G'){
-            encoded <<= 2;
-            encoded |= 1;
-        }
-        else{ //T is 00 so with reverse complementarity we won't get 0000000000000 as input for xorshift
-            encoded <<= 2;
-        }
+    for(int i = 0; i < (int)kmer.size(); i+=1)
+    {
+        encoded <<= 2;
+        encoded |= nucl_encode(kmer[i]);
     }
+    return encoded;
+}
 
+uint64_t encode(const char* kmer, const int kmer_size)
+{
+    uint64_t encoded = nucl_encode(kmer[0]);
+    for(int i = 1; i < kmer_size; i+=1)
+    {
+        encoded <<= 2;
+        encoded |= nucl_encode(kmer[i]);
+    }
     return encoded;
 }
 
@@ -153,19 +162,7 @@ string decode(uint64_t revhash, uint64_t k){
     string kmer;
 
     for (size_t i=0; i<k; i++){
-        switch(revhash & mask_right(2)){
-            case 3:
-                kmer = 'A' + kmer;
-                break;
-            case 2:
-                kmer = 'C' + kmer;
-                break;
-            case 1:
-                kmer = 'G' + kmer;
-                break;
-            default:
-                kmer = 'T' + kmer;
-        }
+        kmer = nucl_decode(revhash) + kmer;
         revhash >>= 2;
     }
 
@@ -232,30 +229,14 @@ string hash_to_kmer(uint64_t hash, uint64_t k){
 }
 
 
-uint64_t nucl_encode(char nucl){
-  //Returns the binary encoding of a nucleotide
-  //different from encode() function because this is for query, so we have to check for canonical smer
-  //and this encoding allows fast comparison (<) of lexico order 
-  switch (nucl){
-    case 'A':
-      return 0;
-    case 'T':
-      return 3;
-    case 'C':
-      return 1;
-    case 'G':
-      return 2;
-    default :
-        cout << "non nucl : " << nucl << endl;
-        throw std::invalid_argument( "received non nucleotidic value" );
-  }
-}
+/* De devarit plus être utilisee a cause de la modification de la methode encode_nucl
 
 uint64_t flip(uint64_t encoding, size_t bitsize){
   //Used so Ts are 0s so we dont get 0000.. in xorshift (through revcompl)
     return ~encoding << (64-bitsize) >> (64-bitsize);
 }
 
+*/
 uint64_t revcomp64 (const uint64_t v, size_t bitsize){
   return (((uint64_t)rev_table[v & 0xff] << 56) | 
     ((uint64_t)rev_table[(v >> 8) & 0xff] << 48) | 
@@ -273,11 +254,13 @@ uint64_t canonical(uint64_t smer, size_t size){
     else { return smer; }
 }
 
+/*
 std::string canonical(const std::string& smer, size_t s){
   //debug purpose only
   return decode(flip(canonical(flip(encode(smer), 2*s), 2*s), 2*s), s);
 }
 
+*/
 std::ostream& operator<<(std::ostream& os, result_query const& res) {
     return os << "(min:" << res.minimum << ", max:" << res.maximum << ", average:" << res.average << ", presence ratio:" << res.kmer_present_ratio << ")" << endl;
 }

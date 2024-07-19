@@ -796,20 +796,46 @@ std::pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
     //mask runend[pos_after_jump : end]
 
     //paper : t = select(runends[i+O(i)+1, ..., end], d)
-    uint64_t select_val = bitselectasm(get_runend_word(current_block) & runend_mask, 
-                                       nb_runs);
-                                       
-    
-    nb_runs -= bitrankasm(get_runend_word(current_block) & runend_mask, 
-                          MEM_UNIT-1);
+    uint64_t select_val = bitselectasm(get_runend_word(current_block) & runend_mask, nb_runs);
+    nb_runs -= bitrankasm(get_runend_word(current_block) & runend_mask, MEM_UNIT-1);
 
+#if 0
+//    uint64_t current_block_copy = current_block;
+//    uint64_t nb_runs_copy       = nb_runs;
+//    uint64_t select_val_copy    = select_val;
 
     while (select_val == BLOCK_SIZE){   
         left_block = true;
         current_block = get_next_block_id(current_block);
-        select_val = bitselectasm(get_runend_word(current_block), nb_runs);
-        nb_runs -= bitrankasm(get_runend_word(current_block), MEM_UNIT-1);
+        select_val    = bitselectasm(get_runend_word(current_block), nb_runs);
+        nb_runs      -= bitrankasm  (get_runend_word(current_block), MEM_UNIT-1);
     }
+#endif
+#if 0
+    if( current_block_copy != current_block )
+    {
+        std::cout << "Erreur " << __FILE__ << " " << __LINE__ << std::endl;
+        printf("*  current_block_copy = %ld\n", current_block_copy);
+        printf("*  current_block      = %ld\n", current_block);
+        exit( EXIT_FAILURE );
+    }
+
+    if( select_val_copy != select_val )
+    {
+        std::cout << "Erreur " << __FILE__ << " " << __LINE__ << std::endl;
+        printf("*  select_val_copy = %ld\n", select_val_copy);
+        printf("*  select_val      = %ld\n", select_val);
+        exit( EXIT_FAILURE );
+    }
+
+    if( nb_runs_copy != nb_runs )
+    {
+        std::cout << "Erreur " << __FILE__ << " " << __LINE__ << std::endl;
+        printf("*  nb_runs_copy = %ld\n", nb_runs_copy);
+        printf("*  nb_runs      = %ld\n", nb_runs);
+        exit( EXIT_FAILURE );
+    }
+#endif
 
     return std::make_pair(current_block*BLOCK_SIZE + select_val, left_block);
 }
@@ -882,8 +908,8 @@ uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
         // === OTHER BLOCKS TO FIND THE END OF dth RUN === 
         while (select_val == BLOCK_SIZE){     
                 current_block = get_next_block_id(current_block);
-                select_val = bitselectasm(get_runend_word(current_block), nb_runs);
-                nb_runs -= bitrankasm(get_runend_word(current_block), MEM_UNIT-1);
+                select_val    = bitselectasm(get_runend_word(current_block), nb_runs);
+                nb_runs      -= bitrankasm(get_runend_word(current_block), MEM_UNIT-1);
         }
 
         return (current_block*BLOCK_SIZE + select_val + 1) % (1ULL << quotient_size); 

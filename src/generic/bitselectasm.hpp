@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-uint64_t bitselectasm_u64_c(uint64_t num, uint64_t rank){
+inline uint64_t bitselectasm_u64_c(uint64_t num, uint64_t rank){
     const uint64_t i = 1ULL << (rank - 1); // i = 2^rank
     const uint64_t j = pdep_u64_c(i, num);
     const uint64_t k = tzcnt_u64_c(j);
@@ -19,7 +19,7 @@ uint64_t bitselectasm_u64_c(uint64_t num, uint64_t rank){
 //
 //
 #if defined(__aarch64__) || defined(_M_ARM64)
-uint64_t bitselectasm_u64_arm(uint64_t num, uint64_t rank){
+inline uint64_t bitselectasm_u64_arm(uint64_t num, uint64_t rank){
     const uint64_t i = 1ULL << (rank - 1); // i = 2^rank
     const uint64_t j = pdep_u64_arm(i, num);
     const uint64_t k = tzcnt_u64_arm(j);
@@ -32,7 +32,7 @@ uint64_t bitselectasm_u64_arm(uint64_t num, uint64_t rank){
 //
 //
 #if defined(__SSE4_2__)
-uint64_t bitselectasm_u64_builtin(uint64_t num, uint64_t rank){
+inline uint64_t bitselectasm_u64_builtin(uint64_t num, uint64_t rank){
 #if 0
     const uint64_t i = 1ULL << (rank - 1); // i = 2^rank
 	const uint64_t j = _pdep_u64(i, num);
@@ -52,7 +52,7 @@ uint64_t bitselectasm_u64_builtin(uint64_t num, uint64_t rank){
 //
 //
 #if defined(__SSE4_2__)
-uint64_t bitselectasm_u64_x86(uint64_t num, uint64_t rank){
+inline uint64_t bitselectasm_u64_x86(uint64_t num, uint64_t rank){
 #if 0
     uint64_t i = 1ULL << (rank - 1); // i = 2^rank
 	asm("pdep %[num], %[mask], %[num]"

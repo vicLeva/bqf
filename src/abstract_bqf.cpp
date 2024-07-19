@@ -1,10 +1,245 @@
-#include "abstract_bqf.hpp" 
+#include "abstract_bqf.hpp"
 #include <stdio.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+class fast_kmer_file
+{
+private:
+    const int kmer_size;
+    const int buff_size = 64 * 1024 * 1024;
+    char* buffer;
+    int n_data   = 0;
+    int c_ptr    = 0;
+    int n_lines        = 0;
+    bool no_more_load  = false;
+    bool file_ended    = false;
+    FILE* f;
+
+public:
+    fast_kmer_file(const std::string filen, const int km_size) : kmer_size(km_size)
+    {
+        printf("(II) Creating fast_kmer_file object\n");
+
+        buffer = new char[buff_size];
+
+        f = fopen( filen.c_str(), "r" );
+        if( f == NULL )
+        {
+            printf("(EE) File does not exist !\n");
+            exit( EXIT_FAILURE );
+        }
+        n_data = fread(buffer, sizeof(char), buff_size, f);
+        printf("(II) Creation done\n");
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    ~fast_kmer_file()
+    {
+        delete[] buffer;
+        fclose( f );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    bool next_kmer(char* n_kmer, char* n_value)
+    {
+        if( file_ended == true )
+        {
+            return false;
+        }
+
+        //
+        // On regarde si l'on a encore une entrée dans le buffer
+        //
+        int pos_nline = -1;
+        for(int i = c_ptr; i < n_data; i += 1)
+        {
+            if(buffer[i] == '\n')
+            {
+                pos_nline = i;
+                break;
+            }
+        }
+
+        if( pos_nline == -1 )
+        {
+            if( is_eof() == true )
+                return false;
+
+            if( reload() == true )
+            {
+                return next_kmer(n_kmer, n_value);
+            }else{
+                return false;
+            }
+        }
+
+        //
+        // On peut recopier le k-mer dans la structure
+        //
+
+        for(int i = 0; i < kmer_size; i += 1)
+        {
+            n_kmer[i] = buffer[c_ptr + i];
+        }
+        c_ptr += kmer_size;
+        n_kmer[kmer_size] = 0;
+
+        //
+        // On verifie que l'on a bien un espace / tabulation
+        //
+
+        c_ptr += 1;
+
+        //
+        // On recopie la valeur numérique de l'abondance
+        //
+
+        int cnt = 0;
+        while( buffer[c_ptr] != '\n' )
+        {
+            n_value[cnt++] = buffer[c_ptr++];
+        }
+        n_value[cnt] = '\0';
+        c_ptr += 1;
+
+        n_lines += 1;
+
+        file_ended = (c_ptr == n_data) && (n_data != buff_size);
+
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    bool reload()
+    {
+//        printf("[%6d] START OF DATA RELOADING !\n", n_lines);
+        int reste = n_data - c_ptr;
+        for(int i = c_ptr; i < n_data; i += 1)
+        {
+            buffer[i - c_ptr] = buffer[i];
+        }
+        int nread = fread(buffer + reste, sizeof(char), buff_size - reste, f);
+//        printf("[%6d] ASKED        : %d\n", n_lines, buff_size - reste);
+//        printf("[%6d] READ         : %d\n", n_lines, nread);
+        no_more_load = ( n_data != buff_size ); // a t'on atteint la fin du fichier ?
+//        printf("[%6d] no_more_load : %d\n", n_lines, no_more_load);
+        c_ptr        = 0;                       // on remet a zero le pointeur de lecture
+        n_data       = nread + reste;           // on met a jour le nombre de données dans le buffer
+//        printf("[%6d] n_data       : %d\n", n_lines, n_data);
+//        printf("[%6d] END OF DATA RELOADING !\n", n_lines);
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    bool is_eof()
+    {
+        if( (no_more_load == true) && (c_ptr == n_data) )
+            return true;
+        return false;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+};
+
+int count_lines_c(std::string filename)
+{
+    printf("(II) Counting the number of sequences (c)\n");
+    FILE* f = fopen( filename.c_str(), "r" );
+    if( f == NULL )
+    {
+        printf("(EE) File does not exist !\n");
+        return EXIT_FAILURE;
+    }
+
+    int n_sequences = 0;
+    char buffer[1024 * 1024];
+    while ( !feof(f) )
+    {
+        int n = fread(buffer, sizeof(char), 1024 * 1024, f);
+        for(int x = 0; x < n; x += 1)
+            n_sequences += (buffer[x] == '\n');
+    }
+    fclose( f );
+    return n_sequences;
+}
+
+int read_k_value(std::string filename)
+{
+    std::ifstream ifile( filename );
+    if( ifile.is_open() == false )
+    {
+        printf("(EE) File does not exist !\n");
+        return EXIT_FAILURE;
+    }
+    std::string line, seq;
+
+    getline(ifile, line);
+
+    ifile.close();
+
+    std::stringstream ss(line);
+    getline(ss, seq, '\t');
+
+    int k_length = seq.length();
+    printf("(II) Sequence line = %s\n", seq.c_str());
+    printf("(II) k_length      = %d\n", k_length);
+
+    return k_length;
+}
+
+int fast_atoi(const char *a)
+{
+    int res = (*a++) - '0';
+    while( *a != '\0' )
+    {
+        res = res * 10 + (*a - 48);
+        a  += 1;
+    }
+    return res;
+}
 
 
 using namespace std;
 
 void Bqf::insert(string kmc_input){
+    int n_lines = count_lines_c(kmc_input);
+    const int k = read_k_value(kmc_input);
+    const int s = k;
+    const uint64_t s_mask = mask_right(2 * s);
+
+    char kmer_value[256]; bzero(kmer_value, 256);
+    char kmer_abond[256]; bzero(kmer_abond, 256);
+
+    fast_kmer_file fast_ifile(kmc_input, k);
+    for(int l_number = 0; l_number < n_lines; l_number += 1)
+    {
+        bool not_oef = fast_ifile.next_kmer(kmer_value, kmer_abond);
+        if( not_oef == false )
+        {
+            break;
+        }
+
+        uint64_t current_smer = 0;
+        for (auto i = 0; i < k; i++)
+        {
+            current_smer <<= 2;
+            current_smer |= nucl_encode(kmer_value[i]);
+        }
+//      Suite au remplacement de la fonction encode_nucl
+//      const uint64_t s_hash    = bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), s_mask);
+        const uint64_t s_hash    = bfc_hash_64(canonical(current_smer, 2*s), s_mask);
+        const uint64_t abondan   = fast_atoi( kmer_abond );
+
+        this->insert(s_hash, abondan);
+    }
+
+#if 0
     try {
         ifstream infile(kmc_input);
 
@@ -34,6 +269,7 @@ void Bqf::insert(string kmc_input){
         // Gérez l'exception ici, par exemple, affichez un message d'erreur
         std::cerr << "Error: " << e.what() << std::endl;
     }
+#endif
 }   
 
 
@@ -176,7 +412,8 @@ result_query Bqf::query(string seq){
     const int n = seq.length();
     
     if (k == s && s == n) { 
-        const uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
+        const uint64_t res = this->query(bfc_hash_64(canonical(encode(seq), 2*s), mask_right(s*2)));
+        //const uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
         return result_query {(int)res, (int)res, (float)res, (float)(res!=0)};
     }
     const uint z = k-s;
@@ -200,7 +437,8 @@ result_query Bqf::query(string seq){
         current_smer <<= 2;
         current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
 
-        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(canonical(current_smer, 2*s), mask_right(s*2)));
+//      last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
     }
 
 
@@ -209,7 +447,8 @@ result_query Bqf::query(string seq){
         current_smer <<= 2;
         current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
 
-        last_smers_abundances[(i-s+1)%(z+1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+//      last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(canonical(current_smer, 2*s), mask_right(s*2)));
 
         kmer_abundance = min_element(last_smers_abundances, last_smers_abundances+z+1);
         if (*kmer_abundance == 0){
@@ -227,47 +466,28 @@ result_query Bqf::query(string seq){
 
 uint64_t Bqf::query(uint64_t number){
     if (elements_inside == 0) return 0;
-    const uint64_t quot = quotient(number);
-    const uint64_t rem = remainder(number);
+    uint64_t quot = quotient(number);
+    uint64_t rem = remainder(number);
     if (!is_occupied(quot)) return 0;
 
-    const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
-    const uint64_t quots = (1ULL << this->quotient_size);
+    pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
-    // dichotomous search
-    uint64_t left = boundary.first;
-    if (left < quot)   
-        left += quots;
+    // TODO:
+    // OPTIMIZE TO LOG LOG SEARCH ?
 
-    uint64_t right = boundary.second;
-    if (right < quot)
-        right += quots;
+    uint64_t position = boundary.first;
 
-    uint64_t middle = ceil((left + right) / 2);
-    uint64_t position = middle;
-    if (position >= quots)
-        position -= quots;
-    
-    uint64_t remainder_in_filter;
+    while(position != boundary.second){
+        uint64_t remainder_in_filter = get_remainder(position);
 
-    assert(left <= right);
-
-    while (left <= right) {
-        middle = ceil((left + right) / 2);
-        position = middle;
-        if (position >= quots)
-            position -= quots;
-        remainder_in_filter = get_remainder(position);
-
-        if (remainder_in_filter == rem) 
-            return query_process_count(get_remainder(position, true) & mask_right(count_size));
-        else if (left == right)
-            return 0;
-        else if (remainder_in_filter > rem)
-            right = middle;
-        else
-            left = middle + 1;
+        if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
+        else if (remainder_in_filter > rem) return 0;
+        position = get_next_quot(position);
     }
+
+    uint64_t remainder_in_filter = get_remainder(boundary.second); 
+    if (remainder_in_filter == rem) return query_process_count(get_remainder(position, true) & mask_right(count_size));
+
     return 0;
 }
 

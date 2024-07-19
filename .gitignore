@@ -26,3 +26,10 @@ examples/AHX_ACXIOSF/AHX_ACXIOSF_6_1_23_all.txt.bz2
 examples/AHX_ACXIOSF/bqf.bz2
 examples/AHX_ACXIOSF/queries.fasta
 examples/AHX_ACXIOSF/queries_shrinked.fasta
+
+.idea
+kmc/
+examples/data/
+examples/data/ecoli
+examples/data/tara_ocean
+cmake-build-debug
