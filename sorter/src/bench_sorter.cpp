@@ -5,11 +5,16 @@
 #include <chrono>
 #include <algorithm>
 #include <iostream>
-#include <omp.h>
 
-#include "sorting/std_2cores.hpp"
-#include "sorting/std_4cores.hpp"
-#include "tools/tools.hpp"
+#include "sorting/std_2cores.hxx"
+#include "sorting/std_4cores.hxx"
+
+//#include "sorting/merge_sort.hxx"
+#include "sorting/seq_sort.hxx"
+
+#include "tools/vec_compare.hxx"
+#include "tools/vec_copy.hxx"
+#include "tools/vec_print.hxx"
 
 #include "../../src/headers/additional_methods.hpp"
 
@@ -56,7 +61,7 @@ int main(int argc, char* argv[])
         printf("%10lld : It took %g seconds\n", v, end_time_std - start_time_std);
 
         double start_time_cstm = omp_get_wtime();
-        p_sort_4x(list_custom);
+        std_4cores(list_custom);
         double end_time_cstm = omp_get_wtime();
 
         printf("       :         %g seconds\n",    end_time_cstm - start_time_cstm);

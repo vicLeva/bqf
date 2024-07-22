@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 option(BUILD_MACOS_INTEL "Build test programs" OFF)
-option(BUILD_MACOS_ARM   "Build test programs" OFF)
-option(BUILD_LINUX_INTEL "Build test programs" ON)
+option(BUILD_MACOS_ARM   "Build test programs" ON)
+option(BUILD_LINUX_INTEL "Build test programs" OFF)
 option(BUILD_LINUX_ARM   "Build test programs" OFF)
 
 option(ENABLE_LTO    "Build test programs" OFF)
@@ -118,7 +118,6 @@ if(ENABLE_LTO)
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 endif ()
 
-
 ########################################################################################################################
 
 project(bench_sorter)
@@ -126,9 +125,9 @@ project(bench_sorter)
 #file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 file(GLOB_RECURSE source_files ./src/quicksort.cpp
         ./src/additional_methods.cpp
-        src/sorting/std_4cores.cpp
-        src/sorting/std_2cores.cpp
-        ./src/tools/tools.cpp
+        src/sorting/std_4cores.hxx
+        src/sorting/std_2cores.hxx
+        src/tools/vec_compare.hxx
         src/progress/progressbar.cpp
         ./src/bench_sorter.cpp)
 add_executable(bench_sorter ${source_files})
@@ -145,8 +144,8 @@ project(kmer_sorter)
 file(GLOB_RECURSE source_files ./src/quicksort.cpp ./src/additional_methods.cpp
         ./src/progress/progressbar.cpp
         ./../src/additional_methods.cpp
-        ./src/sorting/std_4cores.cpp
-        ./src/sorting/std_2cores.cpp
+        src/sorting/std_4cores.hxx
+        src/sorting/std_2cores.hxx
         ./src/kmer_sorter.cpp)
 add_executable(kmer_sorter ${source_files})
 
@@ -158,5 +157,28 @@ target_include_directories(kmer_sorter
 target_link_libraries(kmer_sorter pthread)
 target_link_libraries(kmer_sorter bz2)
 target_link_libraries(kmer_sorter curses)
+
+########################################################################################################################
+
+project(testbench)
+
+#file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
+file(GLOB_RECURSE source_files ./src/quicksort.cpp ./src/additional_methods.cpp
+        ./src/progress/progressbar.cpp
+        ./../src/additional_methods.cpp
+        ./src/sorting/std_4cores.hxx
+        ./src/sorting/std_2cores.hxx
+        ./src/tools/tools.cpp.cpp
+        ./src/testbench.cpp)
+
+add_executable(testbench ${source_files})
+
+target_include_directories(testbench
+        PUBLIC
+        "${PROJECT_SOURCE_DIR}/../src/headers/"
+)
+
+find_package(Catch2 3 REQUIRED)
+target_link_libraries(testbench PRIVATE Catch2::Catch2WithMain pthread bz2 curses)
 
 ########################################################################################################################

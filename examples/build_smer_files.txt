@@ -1,0 +1,16 @@
+../kmc/bin/kmc -k27 -m8 -ci2 ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.fastq NA.res /tmp
+../kmc/bin/kmc_dump NA.res ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.27mers
+
+
+../kmc/bin/kmc -k24 -m8 -ci2 ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.fastq NA.res ./temp
+../kmc/bin/kmc_dump NA.res ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.24mers
+
+
+../kmc/bin/kmc -k21 -m8 -ci2 ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.fastq NA.res ./temp
+../kmc/bin/kmc_dump NA.res ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.21mers
+
+
+../kmc/bin/kmc -k19 -m8 -ci2 ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.fastq NA.res ./temp
+../kmc/bin/kmc_dump NA.res ./tara_ocean/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.19mers
+
+rm NA.res.*

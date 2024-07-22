@@ -12,7 +12,10 @@
 
 #include "progress/progressbar.h"
 
-#include "./sorting/std_2cores.hpp"
+#include "./sorting/std_2cores.hxx"
+#include "./sorting/std_4cores.hxx"
+#include "./sorting/crumsort_2cores.hxx"
+
 
 void vec_copy(std::vector<uint64_t>& dst, std::vector<uint64_t>& src)
 {
@@ -528,7 +531,7 @@ bool SaveToFileRAW(const std::string filename, const std::vector<uint64_t> list_
         fast_decode(smer, smer_size, buff_smer);
         buff_smer[smer_size] = '\0';
 
-        fprintf(f, "%16.16lX | %s | %d\n", list_hash[y], buff_smer, r_abon);
+        fprintf(f, "%16.16llX | %s | %d\n", list_hash[y], buff_smer, r_abon);
 
         if( y%prog_step == 0)
             progressbar_inc(progress);
@@ -663,8 +666,13 @@ int main(int argc, char* argv[])
     printf("(II) Launching the sorting step\n");
     printf("(II) - Number of samples = %ld\n", list_hash.size());
     double start_time = omp_get_wtime();
+
 //    std::sort( list_hash.begin(), list_hash.end() );
-    p_sort( list_hash );
+//    std_2cores( list_hash );
+//    std_4cores( list_hash );
+//    crumsort_2cores( list_hash );
+    crumsort_prim( list_hash.data(), list_hash.size(), 9 /*uint64*/ );
+
     double end_time = omp_get_wtime();
     printf("(II) - Execution time    = %f\n", end_time - start_time);
 

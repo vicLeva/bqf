@@ -1,5 +1,15 @@
-#include "std_2cores.hpp"
+#pragma once
+#include <cstdio>
+#include <cstdlib>
+#include <fstream>
+#include <vector>
+#include <chrono>
+#include <algorithm>
+#include <iostream>
+#include <omp.h>
 #include <thread>
+
+#include "../tools/vec_copy.hxx"
 
 static void local_sort_thread_4x(
         uint64_t* dst,
@@ -39,9 +49,11 @@ void local_merge(uint64_t* dst, uint64_t* src_1, uint64_t* src_2, int size)
     }
 }
 
-void p_sort_4x(std::vector<uint64_t>& test)
+void std_4cores(std::vector<uint64_t>& test)
 {
+#if 0
     double A = omp_get_wtime();
+#endif
     const int size = test.size();
     const int half = size / 2;
     const int quar = half / 2;
@@ -58,7 +70,9 @@ void p_sort_4x(std::vector<uint64_t>& test)
     t2.join();
     t3.join();
     t4.join();
+#if 0
     double B = omp_get_wtime();
+#endif
 
     std::thread z1(local_merge, test.data(),        tmp,        tmp + quar, half);
     std::thread z2(local_merge, test.data() + half, tmp + half, tmp + qua3, half);
@@ -66,20 +80,24 @@ void p_sort_4x(std::vector<uint64_t>& test)
     z2.join();
 
     //
+#if 0
     double C = omp_get_wtime();
+#endif
     local_merge(tmp,                test.data(),test.data() + half, size);
 
+#if 0
     double D = omp_get_wtime();
+#endif
 
     for(int x = 0; x < size; x += 1)
         test[x] = tmp[x];
 
+#if 0
     double E = omp_get_wtime();
-
     printf(" (1) %g seconds\n",    B - A);
     printf(" (2) %g seconds\n",    C - B);
     printf(" (3) %g seconds\n",    D - C);
     printf(" (4) %g seconds\n",    E - D);
-
+#endif
     delete[] tmp;
 }
