@@ -258,7 +258,7 @@ typedef int CMPFUNC (const void *a, const void *b);
 #if (DBL_MANT_DIG < LDBL_MANT_DIG)
   #define VAR long double
   #define FUNC(NAME) NAME##128
-  #include "quadsort.c"
+  #include "quadsort.hxx"
   #undef VAR
   #undef FUNC
 #endif
