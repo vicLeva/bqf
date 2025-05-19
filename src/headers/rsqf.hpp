@@ -176,7 +176,7 @@ class Rsqf {
     /** 
      * \brief number of elements (non distinct in RSQF, distinct in BCQF) inserted in the filter
      */
-    uint64_t elements_inside;
+    uint64_t elements_inside = 0;
 
     /** 
      * \brief used mainly for debug, displays in stdout what's going on in the QF

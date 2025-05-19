@@ -31,9 +31,10 @@ class Bqf_ec : public Bqf{
     /** 
      * \brief Constructor that instantiates a BackpackCQF from quotient and remainder sizes
      * \param q_size The desired size of quotient, will induce filter's size
-     * \param r_size The desired size of quotient (usually 64-q_size)
      * \param c_size The desired size of remainders counters
-     * \param verbose to print on-going operations in stdout (default: false)
+     * \param k The length of a k_mer
+     * \param z The length difference between a k-mer and the inserted s-mer
+     * \param verb to print on-going operations in stdout (default: false)
      */
     Bqf_ec(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb=false);
 

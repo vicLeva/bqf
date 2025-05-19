@@ -5,13 +5,11 @@
 using namespace std;
 
 Rsqf::Rsqf(){
-    elements_inside = 0;
 }
 
 Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : verbose(verbose) {
     assert(q_size >= 7);
 
-    elements_inside = 0;
     quotient_size = q_size;
     remainder_size = r_size;
 
@@ -21,14 +19,13 @@ Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : verbose(verbose) {
     size_limit = num_quots * 0.95;
 
     // In machine words
-    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+    number_blocks = ceil(num_quots / BLOCK_SIZE);
 
-    filter = std::vector<uint64_t>(num_of_words);
+    filter = vector<uint64_t>(num_of_words);
 }
 
 
 Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) { 
-    elements_inside = 0;
     
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory);
@@ -40,13 +37,13 @@ Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) {
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
 
     // In machine words
-    number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+    number_blocks = ceil(num_quots / BLOCK_SIZE);
     
-    filter = std::vector<uint64_t>(num_of_words);
+    filter = vector<uint64_t>(num_of_words);
 }
 
-std::string Rsqf::block2string(size_t block_id, bool bit_format) {
-    std::stringstream stream;
+string Rsqf::block2string(size_t block_id, bool bit_format) {
+    stringstream stream;
 
     // Init the position in filter to the first machine word of the block
     uint64_t position = block_id * (MET_UNIT + this->remainder_size);
@@ -176,7 +173,7 @@ using namespace std;
 void Rsqf::insert(uint64_t number){
     if (elements_inside+1 == size_limit){
         if (verbose){
-            std::cout << "RESIZING" << std::endl;
+            cout << "RESIZING" << endl;
         }
         this->resize(1);    
     }
@@ -186,8 +183,8 @@ void Rsqf::insert(uint64_t number){
     uint64_t rem = remainder(number);
 
     if (verbose){
-        std::cout << "[INSERT] quot " << quot << std::endl;
-        std::cout << "[INSERT] rem " << rem << std::endl;
+        cout << "[INSERT] quot " << quot << endl;
+        cout << "[INSERT] rem " << rem << endl;
     }
     
 
@@ -196,7 +193,7 @@ void Rsqf::insert(uint64_t number){
     assert(get_remainder(fu_slot) == 0);
     
     if (verbose) {
-        std::cout << "[INSERT] FUS " << fu_slot << std::endl;
+        cout << "[INSERT] FUS " << fu_slot << endl;
     }
 
     if (!is_occupied(quot)){
@@ -218,7 +215,7 @@ void Rsqf::insert(uint64_t number){
             cout << "occupied" << endl;
         }
         //getting boundaries of the run
-        std::pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+        pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
         if (verbose){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
@@ -269,7 +266,7 @@ bool Rsqf::query(uint64_t number){
 
     if (!is_occupied(quot)) return 0;
 
-    std::pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+    pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
     // TODO:
     // OPTIMIZE TO LOG LOG SEARCH ?
@@ -299,13 +296,13 @@ bool Rsqf::remove(uint64_t number){
     uint64_t rem = remainder(number);
 
     if (verbose){
-        std::cout << "[REMOVE] quot " << quot << std::endl;
-        std::cout << "[REMOVE] rem " << rem << std::endl;
+        cout << "[REMOVE] quot " << quot << endl;
+        cout << "[REMOVE] rem " << rem << endl;
     }
 
     if (is_occupied(quot) == false) return 0;
 
-    std::pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+    pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
 
     // TODO:
     // OPTIMIZE TO LOG LOG SEARCH ?
@@ -377,11 +374,11 @@ bool Rsqf::remove(uint64_t number){
 }
 
 
-std::unordered_set<uint64_t> Rsqf::enumerate(){
-    std::unordered_set<uint64_t> finalSet;
+unordered_set<uint64_t> Rsqf::enumerate(){
+    unordered_set<uint64_t> finalSet;
     uint64_t curr_occ;
     
-    std::pair<uint64_t, uint64_t> bounds;
+    pair<uint64_t, uint64_t> bounds;
     uint64_t cursor;
 
     uint64_t quotient;
@@ -416,7 +413,7 @@ std::unordered_set<uint64_t> Rsqf::enumerate(){
 
 
 void Rsqf::resize(int n){
-    std::unordered_set<uint64_t> inserted_elements = this->enumerate();
+    unordered_set<uint64_t> inserted_elements = this->enumerate();
 
     this->quotient_size += n;
     this->remainder_size -= n;
@@ -427,9 +424,9 @@ void Rsqf::resize(int n){
     this->size_limit = num_quots * 0.95;
 
     // In machine words
-    this->number_blocks = std::ceil(num_quots / BLOCK_SIZE);
+    this->number_blocks = ceil(num_quots / BLOCK_SIZE);
 
-    this->filter = std::vector<uint64_t>(num_of_words);
+    this->filter = vector<uint64_t>(num_of_words);
 
     for (const uint64_t& hash: inserted_elements) {
         this->insert(hash);
@@ -694,7 +691,7 @@ bool Rsqf::is_occupied(uint64_t position){
 
 
 uint64_t Rsqf::first_unshiftable_slot(uint64_t curr_quotient){ //const
-    std::pair<uint64_t, bool> rend_pos = get_runend(curr_quotient);
+    pair<uint64_t, bool> rend_pos = get_runend(curr_quotient);
     
     if (verbose){
         cout << "[FUnshftbleS] first runend " << rend_pos.first << " | " <<  rend_pos.second << " (quot " << curr_quotient << ")" << endl;
@@ -728,7 +725,7 @@ uint64_t Rsqf::first_unshiftable_slot(uint64_t curr_quotient){ //const
 }
 
 uint64_t Rsqf::first_unused_slot(uint64_t curr_quotient){ //const
-    std::pair<uint64_t, bool> rend_pos = get_runend(curr_quotient);
+    pair<uint64_t, bool> rend_pos = get_runend(curr_quotient);
     
     if (verbose){
         cout << "[FUS] first runend " << rend_pos.first << " | " <<  rend_pos.second << " (quot " << curr_quotient << ")" << endl;
@@ -759,17 +756,17 @@ uint64_t Rsqf::first_unused_slot(uint64_t curr_quotient){ //const
 }
 
 
-std::pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
+pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
     uint64_t current_block = get_block_id(quotient);
     uint64_t current_shift = get_shift_in_block(quotient);
     uint64_t offset = get_offset_word(current_block);
 
     if (current_shift == 0) {
         if (offset <= 1){
-            return std::make_pair(quotient, false);
+            return make_pair(quotient, false);
         }
         else {
-            return std::make_pair((quotient + offset - 1) % (1ULL << quotient_size), 
+            return make_pair((quotient + offset - 1) % (1ULL << quotient_size), 
                                   (offset-1 >= BLOCK_SIZE));
         }
     }
@@ -782,7 +779,7 @@ std::pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
 
     if (nb_runs == 0) { 
         uint64_t offset_orig = (offset==0) ? 0 : offset-1;
-        return std::make_pair(quotient - current_shift + offset_orig, (offset_orig >= BLOCK_SIZE));
+        return make_pair(quotient - current_shift + offset_orig, (offset_orig >= BLOCK_SIZE));
     }
 
     
@@ -811,7 +808,7 @@ std::pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
         nb_runs -= bitrankasm(get_runend_word(current_block), MEM_UNIT-1);
     }
 
-    return std::make_pair(current_block*BLOCK_SIZE + select_val, left_block);
+    return make_pair(current_block*BLOCK_SIZE + select_val, left_block);
 }
 
 
@@ -936,11 +933,11 @@ uint64_t Rsqf::get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t off
 }
 
 
-std::pair<uint64_t,uint64_t> Rsqf::get_run_boundaries(uint64_t quotient){ //const
+pair<uint64_t,uint64_t> Rsqf::get_run_boundaries(uint64_t quotient){ //const
     //SUB OPTI
     assert(is_occupied(quotient));
     
-    std::pair<uint64_t, uint64_t> boundaries;
+    pair<uint64_t, uint64_t> boundaries;
 
     boundaries.first = get_runstart(quotient, 1);
     boundaries.second = get_runend(quotient).first;
@@ -1109,8 +1106,8 @@ void Rsqf::shift_bits_right_metadata(uint64_t quotient, uint64_t start_position,
 }
 
 
-void Rsqf::save_on_disk(const std::string& filename) { //remove 5 
-    std::ofstream file(filename, std::ios::out | std::ios::binary);
+void Rsqf::save_on_disk(const string& filename) { //remove 5 
+    ofstream file(filename, ios::out | ios::binary);
     if (file.is_open()) {
         file.write(reinterpret_cast<const char*>(&this->quotient_size), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->remainder_size), sizeof(uint64_t));
@@ -1118,14 +1115,14 @@ void Rsqf::save_on_disk(const std::string& filename) { //remove 5
         file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
         file.close();
     } else {
-        std::cerr << "Unable to open file for writing: " << filename << std::endl;
+        cerr << "Unable to open file for writing: " << filename << endl;
         exit( EXIT_FAILURE );
     }
 }
 
-Rsqf Rsqf::load_from_disk(const std::string& filename){
+Rsqf Rsqf::load_from_disk(const string& filename){
     Rsqf qf;
-    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    ifstream file(filename, ios::in | ios::binary);
     if (file.is_open()) {
         file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(int64_t));
         file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(int64_t));
@@ -1134,7 +1131,7 @@ Rsqf Rsqf::load_from_disk(const std::string& filename){
         file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(int64_t) * num_words);
         file.close();
     } else {
-        std::cerr << "Unable to open file for reading: " << filename << std::endl;
+        cerr << "Unable to open file for reading: " << filename << endl;
         return 1;
     }
     return qf;
