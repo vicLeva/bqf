@@ -7,8 +7,6 @@ Bqf_ec::Bqf_ec(){}
 Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb) :
     Bqf(c_size, k, k-z, q_size, verb)
 {
-    assert(q_size >= 7);
-
     const uint64_t hash_size = 2*smer_size;   
 
     remainder_size = hash_size - q_size + c_size;
@@ -20,22 +18,7 @@ Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool ve
 
 
 Bqf_ec::Bqf_ec(uint64_t max_memory, uint64_t c_size, bool verb):
-    verbose(verb), count_size(c_size) 
-{ //TO CHANGE, MISS HASH INFORMATION
-    // Size of the quotient/remainder to fit into max_memory MB
-    quotient_size = find_quotient_given_memory(max_memory, c_size);
-    assert(quotient_size >= 7);
-    remainder_size = MEM_UNIT - quotient_size + c_size;
-
-    // Number of quotients must be >= MEM_UNIT
-    const uint64_t num_quots = 1ULL << quotient_size; //524.288
-    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
-
-    // In machine words
-    number_blocks = ceil(num_quots / BLOCK_SIZE);
-    
-    filter = vector<uint64_t>(num_of_words);
-}
+    Bqf(max_memory, c_size, verbose){}
 
 
 

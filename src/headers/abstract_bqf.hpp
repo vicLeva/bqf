@@ -34,7 +34,8 @@ public:
     Bqf(){};
     Bqf(uint64_t c_size, uint64_t k, uint64_t s, uint64_t q_size, bool verbose = false) :
         Rsqf(q_size, 2*s - q_size + c_size, verbose), count_size(c_size), kmer_size(k), smer_size(s) {};
-    
+    Bqf(uint64_t max_memory, uint64_t c_size, bool verb);
+
     
     /** 
      * \brief Insert every kmer + abundance of a kmer count software output file (eg KMC)

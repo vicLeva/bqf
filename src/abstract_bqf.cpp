@@ -4,6 +4,21 @@
 
 using namespace std;
 
+Bqf::Bqf(uint64_t max_memory, uint64_t c_size, bool verb): 
+    Rsqf(max_memory, verb), count_size(c_size) {
+    // Size of the quotient/remainder to fit into max_memory MB
+    remainder_size = MEM_UNIT - quotient_size + c_size;
+
+    // Number of quotients must be >= MEM_UNIT
+    const uint64_t num_quots = 1ULL << quotient_size; //524.288
+    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
+
+    // In machine words
+    number_blocks = ceil(num_quots / BLOCK_SIZE);
+    
+    filter = vector<uint64_t>(num_of_words);
+}
+
 void Bqf::insert(string kmc_input){
     try {
         ifstream infile(kmc_input);
