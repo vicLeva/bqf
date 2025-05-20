@@ -4,18 +4,12 @@ using namespace std;
 
 Bqf_oom::Bqf_oom(){}
 
-Bqf_oom::Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb){
+Bqf_oom::Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb):
+    Bqf(c_size, k, k-z, q_size, verb)
+{
     assert(q_size >= 7);
 
-    verbose = verb;
-
-    elements_inside = 0;
-    quotient_size = q_size;
-    kmer_size = k;
-    smer_size = k-z;
     const uint64_t hash_size = 2*smer_size;   
-    count_size = c_size; 
-
     remainder_size = hash_size - q_size + c_size;
     
     
@@ -36,16 +30,14 @@ Bqf_oom::Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool 
 }
 
 
-Bqf_oom::Bqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){ //TO CHANGE, MISS HASH INFORMATION
-    elements_inside = 0;
-
-    verbose = verb;
+Bqf_oom::Bqf_oom(uint64_t max_memory, uint64_t c_size, bool verb) :
+    verbose(verb), count_size(c_size)
+{ //TO CHANGE, MISS HASH INFORMATION
     
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory, c_size);
     assert (quotient_size >= 7);
     remainder_size = MEM_UNIT - quotient_size + c_size;
-    count_size = c_size;
 
     // Number of quotients must be >= MEM_UNIT
     const uint64_t num_quots = 1ULL << quotient_size; //524.288
@@ -164,9 +156,9 @@ uint64_t Bqf_oom::query_process_count(uint64_t c) {
 }
 
 
-Bqf_oom Bqf_oom::load_from_disk(const std::string& filename){
+Bqf_oom Bqf_oom::load_from_disk(const string& filename){
     Bqf_oom qf;
-    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    ifstream file(filename, ios::in | ios::binary);
     if (file.is_open()) {
         file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(uint64_t));
@@ -183,7 +175,7 @@ Bqf_oom Bqf_oom::load_from_disk(const std::string& filename){
 
         qf.verbose = false;
     } else {
-        std::cerr << "Unable to open file for reading: " << filename << std::endl;
+        cerr << "Unable to open file for reading: " << filename << endl;
     }
     return qf;
 }

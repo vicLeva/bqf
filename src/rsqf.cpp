@@ -7,11 +7,10 @@ using namespace std;
 Rsqf::Rsqf(){
 }
 
-Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : verbose(verbose) {
+Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : 
+    verbose(verbose), quotient_size(q_size), remainder_size(r_size)
+{
     assert(q_size >= 7);
-
-    quotient_size = q_size;
-    remainder_size = r_size;
 
     uint64_t num_quots = 1ULL << quotient_size; 
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT;

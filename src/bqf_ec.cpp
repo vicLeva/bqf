@@ -5,7 +5,7 @@ using namespace std;
 Bqf_ec::Bqf_ec(){}
 
 Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb) :
-    verbose(verb), quotient_size(q_size), kmer_size(k), smer_size(k-z), count_size(c_size)
+    Bqf(c_size, k, k-z, q_size, verb)
 {
     assert(q_size >= 7);
 
@@ -16,16 +16,6 @@ Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool ve
     if (verbose){ 
         cout << "q " << quotient_size << " r " << (hash_size - q_size) << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
     }
-
-    const uint64_t num_quots = 1ULL << quotient_size; 
-    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
-
-    size_limit = num_quots * 0.95;
-
-    // In machine words
-    number_blocks = ceil(num_quots / BLOCK_SIZE);
-
-    filter = vector<uint64_t>(num_of_words);
 }
 
 
