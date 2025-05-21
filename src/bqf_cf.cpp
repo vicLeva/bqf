@@ -114,10 +114,6 @@ bool Bqf_cf::is_second_insert(uint64_t number){
                 position -= quots;
             remainder_in_filter = get_remainder(position);
 
-            if (verbose) {
-                cout << "remainder in position " << position << " : " << remainder_in_filter << endl;
-            }
-
             if (remainder_in_filter == rem)
                 return add_to_counter(position);
             else if (left == right){
@@ -153,6 +149,10 @@ void Bqf_cf::insert_and_filter(string kmc_input, string output) {
 
         if (!infile) {
             throw std::runtime_error("File not found: " + kmc_input);
+        }
+
+        if (!outfile.is_open()) {
+            throw std::runtime_error("Could not open file " + output);
         }
 
         string smer; 

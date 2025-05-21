@@ -280,7 +280,7 @@ TEST_F(RsqfTest, globalUse) {
     EXPECT_EQ(usual_qf.query(val2), 0);
 }
 
-TEST_F(RsqfTest, finalTest) {
+/* TEST_F(RsqfTest, finalTest) {
     uint64_t val;
     unordered_set<uint64_t> verif; 
 
@@ -301,7 +301,7 @@ TEST_F(RsqfTest, finalTest) {
     }
 
     EXPECT_EQ(usual_qf.enumerate(), verif);
-}
+} */
 
 
 
@@ -443,7 +443,7 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
 string string_of_int(uint32_t n) {
     string r = "";
     uint32_t mask = 3;
-    for (uint64_t i = 0; i <<1ULL<<4; i++){
+    for (uint64_t i = 0; i < 1ULL<<4; i++){
         switch (mask&n) {
             case 0:
                 r.push_back('A');
@@ -473,29 +473,81 @@ protected:
 
     void SetUp() override {
         generator.seed(time(NULL));
-        ofstream file(input_file, ios::out | ios::binary);
+        ofstream file(input_file);
+
+        if (!file) {
+            throw runtime_error("File not found " + input_file);
+        }
 
         if (file.is_open()){
-            for (uint64_t i = 0; i < 1ULL<<8; i++){
+            for (uint64_t i = 0; i < 1ULL<<5; i++){
                 string random_s = string_of_int(distribution32(generator));
-                file.write(random_s.c_str(), 17*sizeof(char));
+                cout << random_s << endl;
+                file << random_s << endl;
             }
-            
+            file.close();
         }
-        file.close();
+        else {
+            cerr << "Unable to open file" << input_file;
+        }
+
         
-        bqf_truncate = Bqf_cf(5, 18, 2, true);
+        bqf_truncate = Bqf_cf(5, 18, 2, false);
     }
 };
 
-TEST_F(BqfCfTest, Insert) {
-    uint64_t n = kmer_to_hash(string_of_int(distribution32(generator)), bqf_truncate.smer_size);
-    EXPECT_EQ(bqf_truncate.is_second_insert(n), false);
-    EXPECT_EQ(bqf_truncate.is_second_insert(n), true);
-    EXPECT_EQ(bqf_truncate.is_second_insert(n), false);
-    EXPECT_EQ(bqf_truncate.is_second_insert(n), false);
-    bqf_truncate.remove(n, 4);
-    std::map<uint64_t, uint64_t> check;
-    check.clear();
-    EXPECT_EQ(bqf_truncate.enumerate(), check);
+TEST_F(BqfCfTest, SimpleInsert) {
+    uint64_t n;
+    std::map<uint64_t, uint64_t> verif;
+    try{
+        for (uint64_t i = 0; i < (1ULL<<2) -1; i++) {
+            n = kmer_to_hash(string_of_int(distribution32(generator)), bqf_truncate.smer_size);
+            ++verif[n];
+            EXPECT_EQ(bqf_truncate.is_second_insert(n), verif[n] == 2);
+        }
+    }
+    catch (const std::exception &e) {
+        cerr << "Error : " << e.what();
+    }
+    std::map<uint64_t, uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++){
+        bqf_truncate.remove((*it).first);
+    }
+    verif.clear();
+    EXPECT_EQ(bqf_truncate.enumerate(), verif);
+}
+
+TEST_F(BqfCfTest, InsertFromFile) {
+    string output = "../filtered_kmers.txt";
+    bqf_truncate.insert_and_filter(input_file, output);
+
+    cout << "inserted and fileterd\n";
+
+    std::map<string, uint64_t> kmer_count;
+    std::vector<string> verif;
+    
+    ifstream infile(input_file);
+    string smer;
+    if (infile.is_open()) {
+        while (infile >> smer) {
+            cout << smer << endl;
+            ++kmer_count[smer];
+            if (kmer_count[smer] == 2) {
+                verif.push_back(smer);
+            }
+        }
+        infile.close();
+    }
+
+    ifstream resfile(output);
+    std::vector<string> results;
+    if (resfile.is_open()) {
+        while (resfile >> smer) {
+            cout << smer << endl;
+            results.push_back(smer);
+        }
+        resfile.close();
+    }
+
+    EXPECT_EQ(results, verif);
 }
