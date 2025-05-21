@@ -18,13 +18,13 @@ public:
 
     bool add_to_counter(uint64_t position);
     bool is_second_insert(uint64_t number);
-    void is_second_insert(string kmer, ofstream& output);
+    void is_second_insert(std::string kmer, std::ofstream& output);
     /**
      * @brief inserts a list of smers in the BQF and copies in a file all smers that appear more than twice
      * \param file is the file from which to read the smers
      * \param output is the file in which to write redundant smers
      */
-    void insert_and_filter(string file, string output);
+    void insert_and_filter(std::string file, std::string output);
 };
 
 #endif

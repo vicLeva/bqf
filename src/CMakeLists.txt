@@ -4,6 +4,7 @@ add_library(RSQF
 	abstract_bqf.cpp
 	bqf_ec.cpp
 	bqf_oom.cpp
+	bqf_cf.cpp
 )
 
 target_include_directories(RSQF

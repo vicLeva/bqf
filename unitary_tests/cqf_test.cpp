@@ -3,6 +3,7 @@
 #include "rsqf.hpp"
 #include "bqf_ec.hpp" 
 #include "bqf_oom.hpp"
+#include "bqf_cf.hpp"
 #include <random>
 
 using namespace std;
@@ -374,7 +375,7 @@ TEST_F(BCqfTest, insertRDMoccs) {
         cqf.insert(val, val%31);
         verif.insert({val, val%31 });
     }
-
+    //EXPECT_EQ(cqf.enumerate().size(), verif.size());
     EXPECT_EQ(cqf.enumerate(), verif);
 
     //REMOVE
@@ -387,6 +388,29 @@ TEST_F(BCqfTest, insertRDMoccs) {
     EXPECT_EQ(cqf.enumerate(), verif);
 }
 
+
+TEST_F(BCqfTest, insertSeveralOccs) {
+    uint64_t val;
+    std::map<uint64_t, uint64_t> verif; 
+
+    //INSERT
+    for (uint64_t i=0; i < (1ULL<<17)-1; i++){
+        val = distribution(generator);    
+        cqf.insert(val);
+        ++verif[val];
+    }
+    //EXPECT_EQ(cqf.enumerate().size(), verif.size());
+    EXPECT_EQ(cqf.enumerate(), verif);
+
+    //REMOVE
+    std::map<uint64_t,uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++){
+        cqf.remove((*it).first, (*it).second);
+    }
+    verif.clear();
+
+    EXPECT_EQ(cqf.enumerate(), verif);
+}
 
 TEST_F(BCqfTest, insertRDMoccs_oom) {
     uint64_t val;
@@ -402,7 +426,7 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
         cqf_oom.insert(val, (1ULL << val%31));
         verif.insert({ val, (1ULL << val%31) });
     }
-
+    //EXPECT_EQ(cqf_oom.enumerate().size(), verif.size());
     EXPECT_EQ(cqf_oom.enumerate(), verif);
 
     //REMOVE
@@ -413,4 +437,65 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
     verif.clear();
 
     EXPECT_EQ(cqf_oom.enumerate(), verif);
+}
+
+
+string string_of_int(uint32_t n) {
+    string r = "";
+    uint32_t mask = 3;
+    for (uint64_t i = 0; i <<1ULL<<4; i++){
+        switch (mask&n) {
+            case 0:
+                r.push_back('A');
+                break;
+            case 1:
+                r.push_back('C');
+                break;
+            case 2:
+                r.push_back('T');
+                break;
+            default:
+                r.push_back('G');
+        }
+        n = n>>2;
+    }
+    return r;
+}
+
+class BqfCfTest : public ::testing::Test {
+protected:
+    std::default_random_engine generator;
+    std::uniform_int_distribution<uint32_t> distribution32;
+    std::uniform_int_distribution<uint64_t> distribution64;
+
+    std::string input_file = "../random_kmers.txt";
+    Bqf_cf bqf_truncate;
+
+    void SetUp() override {
+        generator.seed(time(NULL));
+        ofstream file(input_file, ios::out | ios::binary);
+
+        if (file.is_open()){
+            for (uint64_t i = 0; i < 1ULL<<8; i++){
+                string random_s = string_of_int(distribution32(generator));
+                file.write(random_s.c_str(), 17*sizeof(char));
+            }
+            
+        }
+        file.close();
+        
+        bqf_truncate = Bqf_cf(5, 18, 2, true);
+    }
+};
+
+TEST_F(BqfCfTest, Insert) {
+    uint64_t n = kmer_to_hash(string_of_int(distribution32(generator)), bqf_truncate.smer_size);
+    EXPECT_EQ(bqf_truncate.is_second_insert(n), false);
+    EXPECT_EQ(bqf_truncate.is_second_insert(n), true);
+    EXPECT_EQ(bqf_truncate.is_second_insert(n), false);
+    EXPECT_EQ(bqf_truncate.is_second_insert(n), false);
+    bqf_truncate.remove(n, 4);
+    std::map<uint64_t, uint64_t> check;
+    check.clear();
+    EXPECT_EQ(bqf_truncate.enumerate(), check);
 }

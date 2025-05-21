@@ -12,6 +12,9 @@ Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, uint64_t z, bool verb=false) :
 
 bool Bqf_cf::add_to_counter(uint64_t position){
     const uint64_t old_rem = get_remainder(position, true);
+    if (verbose) {
+        cout << "[ADD] to old_rem " << old_rem << endl;
+    }
     if (!(old_rem & 1ULL)){ // 2nd occurence
         set_bits(filter, 
             get_remainder_word_position(position) * BLOCK_SIZE + get_remainder_shift_position(position), 
@@ -111,6 +114,10 @@ bool Bqf_cf::is_second_insert(uint64_t number){
                 position -= quots;
             remainder_in_filter = get_remainder(position);
 
+            if (verbose) {
+                cout << "remainder in position " << position << " : " << remainder_in_filter << endl;
+            }
+
             if (remainder_in_filter == rem)
                 return add_to_counter(position);
             else if (left == right){
@@ -142,7 +149,7 @@ void Bqf_cf::is_second_insert(string kmer, ofstream& output){
 void Bqf_cf::insert_and_filter(string kmc_input, string output) {
     try {
         ifstream infile(kmc_input);
-        ofstream outfile(output);
+        ofstream outfile(output, ios::binary);
 
         if (!infile) {
             throw std::runtime_error("File not found: " + kmc_input);
@@ -165,6 +172,7 @@ void Bqf_cf::insert_and_filter(string kmc_input, string output) {
         }
 
         infile.close();
+        outfile.close();
     } catch (const std::exception &e) {
         // Gérez l'exception ici, par exemple, affichez un message d'erreur
         std::cerr << "Error: " << e.what() << std::endl;
