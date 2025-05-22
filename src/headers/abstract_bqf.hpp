@@ -33,7 +33,8 @@ public:
     */ 
     Bqf(){};
     Bqf(uint64_t c_size, uint64_t k, uint64_t s, uint64_t q_size, bool verbose = false) :
-        Rsqf(q_size, 2*s - q_size + c_size, verbose), count_size(c_size), kmer_size(k), smer_size(s) {};
+        Rsqf(q_size, 2*s - q_size + c_size, verbose), count_size(c_size), kmer_size(k), smer_size(s) 
+        {assert (q_size >= 7);};
     Bqf(uint64_t max_memory, uint64_t c_size, bool verb);
 
     
@@ -71,6 +72,14 @@ public:
      * \param count number of occurences of the element to insert (default: 1)
      */
     virtual void insert(uint64_t number, uint64_t count = 1);
+
+    /**
+     * \brief finds the position in which to insert a number in a run
+     * \param boundary boundaries of the run
+     * \param quot quotient of the number
+     * \param rem remainder of the number
+     */
+    std::pair<uint64_t, bool> find_insert_position(const std::pair<uint64_t,uint64_t> boundary, uint64_t quot, uint64_t rem);
 
     void query(std::ifstream& infile, std::ofstream& outfile);
 

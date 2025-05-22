@@ -7,6 +7,7 @@ using namespace std;
 Bqf::Bqf(uint64_t max_memory, uint64_t c_size, bool verb): 
     Rsqf(max_memory, verb), count_size(c_size) {
     // Size of the quotient/remainder to fit into max_memory MB
+    assert(quotient_size >= 7);
     remainder_size = MEM_UNIT - quotient_size + c_size;
 
     // Number of quotients must be >= MEM_UNIT
@@ -53,7 +54,60 @@ void Bqf::insert(string kmc_input){
 
 
 void Bqf::insert(string kmer, uint64_t count){
-    this->insert(kmer_to_hash(kmer, smer_size), count);
+    uint64_t n = kmer_to_hash(kmer, smer_size);
+    cout << "[INSERTING] " << kmer << " with hash " << n << endl;
+    this->insert(n, count);
+}
+
+pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> boundary, uint64_t quot, uint64_t rem) {
+    if (verbose) {
+        cout << "[SEARCH] in [" << boundary.first << " ; " << boundary.second << "]" << endl;
+    }
+    
+    // nb of quotients
+    const uint64_t quots = (1ULL << this->quotient_size);
+
+    // dichotomous search
+    uint64_t left = boundary.first;
+    if (left < quot)   
+        left += quots;
+
+    uint64_t right = boundary.second;
+    if (right < quot) 
+        right += quots;
+
+    uint64_t middle = ceil((left + right) / 2);
+    uint64_t position = middle;
+    if (position >= quots)
+        position -= quots;
+    
+    uint64_t remainder_in_filter;
+
+    assert(left <= right);
+
+    while (left <= right) {
+        middle = ceil((left + right) / 2);
+        position = middle;
+        if (position >= quots)
+            position -= quots;
+        remainder_in_filter = get_remainder(position);
+
+        if (remainder_in_filter == rem)
+            return make_pair(position, true);
+        else if (left == right){
+            if (remainder_in_filter < rem)
+                position = get_next_quot(position);
+            break;
+        }
+        else if (remainder_in_filter > rem)
+            right = middle;
+        else
+            left = middle + 1;    
+    }
+    if (verbose) {
+        cout << "[SEARCH] found position " << position << endl;
+    }
+    return make_pair(position, false);
 }
 
 void Bqf::insert(uint64_t number, uint64_t count){
@@ -110,46 +164,11 @@ void Bqf::insert(uint64_t number, uint64_t count){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
         }
 
-        // nb of quotients
-        const uint64_t quots = (1ULL << this->quotient_size);
+        pair<uint64_t, bool> pos_and_found = find_insert_position(boundary, quot, rem);
+        uint64_t position = pos_and_found.first;
 
-        // dichotomous search and insertion
-        uint64_t left = boundary.first;
-        if (left < quot)   
-            left += quots;
-
-        uint64_t right = boundary.second;
-        if (right < quot) 
-            right += quots;
-
-        uint64_t middle = ceil((left + right) / 2);
-        uint64_t position = middle;
-        if (position >= quots)
-            position -= quots;
-        
-        uint64_t remainder_in_filter;
-
-        assert(left <= right);
-
-        while (left <= right) {
-            middle = ceil((left + right) / 2);
-            position = middle;
-            if (position >= quots)
-                position -= quots;
-            remainder_in_filter = get_remainder(position);
-
-            if (remainder_in_filter == rem)
-                return add_to_counter(position, rem_count);
-            else if (left == right){
-                if (remainder_in_filter < rem)
-                    position = get_next_quot(position);
-                break;
-            }
-            else if (remainder_in_filter > rem)
-                right = middle;
-            else
-                left = middle + 1;
-            
+        if (pos_and_found.second) {
+            return add_to_counter(position, rem_count);
         }
 
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);

@@ -8,7 +8,9 @@ using namespace std;
     ================================================================
 */ 
 Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, uint64_t z, bool verb=false) :
-    Bqf_ec(q_size, 1, k, z, verb) {};
+    Bqf_ec(q_size, 1, k, z, verb) {
+        assert (q_size >= 7);
+    };
 
 bool Bqf_cf::add_to_counter(uint64_t position){
     const uint64_t old_rem = get_remainder(position, true);
@@ -70,6 +72,10 @@ bool Bqf_cf::is_second_insert(uint64_t number){
         shift_bits_left_metadata(quot, 1, starting_position, fu_slot);
         elements_inside++;
         shift_left_and_set_circ(starting_position, fu_slot, rem_count);
+
+        if (verbose) {
+            cout << "[INSERT END]" << endl;
+        }
         return false;
     }
     // IF THE QUOTIENT HAS BEEN USED BEFORE
@@ -86,60 +92,29 @@ bool Bqf_cf::is_second_insert(uint64_t number){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
         }
 
-        // nb of quotients
-        const uint64_t quots = (1ULL << this->quotient_size);
+        pair<uint64_t, bool> pos_and_found = find_insert_position(boundary, quot, rem);
+        uint64_t position = pos_and_found.first;
 
-        // dichotomous search and insertion
-        uint64_t left = boundary.first;
-        if (left < quot)   
-            left += quots;
-
-        uint64_t right = boundary.second;
-        if (right < quot) 
-            right += quots;
-
-        uint64_t middle = ceil((left + right) / 2);
-        uint64_t position = middle;
-        if (position >= quots)
-            position -= quots;
-        
-        uint64_t remainder_in_filter;
-
-        assert(left <= right);
-
-        while (left <= right) {
-            middle = ceil((left + right) / 2);
-            position = middle;
-            if (position >= quots)
-                position -= quots;
-            remainder_in_filter = get_remainder(position);
-
-            if (remainder_in_filter == rem)
-                return add_to_counter(position);
-            else if (left == right){
-                if (remainder_in_filter < rem)
-                    position = get_next_quot(position);
-                break;
-            }
-            else if (remainder_in_filter > rem)
-                right = middle;
-            else
-                left = middle + 1;
-            
+        if (pos_and_found.second) {
+            return add_to_counter(position);
         }
-
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
         elements_inside++;
         shift_left_and_set_circ(position, fu_slot, rem_count);
+        if (verbose) {
+            cout << "[INSERT END]" << endl;
+        }
         return false;
     }
 }
 
 void Bqf_cf::is_second_insert(string kmer, ofstream& output){
+    cout << "[INSERTING] " << kmer << endl;
     if (this->is_second_insert(kmer_to_hash(kmer, smer_size))) {
         output << kmer << endl;
     }
+    cout << "[COMPLETE]" << endl;
 }
 
 void Bqf_cf::insert_and_filter(string kmc_input, string output) {

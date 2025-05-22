@@ -443,7 +443,7 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
 string string_of_int(uint32_t n) {
     string r = "";
     uint32_t mask = 3;
-    for (uint64_t i = 0; i < 1ULL<<4; i++){
+    for (uint64_t i = 0; i < 1ULL<<3; i++){
         switch (mask&n) {
             case 0:
                 r.push_back('A');
@@ -465,34 +465,16 @@ string string_of_int(uint32_t n) {
 class BqfCfTest : public ::testing::Test {
 protected:
     std::default_random_engine generator;
-    std::uniform_int_distribution<uint32_t> distribution32;
-    std::uniform_int_distribution<uint64_t> distribution64;
+    std::uniform_int_distribution<uint16_t> distribution16;
 
     std::string input_file = "../random_kmers.txt";
     Bqf_cf bqf_truncate;
+    Bqf_ec bqf_ec;
 
     void SetUp() override {
         generator.seed(time(NULL));
-        ofstream file(input_file);
-
-        if (!file) {
-            throw runtime_error("File not found " + input_file);
-        }
-
-        if (file.is_open()){
-            for (uint64_t i = 0; i < 1ULL<<5; i++){
-                string random_s = string_of_int(distribution32(generator));
-                cout << random_s << endl;
-                file << random_s << endl;
-            }
-            file.close();
-        }
-        else {
-            cerr << "Unable to open file" << input_file;
-        }
-
         
-        bqf_truncate = Bqf_cf(5, 18, 2, false);
+        bqf_truncate = Bqf_cf(7, 16, 8, false);
     }
 };
 
@@ -500,8 +482,9 @@ TEST_F(BqfCfTest, SimpleInsert) {
     uint64_t n;
     std::map<uint64_t, uint64_t> verif;
     try{
-        for (uint64_t i = 0; i < (1ULL<<2) -1; i++) {
-            n = kmer_to_hash(string_of_int(distribution32(generator)), bqf_truncate.smer_size);
+        for (uint64_t i = 0; i < (1ULL<<10) -1; i++) {
+            string smer = string_of_int(distribution16(generator));
+            n = kmer_to_hash(smer, bqf_ec.smer_size);
             ++verif[n];
             EXPECT_EQ(bqf_truncate.is_second_insert(n), verif[n] == 2);
         }
@@ -518,6 +501,24 @@ TEST_F(BqfCfTest, SimpleInsert) {
 }
 
 TEST_F(BqfCfTest, InsertFromFile) {
+    // File initialization
+    ofstream file(input_file);
+    if (!file) {
+        throw runtime_error("File not found " + input_file);
+    }
+
+    if (file.is_open()){
+        for (uint64_t i = 0; i < 1ULL<<12; i++){
+            string random_s = string_of_int(distribution16(generator));
+            cout << random_s << endl;
+            file << random_s << endl;
+        }
+        file.close();
+    }
+    else {
+        cerr << "Unable to open file" << input_file;
+    }
+
     string output = "../filtered_kmers.txt";
     bqf_truncate.insert_and_filter(input_file, output);
 
@@ -548,6 +549,12 @@ TEST_F(BqfCfTest, InsertFromFile) {
         }
         resfile.close();
     }
+
+    std::map<string, uint64_t>::iterator it;
+    for (it = kmer_count.begin(); it != kmer_count.end(); it++) {
+        bqf_truncate.remove((*it).first);
+    }
+    kmer_count.clear();
 
     EXPECT_EQ(results, verif);
 }
