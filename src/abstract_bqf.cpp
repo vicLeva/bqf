@@ -7,7 +7,6 @@ using namespace std;
 Bqf::Bqf(uint64_t max_memory, uint64_t c_size, bool verb): 
     Rsqf(max_memory, verb), count_size(c_size) {
     // Size of the quotient/remainder to fit into max_memory MB
-    assert(quotient_size >= 7);
     remainder_size = MEM_UNIT - quotient_size + c_size;
 
     // Number of quotients must be >= MEM_UNIT

@@ -4,15 +4,13 @@ using namespace std;
 
 /*  
     ================================================================
-    CONSTRUCTORS
+    CONSTRUCTOR
     ================================================================
 */ 
 Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, uint64_t z, bool verb=false) :
-    Bqf_ec(q_size, 1, k, z, verb) {
-        assert (q_size >= 7);
-    };
+    Bqf_ec(q_size, 1, k, z, verb) {};
 
-bool Bqf_cf::add_to_counter(uint64_t position){
+bool Bqf_cf::is_second_add_to_counter(uint64_t position){
     const uint64_t old_rem = get_remainder(position, true);
     if (verbose) {
         cout << "[ADD] to old_rem " << old_rem << endl;
@@ -73,9 +71,6 @@ bool Bqf_cf::is_second_insert(uint64_t number){
         elements_inside++;
         shift_left_and_set_circ(starting_position, fu_slot, rem_count);
 
-        if (verbose) {
-            cout << "[INSERT END]" << endl;
-        }
         return false;
     }
     // IF THE QUOTIENT HAS BEEN USED BEFORE
@@ -96,34 +91,30 @@ bool Bqf_cf::is_second_insert(uint64_t number){
         uint64_t position = pos_and_found.first;
 
         if (pos_and_found.second) {
-            return add_to_counter(position);
+            return is_second_add_to_counter(position);
         }
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
         // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
         elements_inside++;
         shift_left_and_set_circ(position, fu_slot, rem_count);
-        if (verbose) {
-            cout << "[INSERT END]" << endl;
-        }
+
         return false;
     }
 }
 
 void Bqf_cf::is_second_insert(string kmer, ofstream& output){
-    cout << "[INSERTING] " << kmer << endl;
     if (this->is_second_insert(kmer_to_hash(kmer, smer_size))) {
         output << kmer << endl;
     }
-    cout << "[COMPLETE]" << endl;
 }
 
-void Bqf_cf::insert_and_filter(string kmc_input, string output) {
+void Bqf_cf::insert_from_file_and_filter(string input, string output) {
     try {
-        ifstream infile(kmc_input);
+        ifstream infile(input);
         ofstream outfile(output, ios::binary);
 
         if (!infile) {
-            throw std::runtime_error("File not found: " + kmc_input);
+            throw std::runtime_error("File not found: " + input);
         }
 
         if (!outfile.is_open()) {

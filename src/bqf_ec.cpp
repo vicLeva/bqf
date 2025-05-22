@@ -18,7 +18,8 @@ Bqf_ec::Bqf_ec(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool ve
 
 
 Bqf_ec::Bqf_ec(uint64_t max_memory, uint64_t c_size, bool verb):
-    Bqf(max_memory, c_size, verbose){}
+    Bqf(max_memory, c_size, verbose)
+    {}
 
 
 

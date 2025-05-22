@@ -510,7 +510,6 @@ TEST_F(BqfCfTest, InsertFromFile) {
     if (file.is_open()){
         for (uint64_t i = 0; i < 1ULL<<12; i++){
             string random_s = string_of_int(distribution16(generator));
-            cout << random_s << endl;
             file << random_s << endl;
         }
         file.close();
@@ -520,10 +519,11 @@ TEST_F(BqfCfTest, InsertFromFile) {
     }
 
     string output = "../filtered_kmers.txt";
-    bqf_truncate.insert_and_filter(input_file, output);
 
-    cout << "inserted and fileterd\n";
+    //inserting smers in the BQF
+    bqf_truncate.insert_from_file_and_filter(input_file, output);
 
+    //checking the output
     std::map<string, uint64_t> kmer_count;
     std::vector<string> verif;
     
@@ -531,7 +531,6 @@ TEST_F(BqfCfTest, InsertFromFile) {
     string smer;
     if (infile.is_open()) {
         while (infile >> smer) {
-            cout << smer << endl;
             ++kmer_count[smer];
             if (kmer_count[smer] == 2) {
                 verif.push_back(smer);
@@ -544,7 +543,6 @@ TEST_F(BqfCfTest, InsertFromFile) {
     std::vector<string> results;
     if (resfile.is_open()) {
         while (resfile >> smer) {
-            cout << smer << endl;
             results.push_back(smer);
         }
         resfile.close();

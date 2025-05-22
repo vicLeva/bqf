@@ -10,7 +10,8 @@ Rsqf::Rsqf(){
 Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : 
     quotient_size(q_size), remainder_size(r_size), verbose(verbose)
 {
-    assert(q_size >= 7);
+    if (q_size < 7)
+        throw std::runtime_error("quotient size is " + to_string(q_size) + " (< 7)");
 
     uint64_t num_quots = 1ULL << quotient_size; 
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT;
@@ -28,7 +29,8 @@ Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) {
     
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory);
-    assert(quotient_size >= 7);
+    if (quotient_size < 7)
+        throw std::runtime_error("quotient size is " + to_string(quotient_size) + " (< 7)");
     remainder_size = MEM_UNIT - quotient_size;
 
     // Number of quotients must be >= MEM_UNIT
