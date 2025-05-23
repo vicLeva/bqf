@@ -121,6 +121,12 @@ void Bqf_cf::is_second_insert(string kmer, ofstream& output){
     }
 }
 
+void Bqf_cf::is_second_insert(uint64_t coded_kmer, ofstream& output){
+    if (this->is_second_insert(kmer_to_hash(coded_kmer, kmer_size))) {
+        output << decode(~coded_kmer, kmer_size) << endl;
+    }
+}
+
 void Bqf_cf::insert_from_file_and_filter(string input, string output) {
     try {
         ifstream infile(input);
@@ -159,38 +165,72 @@ void Bqf_cf::insert_from_file_and_filter(string input, string output) {
 
 void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string output) {
     try {
+        ofstream outfile(output, ios::binary);
+        if (!outfile.is_open()) {
+            throw std::runtime_error("Could not open file " + output);
+        }
+
         fastx_parser::FastxParser<fastx_parser::ReadSeq> parser(files, 1, 1);
         parser.start();
         auto rg = parser.getReadGroup();
         while (parser.refill(rg)) {
             for (auto& rp : rg) {
-                insert_from_sequence(rp.seq, output);
+                insert_from_sequence(rp.seq, outfile);
             }
         }
         parser.stop();
+        outfile.close();
         }
     catch (const std::exception &e) {
         std::cerr << "Error :" << e.what() << std::endl;
     }
 }
 
-void Bqf_cf::insert_from_sequence (std::string sequence, std::string output) {
-    /* uint64_t lgth = sequence.length();
+void Bqf_cf::insert_from_sequence (std::string sequence, ofstream& output) {
+    if (verbose){
+        cout << "[INSERT] sequence " << sequence << endl;
+    }
+    uint64_t lgth = sequence.length();
+    /*the kmer and its revcomp are created character per character and left_to_compute indicates 
+    the nb of characters left to atke into account to create a kmer*/ 
     uint64_t kmer = 0;
     uint64_t revcomp = 0;
     uint64_t mask = mask_right(2*kmer_size);
-    for (uint64_t i = 0; i < lgth - kmer_size; i++) {
+    uint64_t left_to_compute = kmer_size;
+    string strkmer = "";
+    for (uint64_t i = 0; i < lgth; i++) {
         if (is_valid(sequence[i])) {
+            strkmer.push_back(sequence[i]);
+            const uint64_t encoded = nucl_encode(sequence[i]);//((sequence[i] >> 1) & 0b11); //quickly encodes the character
+            kmer <<= 2;
+            kmer |= encoded;
+            kmer &= mask;
 
+            revcomp >>= 2;
+            revcomp |= ( (0x2 ^ encoded) << (2 * (kmer_size - 1)));
+
+            const uint64_t canon  = (kmer < revcomp) ? kmer : revcomp;
+
+            if (!left_to_compute) {
+                strkmer = strkmer.substr(1, kmer_size);
+            }
+
+            left_to_compute -= left_to_compute ? 1 : 0;
+            if (!left_to_compute) {
+                //uint64_t kmer_encoded = encode(sequence.substr(i - kmer_size, kmer_size));
+                //cout << kmer_encoded << " ; " << kmer << endl;
+                /* if (kmer != kmer_encoded)
+                    cout << "kmer encoding " << kmer_encoded << " - " << kmer << endl;
+                else
+                    cout << "ok\n"; */
+                is_second_insert(canon, output);
+            }
         }
-        const uint64_t encoded = ((sequence[i] >> 1) & 0b11); //permet d'encoder rapidement un char selon son code ascii
-        kmer <<= 2;
-        kmer |= encoded;
-        kmer &= mask;
-
-        revcomp >>= 2;
-        revcomp |= ( (0x2 ^ encoded) << (2 * (k - 1)));
-
-        const uint64_t canon  = (kmer < revcomp) ? kmer : revcomp;
-    } */
+        else {
+            kmer = 0;
+            revcomp = 0;
+            left_to_compute = kmer_size;
+        }
+        
+    }
 }

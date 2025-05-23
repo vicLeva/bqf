@@ -467,14 +467,15 @@ protected:
     std::default_random_engine generator;
     std::uniform_int_distribution<uint16_t> distribution16;
 
-    std::string input_file = "../random_kmers.txt";
-    Bqf_cf bqf_truncate;
-    Bqf_ec bqf_ec;
+    std::string input_file = "random_kmers.txt";
+    Bqf_cf small_bqf_cf;
+    Bqf_cf bigger_bqf_cf;
 
     void SetUp() override {
         generator.seed(time(NULL));
         
-        bqf_truncate = Bqf_cf(7, 8, false);
+        small_bqf_cf = Bqf_cf(7, 8, false);
+        bigger_bqf_cf = Bqf_cf(7, 28, false);
     }
 };
 
@@ -484,9 +485,9 @@ TEST_F(BqfCfTest, SimpleInsert) {
     try{
         for (uint64_t i = 0; i < (1ULL<<17) -1; i++) {
             string kmer = string_of_int(distribution16(generator));
-            n = kmer_to_hash(kmer, bqf_ec.kmer_size);
+            n = kmer_to_hash(kmer, small_bqf_cf.kmer_size);
             ++verif[n];
-            EXPECT_EQ(bqf_truncate.is_second_insert(n), verif[n] == 2);
+            EXPECT_EQ(small_bqf_cf.is_second_insert(n), verif[n] == 2);
         }
     }
     catch (const std::exception &e) {
@@ -494,10 +495,10 @@ TEST_F(BqfCfTest, SimpleInsert) {
     }
     std::map<uint64_t, uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
-        bqf_truncate.remove((*it).first);
+        small_bqf_cf.remove((*it).first);
     }
     verif.clear();
-    EXPECT_EQ(bqf_truncate.enumerate(), verif);
+    EXPECT_EQ(small_bqf_cf.enumerate(), verif);
 }
 
 TEST_F(BqfCfTest, InsertFromFile) {
@@ -518,10 +519,10 @@ TEST_F(BqfCfTest, InsertFromFile) {
         cerr << "Unable to open file" << input_file;
     }
 
-    string output = "../filtered_kmers.txt";
+    string output = "filtered_random_kmers.txt";
 
     //inserting kmers in the BQF
-    bqf_truncate.insert_from_file_and_filter(input_file, output);
+    small_bqf_cf.insert_from_file_and_filter(input_file, output);
 
     //checking the output
     std::map<string, uint64_t> kmer_count;
@@ -550,9 +551,48 @@ TEST_F(BqfCfTest, InsertFromFile) {
 
     std::map<string, uint64_t>::iterator it;
     for (it = kmer_count.begin(); it != kmer_count.end(); it++) {
-        bqf_truncate.remove((*it).first);
+        small_bqf_cf.remove((*it).first);
     }
     kmer_count.clear();
 
     EXPECT_EQ(results, verif);
+}
+
+bool word_in_file(string word, string filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file " + filename);
+    }
+    string line;
+    while (file >> line) {
+        if (line.find(word) != line.npos){
+            file.close();
+            return true;
+        }
+    }
+    file.close();
+    return false;
+}
+
+TEST_F(BqfCfTest, FilterFastaFile) {
+    string fasta_file = "../../examples/data/ecoli_100Kb_reads_40x.fasta"; //"../../examples/data/ecoli_100Kb_reads_40x.fasta";
+    string kmc_check = "../../examples/data/ecoli_28_counted";
+    string filtered_kmers = "filtered_queries.txt";
+    vector<string> files;
+    files.push_back(fasta_file);
+    bigger_bqf_cf.filter_fastx_file(files, filtered_kmers);
+
+    ifstream kmc_results(kmc_check);
+    string kmer;
+    uint64_t count;
+    int nb = 0;
+    if (kmc_results.is_open()){
+        while (kmc_results >> kmer >> count && nb < 100) {
+            string nkmer = decode(encode(kmer), bigger_bqf_cf.kmer_size);
+            EXPECT_EQ(kmer, nkmer) << kmer << " != " << nkmer << endl;
+            EXPECT_EQ(word_in_file(kmer, filtered_kmers), count > 1) << kmer << " not here, but count " << count << endl;
+            nb ++;
+        }
+    }
+    kmc_results.close();
 }

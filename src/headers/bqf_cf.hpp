@@ -20,15 +20,15 @@ public:
 
 
     /**
-     * @brief inserts a list of smers in the BQF and copies in a file all smers that appear more than twice
-     * \param input is the file from which to read the smers
-     * \param output is the file in which to write redundant smers
+     * @brief inserts a list of kmer in the BQF and copies in a file all kmer that appear more than twice
+     * \param input is the file from which to read the kmer
+     * \param output is the file in which to write redundant kmer
      */
     void insert_from_file_and_filter(std::string input, std::string output);
 
     void filter_fastx_file(std::vector<std::string> files, std::string output);
 
-    void insert_from_sequence(std::string sequence, std::string output);
+    void insert_from_sequence(std::string sequence, std::ofstream& output);
 
     
 
@@ -45,12 +45,13 @@ public:
      */
     bool is_second_insert(uint64_t number);
     /**
-     * \brief adds an occurence of an smer in the BQF, and if it has already been inserted exactly once,
-     * writes the smer in output
-     * \param smer that should be inserted
-     * \param output where the smer will be written if it is already present once in the BQF
+     * \brief adds an occurence of a kmer in the BQF, and if it has already been inserted exactly once,
+     * writes the kmer in output
+     * \param kmer that should be inserted
+     * \param output where the kmer will be written if it is already present once in the BQF
      */
-    void is_second_insert(std::string smer, std::ofstream& output);
+    void is_second_insert(std::string kmer, std::ofstream& output);
+    void is_second_insert(uint64_t coded_kmer, std::ofstream& output);
 
 
     

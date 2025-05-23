@@ -8,6 +8,7 @@ SET(CMAKE_BUILD_TYPE Release)
 enable_testing()
 
 # C++ options
+find_package(ZLIB REQUIRED)
 add_compile_options(-Wall -Ofast -g -fpermissive -march=native -mtune=native) # for x86 based host
 #add_compile_options(-Wall -Ofast -g -fpermissive -mcpu=native -mtune=native) # for ARM based host
 
@@ -22,5 +23,5 @@ add_subdirectory(test)
 add_subdirectory(examples)
 add_subdirectory(unitary_tests)
 
-target_link_libraries(RSQF PRIVATE fqfeeder)
-target_include_directories(RSQF PRIVATE ${CMAKE_SOURCE_DIR}/bundled/FQFeeder/include)
+target_include_directories(RSQF PRIVATE ${CMAKE_SOURCE_DIR}/bundled/FQFeeder/include ${ZLIB_INCLUDE_DIRS})
+target_link_libraries(RSQF PRIVATE fqfeeder ZLIB::ZLIB)

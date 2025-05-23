@@ -143,21 +143,6 @@ uint64_t encode(string kmer){
             default :
                 break;
         }
-       /*  if (c=='A'){
-            encoded <<= 2;
-            encoded |= 3;
-        }
-        else if (c=='C'){
-            encoded <<= 2;
-            encoded |= 2;
-        }
-        else if (c=='G'){
-            encoded <<= 2;
-            encoded |= 1;
-        }
-        else{ //T is 00 so with reverse complementarity we won't get 0000000000000 as input for xorshift
-            encoded <<= 2;
-        } */
     }
 
     return encoded;
