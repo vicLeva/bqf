@@ -129,7 +129,21 @@ void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t
 uint64_t encode(string kmer){
     uint64_t encoded = 0;
     for(char& c : kmer) {
-        if (c=='A'){
+        encoded <<= 2;
+        switch (c) {
+            case 'A':
+                encoded |= 3;
+                break;
+            case 'C' :
+                encoded |= 2;
+                break;
+            case 'G' :
+                encoded |= 1;
+                break;
+            default :
+                break;
+        }
+       /*  if (c=='A'){
             encoded <<= 2;
             encoded |= 3;
         }
@@ -143,7 +157,7 @@ uint64_t encode(string kmer){
         }
         else{ //T is 00 so with reverse complementarity we won't get 0000000000000 as input for xorshift
             encoded <<= 2;
-        }
+        } */
     }
 
     return encoded;
@@ -227,10 +241,23 @@ uint64_t kmer_to_hash(string kmer, uint64_t k){
     return bfc_hash_64(encode(kmer), mask_right(k*2));
 }
 
+uint64_t kmer_to_hash(uint64_t coded_kmer, uint64_t k){
+    return bfc_hash_64(coded_kmer, mask_right(k*2));
+}
+
 string hash_to_kmer(uint64_t hash, uint64_t k){
     return decode(bfc_hash_64_inv(hash, mask_right(k*2)), k);
 }
 
+
+bool is_valid(char c) {
+    switch (c) {
+        case 'A' : case 'C' : case 'G' : case 'T' :
+            return true;
+        default :
+            return false;
+    }
+}
 
 uint64_t nucl_encode(char nucl){
   //Returns the binary encoding of a nucleotide

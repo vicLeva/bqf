@@ -77,6 +77,8 @@ public:
      * \param boundary boundaries of the run
      * \param quot quotient of the number
      * \param rem remainder of the number
+     * \returns a pair containing the position in which the number should be inserted and a boolean indicating
+     * if it is already present in the run and should only be added
      */
     std::pair<uint64_t, bool> find_insert_position(const std::pair<uint64_t,uint64_t> boundary, uint64_t quot, uint64_t rem);
 

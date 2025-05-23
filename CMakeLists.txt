@@ -16,7 +16,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+add_subdirectory(bundled/FQFeeder)
 add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(examples)
 add_subdirectory(unitary_tests)
+
+target_link_libraries(RSQF PRIVATE fqfeeder)
+target_include_directories(RSQF PRIVATE ${CMAKE_SOURCE_DIR}/bundled/FQFeeder/include)

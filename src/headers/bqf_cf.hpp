@@ -5,6 +5,8 @@
 
 class Bqf_cf : public Bqf_ec {
 
+
+
 public:
     Bqf_cf(){};
     /** 
@@ -14,7 +16,7 @@ public:
      * \param z The length difference between a k-mer and the inserted s-mer
      * \param verb to print on-going operations in stdout (default: false)
      */
-    Bqf_cf(uint64_t q_size, uint64_t k, uint64_t z, bool verb=false);
+    Bqf_cf(uint64_t q_size, uint64_t k, bool verb=false);
 
 
     /**
@@ -23,6 +25,10 @@ public:
      * \param output is the file in which to write redundant smers
      */
     void insert_from_file_and_filter(std::string input, std::string output);
+
+    void filter_fastx_file(std::vector<std::string> files, std::string output);
+
+    void insert_from_sequence(std::string sequence, std::string output);
 
     
 
@@ -40,11 +46,13 @@ public:
     bool is_second_insert(uint64_t number);
     /**
      * \brief adds an occurence of an smer in the BQF, and if it has already been inserted exactly once,
-     *      writes the smer in output
+     * writes the smer in output
      * \param smer that should be inserted
      * \param output where the smer will be written if it is already present once in the BQF
      */
     void is_second_insert(std::string smer, std::ofstream& output);
+
+
     
 };
 

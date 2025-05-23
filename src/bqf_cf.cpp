@@ -1,4 +1,15 @@
 #include "bqf_cf.hpp"
+#pragma push_macro("BLOCK_SIZE")
+#undef BLOCK_SIZE
+#include "FastxParser.hpp"
+#include "FastxParserThreadUtils.hpp"
+#include "blockingconcurrentqueue.h"
+#include "concurrentqueue.h"
+#include "kseq++.hpp"
+#include "lightweightsemaphore.h"
+#pragma pop_macro ("BLOCK_SIZE")
+
+
 
 using namespace std;
 
@@ -7,8 +18,10 @@ using namespace std;
     CONSTRUCTOR
     ================================================================
 */ 
-Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, uint64_t z, bool verb=false) :
-    Bqf_ec(q_size, 1, k, z, verb) {};
+Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, bool verb) :
+    Bqf_ec(q_size, 1, k, 0, verb) {};
+
+
 
 bool Bqf_cf::is_second_add_to_counter(uint64_t position){
     const uint64_t old_rem = get_remainder(position, true);
@@ -28,7 +41,7 @@ bool Bqf_cf::is_second_add_to_counter(uint64_t position){
 
 /*  
     ================================================================
-    HGH-LEVEL METHODS
+    HIGH-LEVEL METHODS
     ================================================================
 */ 
 bool Bqf_cf::is_second_insert(uint64_t number){
@@ -103,7 +116,7 @@ bool Bqf_cf::is_second_insert(uint64_t number){
 }
 
 void Bqf_cf::is_second_insert(string kmer, ofstream& output){
-    if (this->is_second_insert(kmer_to_hash(kmer, smer_size))) {
+    if (this->is_second_insert(kmer_to_hash(kmer, kmer_size))) {
         output << kmer << endl;
     }
 }
@@ -121,26 +134,63 @@ void Bqf_cf::insert_from_file_and_filter(string input, string output) {
             throw std::runtime_error("Could not open file " + output);
         }
 
-        string smer; 
+        string kmer; 
 
-        //1st elem, check s == smer_size
-        infile >> smer;
-        if (smer.size() == this->smer_size){
-            this->is_second_insert(smer, outfile);
+        //1st elem, check k == kmer_size
+        infile >> kmer;
+        if (kmer.size() == this->kmer_size){
+            this->is_second_insert(kmer, outfile);
         } else {
-            std::cerr << "BQF has been configured to welcome " << this->smer_size << "mers but trying to insert " << smer.size() << "mers, end of insertions" << std::endl;
+            std::cerr << "BQF has been configured to welcome " << this->kmer_size << "mers but trying to insert " << kmer.size() << "mers, end of insertions" << std::endl;
             return;
         }
         
 
-        while (infile >> smer) {
-            this->is_second_insert(smer, outfile);
+        while (infile >> kmer) {
+            this->is_second_insert(kmer, outfile);
         }
 
         infile.close();
         outfile.close();
     } catch (const std::exception &e) {
-        // Gérez l'exception ici, par exemple, affichez un message d'erreur
         std::cerr << "Error: " << e.what() << std::endl;
     }
+}
+
+void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string output) {
+    try {
+        fastx_parser::FastxParser<fastx_parser::ReadSeq> parser(files, 1, 1);
+        parser.start();
+        auto rg = parser.getReadGroup();
+        while (parser.refill(rg)) {
+            for (auto& rp : rg) {
+                insert_from_sequence(rp.seq, output);
+            }
+        }
+        parser.stop();
+        }
+    catch (const std::exception &e) {
+        std::cerr << "Error :" << e.what() << std::endl;
+    }
+}
+
+void Bqf_cf::insert_from_sequence (std::string sequence, std::string output) {
+    /* uint64_t lgth = sequence.length();
+    uint64_t kmer = 0;
+    uint64_t revcomp = 0;
+    uint64_t mask = mask_right(2*kmer_size);
+    for (uint64_t i = 0; i < lgth - kmer_size; i++) {
+        if (is_valid(sequence[i])) {
+
+        }
+        const uint64_t encoded = ((sequence[i] >> 1) & 0b11); //permet d'encoder rapidement un char selon son code ascii
+        kmer <<= 2;
+        kmer |= encoded;
+        kmer &= mask;
+
+        revcomp >>= 2;
+        revcomp |= ( (0x2 ^ encoded) << (2 * (k - 1)));
+
+        const uint64_t canon  = (kmer < revcomp) ? kmer : revcomp;
+    } */
 }

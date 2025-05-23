@@ -184,12 +184,27 @@ uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
 uint64_t kmer_to_hash(std::string data, uint64_t size);
 
 /** 
+ * \brief hashes the encoded kmer
+ * \param data the kmer to hash
+ * \param size the kmer size (in base)
+ * \return uint64_t, the hash
+ */
+uint64_t kmer_to_hash(uint64_t coded_kmer, uint64_t k);
+
+/** 
  * \brief reverse the hash, then decode the number into a kmer (canonical)
  * \param data the hash to reverse
  * \param size the kmer size (in base)
  * \return the kmer (string)
  */
 std::string hash_to_kmer(uint64_t hash, uint64_t size);
+
+/**
+ * \brief tests if a charcter is a valid encoding of a nucleotide, i.e. 'A', 'C', 'G' or 'T'
+ * \param c the character to encode
+ * \returns if it is valid
+ */
+bool is_valid(char c);
 
 uint64_t nucl_encode(char nucl);
 

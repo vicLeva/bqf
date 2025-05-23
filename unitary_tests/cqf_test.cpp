@@ -474,7 +474,7 @@ protected:
     void SetUp() override {
         generator.seed(time(NULL));
         
-        bqf_truncate = Bqf_cf(7, 16, 8, false);
+        bqf_truncate = Bqf_cf(7, 8, false);
     }
 };
 
@@ -482,9 +482,9 @@ TEST_F(BqfCfTest, SimpleInsert) {
     uint64_t n;
     std::map<uint64_t, uint64_t> verif;
     try{
-        for (uint64_t i = 0; i < (1ULL<<10) -1; i++) {
-            string smer = string_of_int(distribution16(generator));
-            n = kmer_to_hash(smer, bqf_ec.smer_size);
+        for (uint64_t i = 0; i < (1ULL<<17) -1; i++) {
+            string kmer = string_of_int(distribution16(generator));
+            n = kmer_to_hash(kmer, bqf_ec.kmer_size);
             ++verif[n];
             EXPECT_EQ(bqf_truncate.is_second_insert(n), verif[n] == 2);
         }
@@ -520,7 +520,7 @@ TEST_F(BqfCfTest, InsertFromFile) {
 
     string output = "../filtered_kmers.txt";
 
-    //inserting smers in the BQF
+    //inserting kmers in the BQF
     bqf_truncate.insert_from_file_and_filter(input_file, output);
 
     //checking the output
@@ -528,12 +528,12 @@ TEST_F(BqfCfTest, InsertFromFile) {
     std::vector<string> verif;
     
     ifstream infile(input_file);
-    string smer;
+    string kmer;
     if (infile.is_open()) {
-        while (infile >> smer) {
-            ++kmer_count[smer];
-            if (kmer_count[smer] == 2) {
-                verif.push_back(smer);
+        while (infile >> kmer) {
+            ++kmer_count[kmer];
+            if (kmer_count[kmer] == 2) {
+                verif.push_back(kmer);
             }
         }
         infile.close();
@@ -542,8 +542,8 @@ TEST_F(BqfCfTest, InsertFromFile) {
     ifstream resfile(output);
     std::vector<string> results;
     if (resfile.is_open()) {
-        while (resfile >> smer) {
-            results.push_back(smer);
+        while (resfile >> kmer) {
+            results.push_back(kmer);
         }
         resfile.close();
     }

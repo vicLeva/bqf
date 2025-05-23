@@ -53,9 +53,7 @@ void Bqf::insert(string kmc_input){
 
 
 void Bqf::insert(string kmer, uint64_t count){
-    uint64_t n = kmer_to_hash(kmer, smer_size);
-    cout << "[INSERTING] " << kmer << " with hash " << n << endl;
-    this->insert(n, count);
+    this->insert(kmer_to_hash(kmer, smer_size), count);
 }
 
 pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> boundary, uint64_t quot, uint64_t rem) {
