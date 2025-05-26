@@ -2,11 +2,6 @@
 #pragma push_macro("BLOCK_SIZE")
 #undef BLOCK_SIZE
 #include "FastxParser.hpp"
-#include "FastxParserThreadUtils.hpp"
-#include "blockingconcurrentqueue.h"
-#include "concurrentqueue.h"
-#include "kseq++.hpp"
-#include "lightweightsemaphore.h"
 #pragma pop_macro ("BLOCK_SIZE")
 
 
@@ -127,63 +122,23 @@ void Bqf_cf::is_second_insert(uint64_t coded_kmer, ofstream& output){
     }
 }
 
-void Bqf_cf::insert_from_file_and_filter(string input, string output) {
-    try {
-        ifstream infile(input);
-        ofstream outfile(output, ios::binary);
-
-        if (!infile) {
-            throw std::runtime_error("File not found: " + input);
-        }
-
-        if (!outfile.is_open()) {
-            throw std::runtime_error("Could not open file " + output);
-        }
-
-        string kmer; 
-
-        //1st elem, check k == kmer_size
-        infile >> kmer;
-        if (kmer.size() == this->kmer_size){
-            this->is_second_insert(kmer, outfile);
-        } else {
-            std::cerr << "BQF has been configured to welcome " << this->kmer_size << "mers but trying to insert " << kmer.size() << "mers, end of insertions" << std::endl;
-            return;
-        }
-        
-
-        while (infile >> kmer) {
-            this->is_second_insert(kmer, outfile);
-        }
-
-        infile.close();
-        outfile.close();
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    }
-}
-
 void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string output) {
-    try {
-        ofstream outfile(output, ios::binary);
-        if (!outfile.is_open()) {
-            throw std::runtime_error("Could not open file " + output);
-        }
-
-        fastx_parser::FastxParser<fastx_parser::ReadSeq> parser(files, 1, 1);
-        parser.start();
-        auto rg = parser.getReadGroup();
-        while (parser.refill(rg)) {
-            for (auto& rp : rg) {
-                insert_from_sequence(rp.seq, outfile);
-            }
-        }
-        parser.stop();
-        outfile.close();
-        }
-    catch (const std::exception &e) {
-        std::cerr << "Error :" << e.what() << std::endl;
+    ofstream outfile(output, ios::binary);
+    if (!outfile.is_open()) {
+        throw std::runtime_error("Could not open file " + output);
     }
+
+    fastx_parser::FastxParser<fastx_parser::ReadSeq> parser(files, 1, 1);
+    parser.start();
+    auto rg = parser.getReadGroup();
+    while (parser.refill(rg)) {
+        for (auto& rp : rg) {
+            insert_from_sequence(rp.seq, outfile);
+        }
+    }
+    parser.stop();
+    outfile.close();
+        
 }
 
 void Bqf_cf::insert_from_sequence (std::string sequence, ofstream& output) {
@@ -197,32 +152,22 @@ void Bqf_cf::insert_from_sequence (std::string sequence, ofstream& output) {
     uint64_t revcomp = 0;
     uint64_t mask = mask_right(2*kmer_size);
     uint64_t left_to_compute = kmer_size;
-    string strkmer = "";
+    uint64_t insert = 0;
     for (uint64_t i = 0; i < lgth; i++) {
         if (is_valid(sequence[i])) {
-            strkmer.push_back(sequence[i]);
-            const uint64_t encoded = nucl_encode(sequence[i]);//((sequence[i] >> 1) & 0b11); //quickly encodes the character
+            const uint64_t encoded = ((sequence[i] >> 1) & 0b11); //quickly encodes the character
             kmer <<= 2;
             kmer |= encoded;
             kmer &= mask;
 
             revcomp >>= 2;
-            revcomp |= ( (0x2 ^ encoded) << (2 * (kmer_size - 1)));
+            revcomp |= ( (0b10 ^ encoded) << (2 * (kmer_size - 1)));
 
             const uint64_t canon  = (kmer < revcomp) ? kmer : revcomp;
 
-            if (!left_to_compute) {
-                strkmer = strkmer.substr(1, kmer_size);
-            }
 
             left_to_compute -= left_to_compute ? 1 : 0;
             if (!left_to_compute) {
-                //uint64_t kmer_encoded = encode(sequence.substr(i - kmer_size, kmer_size));
-                //cout << kmer_encoded << " ; " << kmer << endl;
-                /* if (kmer != kmer_encoded)
-                    cout << "kmer encoding " << kmer_encoded << " - " << kmer << endl;
-                else
-                    cout << "ok\n"; */
                 is_second_insert(canon, output);
             }
         }

@@ -20,14 +20,17 @@ public:
 
 
     /**
-     * @brief inserts a list of kmer in the BQF and copies in a file all kmer that appear more than twice
-     * \param input is the file from which to read the kmer
-     * \param output is the file in which to write redundant kmer
+     * @brief filters a fasta/q file : writes all k-mers present more than once in an output file
+     * \param files a vector of all the fastx files from which the kmers should be read
+     * \param output is the file in which to write redundant kmers
      */
-    void insert_from_file_and_filter(std::string input, std::string output);
-
     void filter_fastx_file(std::vector<std::string> files, std::string output);
 
+    /**
+     * @brief inserts all kmers from a DNA sequence and writes all k-mers present more than once in a stream
+     * \param sequence is the sequence from which the kmers are read
+     * \param output is the stream in which kmers present more than once can be written
+     */
     void insert_from_sequence(std::string sequence, std::ofstream& output);
 
     
@@ -45,8 +48,8 @@ public:
      */
     bool is_second_insert(uint64_t number);
     /**
-     * \brief adds an occurence of a kmer in the BQF, and if it has already been inserted exactly once,
-     * writes the kmer in output
+     * \brief adds an occurence of a kmer (in string format or already encoded) in the BQF, and if it has 
+     * already been inserted exactly once, writes the kmer in output
      * \param kmer that should be inserted
      * \param output where the kmer will be written if it is already present once in the BQF
      */

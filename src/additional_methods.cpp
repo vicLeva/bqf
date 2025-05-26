@@ -130,6 +130,7 @@ uint64_t encode(string kmer){
     uint64_t encoded = 0;
     for(char& c : kmer) {
         encoded <<= 2;
+        //encoded |= ((c >> 1) & 0b11);
         switch (c) {
             case 'A':
                 encoded |= 3;
@@ -140,11 +141,13 @@ uint64_t encode(string kmer){
             case 'G' :
                 encoded |= 1;
                 break;
+            case 'T' :
+                break;
             default :
+                throw std::invalid_argument( "received non nucleotidic value");
                 break;
         }
     }
-
     return encoded;
 }
 
@@ -160,10 +163,10 @@ string decode(uint64_t revhash, uint64_t k){
                 kmer = 'C' + kmer;
                 break;
             case 1:
-                kmer = 'G' + kmer;
+                kmer = 'T' + kmer;
                 break;
             default:
-                kmer = 'T' + kmer;
+                kmer = 'G' + kmer;
         }
         revhash >>= 2;
     }
@@ -251,12 +254,12 @@ uint64_t nucl_encode(char nucl){
   switch (nucl){
     case 'A':
       return 0;
-    case 'T':
-      return 3;
     case 'C':
       return 1;
     case 'G':
       return 2;
+    case 'T':
+      return 3;
     default :
         cout << "non nucl : " << nucl << endl;
         throw std::invalid_argument( "received non nucleotidic value" );

@@ -17,15 +17,15 @@ public:
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
     uint64_t count_size;
+
+    uint64_t kmer_size;
     
     /** 
      * \brief s, supposed to be hash_size/2
      */
     uint64_t smer_size;
 
-    uint64_t kmer_size;
-
-
+    
     /*  
         ================================================================
         CONSTRUCTORS
