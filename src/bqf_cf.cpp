@@ -152,7 +152,6 @@ void Bqf_cf::insert_from_sequence (std::string sequence, ofstream& output) {
     uint64_t revcomp = 0;
     uint64_t mask = mask_right(2*kmer_size);
     uint64_t left_to_compute = kmer_size;
-    uint64_t insert = 0;
     for (uint64_t i = 0; i < lgth; i++) {
         if (is_valid(sequence[i])) {
             const uint64_t encoded = ((sequence[i] >> 1) & 0b11); //quickly encodes the character

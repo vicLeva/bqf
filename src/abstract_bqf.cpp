@@ -64,7 +64,7 @@ pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> bou
     // nb of quotients
     const uint64_t quots = (1ULL << this->quotient_size);
 
-    // dichotomous search
+    // dichotomous search in [left; right] (included)
     uint64_t left = boundary.first;
     if (left < quot)   
         left += quots;
@@ -97,7 +97,7 @@ pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> bou
             break;
         }
         else if (remainder_in_filter > rem)
-            right = middle;
+            right = middle - 1;
         else
             left = middle + 1;    
     }

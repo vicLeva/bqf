@@ -5,14 +5,20 @@
 
 std::chrono::steady_clock::time_point begin;
 
+void print_commands(void) {
+    std::cout << std::endl;
+    std::cout << "Usage: ./bqf <command>" << std::endl;
+    std::cout << "Commands:" << std::endl;
+    std::cout << "\t./bqf build [-q <quotient size=8>] [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
+    std::cout << "\t./bqf query -b <bqf_file> -i <reads_to_query> -o <results>" << std::endl;
+    std::cout << "\t./bqf filter [-q <quotient size=8>] [-k <k=32>] -i <fasta_file> -o <outfile>" << std::endl;
+    std::cout << "\t./bqf help" << std::endl;
+    std::cout << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cout << "Usage: ./bqf <command>" << std::endl;
-        std::cout << "Commands:" << std::endl;
-        std::cout << "./bqf build [-q <quotient size=8>] [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
-        std::cout << "./bqf query -b <bqf_file> -i <reads_to_query> -o <results>" << std::endl;
-        std::cout << "./bqf filter [-q <quotient size=8>] [-k <k=32>] -i <fasta_file> -o <outfile>" << std::endl;
-        std::cout << "./bqf help" << std::endl;
+        print_commands();
         return EXIT_FAILURE;
     }
 
@@ -71,7 +77,8 @@ int main(int argc, char* argv[]) {
                     return EXIT_FAILURE;
                 }
             } else {
-                std::cerr << "Invalid argument : " << argv[i] <<std::endl;
+                std::cerr << "Invalid argument : " << argv[i] << std::endl;
+                print_commands();
                 return EXIT_FAILURE;
             }
         }
@@ -118,6 +125,7 @@ int main(int argc, char* argv[]) {
                 }
             } else {
                 std::cerr << "Invalid argument : " << argv[i] <<std::endl;
+                print_commands();
                 return EXIT_FAILURE;
             }
         }
@@ -197,6 +205,7 @@ int main(int argc, char* argv[]) {
                 }
             } else {
                 std::cerr << "Invalid argument : " << argv[i] <<std::endl;
+                print_commands();
                 return EXIT_FAILURE;
             }
         }
@@ -229,14 +238,9 @@ int main(int argc, char* argv[]) {
         
 
     } else if (command == "help" || command == "h") {
-        std::cout << "Usage: ./bqf <command>" << std::endl;
-        std::cout << "Commands:" << std::endl;
-        std::cout << "./bqf build -q <quotient size> [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
-        std::cout << "./bqf query -b <bqf_file> -i <reads_to_query> -o <results_file>" << std::endl;
-        std::cout << "./bqf filter [-q <quotient size=8>] [-k <k=32>] -i <fasta_file> -o <outfile>" << std::endl;
-        std::cout << "./bqf help" << std::endl;
+        print_commands();
 
-        std::cout << "-q is quotient size, it sets the filter size (there will be 2^q slots) so 2^(q-1) < nb_unique_elements < 2^q is higly recommanded" << std::endl;
+        std::cout << "-q is quotient size, it sets the filter size (there will be 2^q slots) so 2^(q-1) < nb_unique_elements < 2^q is highly recommanded" << std::endl;
         std::cout << "-c is the number of bits reserved for counters of each element. (2^c)-1 will be the maximum value" << std::endl;
         std::cout << "-k is the kmer size. The result of the query of a sequence S will be determined by the queries of all the kmers of S" << std::endl;
         std::cout << "-z is fimpera parameter. kmers are queried through the query of all their smers. s = k-z and smers are effectively inserted in the filter" << std::endl;
@@ -245,6 +249,7 @@ int main(int argc, char* argv[]) {
         std::cout << "-b is the file from which the BQF is loaded" << std::endl;
     } else {
         std::cerr << "Invalid command or incorrect number of arguments." << std::endl;
+        print_commands();
         return EXIT_FAILURE;
     }
 

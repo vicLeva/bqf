@@ -1,3 +1,7 @@
+add_executable(bqf
+	main.cpp
+)
+
 add_library(RSQF
 	additional_methods.cpp
 	rsqf.cpp
@@ -10,6 +14,10 @@ add_library(RSQF
 target_include_directories(RSQF
 	PUBLIC
 	"${PROJECT_SOURCE_DIR}/src/headers/"
+)
+
+target_link_libraries(bqf
+	RSQF
 )
 
 set_property(TARGET RSQF PROPERTY CXX_STANDARD 17)
