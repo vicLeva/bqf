@@ -200,7 +200,7 @@ uint64_t kmer_to_hash(uint64_t coded_kmer, uint64_t k);
 std::string hash_to_kmer(uint64_t hash, uint64_t size);
 
 /**
- * \brief tests if a charcter is a valid encoding of a nucleotide, i.e. 'A', 'C', 'G' or 'T'
+ * \brief tests if a character is a valid encoding of a nucleotide, i.e. 'A', 'C', 'G' or 'T'
  * \param c the character to encode
  * \returns if it is valid
  */
@@ -231,6 +231,13 @@ const uint8_t rev_table[256] = {
 uint64_t revcomp64 (const uint64_t v, size_t bitsize);
 
 uint64_t canonical(uint64_t smer, size_t size);
+
+/** 
+ * \brief computes the reverse kmer of a string no matter its encoding
+ * 
+ * Is rather inefficient so should only be used for debug purposes
+ */
+std::string revcomp(std::string kmer);
 
 std::string canonical(const std::string& smer, size_t s);
 

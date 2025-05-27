@@ -4,9 +4,7 @@
 #include "bqf_ec.hpp"
 
 class Bqf_cf : public Bqf_ec {
-
-
-
+    //int counter = 0;
 public:
     Bqf_cf(){};
     /** 
@@ -31,7 +29,7 @@ public:
      * \param sequence is the sequence from which the kmers are read
      * \param output is the stream in which kmers present more than once can be written
      */
-    void insert_from_sequence(std::string sequence, std::ofstream& output);
+    void insert_from_sequence(std::string sequence, std::string& to_write);
 
     
 
@@ -54,7 +52,7 @@ public:
      * \param output where the kmer will be written if it is already present once in the BQF
      */
     void is_second_insert(std::string kmer, std::ofstream& output);
-    void is_second_insert(uint64_t coded_kmer, std::ofstream& output);
+    void is_second_insert(uint64_t coded_kmer, std::string& to_write);
 
 
     

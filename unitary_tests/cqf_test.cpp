@@ -530,7 +530,8 @@ TEST_F(BqfCfTest, FilterFastaFile) {
         while (kmc_results >> kmer >> count && nb < 100) {
             string nkmer = decode(encode(kmer), bigger_bqf_cf.kmer_size);
             EXPECT_EQ(kmer, nkmer);
-            EXPECT_EQ(word_in_file(kmer, filtered_kmers), count > 1) << kmer << " not here, but count " << count << endl;
+            string canonical_kmer = canonical(kmer, bigger_bqf_cf.kmer_size);
+            EXPECT_EQ(word_in_file(canonical_kmer, filtered_kmers), count > 1) << canonical_kmer << " not here, but count " << count << endl;
             nb ++;
         }
     }

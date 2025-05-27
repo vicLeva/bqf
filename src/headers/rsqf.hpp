@@ -4,6 +4,7 @@
 #include <vector>
 #include <stdint.h> 
 #include <iostream>
+#include <iomanip>
 #include <bitset>
 #include <string>
 #include <cassert>
@@ -13,15 +14,6 @@
 #include <unordered_set>
 
 #include "additional_methods.hpp"
-
-// STATIC VARIABLES 
-#define MEM_UNIT 64ULL
-#define BLOCK_SIZE 64ULL
-#define MET_UNIT 3ULL
-#define OFF_POS 0ULL
-#define OCC_POS 1ULL
-#define RUN_POS 2ULL
-#define SCALE_INPUT 8388608ULL
 
 
 class Backpack_cqf;
@@ -117,7 +109,7 @@ class Rsqf {
      * Then it computes for every remainder in the run, the original number inserted (by concatenating the remainder value
      * and the quotient value (of the run)) and pushes it into the unordered_set
      * 
-     * \return a uint_64t unordered set of number, present in the filter
+     * \return a uint64_t unordered set of number, present in the filter
      */
     std::unordered_set<uint64_t> enumerate(); 
 

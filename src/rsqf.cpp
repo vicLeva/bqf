@@ -50,7 +50,7 @@ string Rsqf::block2string(size_t block_id, bool bit_format) {
     uint64_t position = block_id * (MET_UNIT + this->remainder_size);
 
     stream << "BLOCK " << block_id;
-    stream << "   first quotient: " << block_id*64 << endl;
+    stream << "   first quotient: " << block_id*MEM_UNIT << endl;
 
     // --- Offset ---
     stream << "offset : " << this->filter[position++] << endl;
@@ -127,7 +127,7 @@ string Rsqf::block2string(size_t block_id, bool bit_format) {
         if (! bit_format) {
             if (remainder_id % 4 == 0)
                 stream << "         ";
-            stream << current_remainder << '\t';
+            stream << setw(20) << current_remainder;
             if (remainder_id % 4 == 3)
                 stream << endl;
         }
@@ -502,7 +502,7 @@ void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient
 
     while (curr_word_pos != end_word_pos){
         // left bits we will lose after the shift
-        to_shift = (filter[curr_word_pos] & mask_left(remainder_size)) >> (64 - remainder_size);
+        to_shift = (filter[curr_word_pos] & mask_left(remainder_size)) >> (BLOCK_SIZE - remainder_size);
 
         // mask of what we keep
         mask = mask_right(curr_word_shift);

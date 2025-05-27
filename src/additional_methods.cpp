@@ -106,7 +106,7 @@ uint64_t get_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t len){
 
 using namespace std;
 void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t len) {
-    assert(pos + len <= vec.size() * 64);
+    assert(pos + len <= vec.size() * MEM_UNIT);
     if (len == 0) return;
 
     uint64_t mask = mask_right(len);
@@ -132,16 +132,16 @@ uint64_t encode(string kmer){
         encoded <<= 2;
         //encoded |= ((c >> 1) & 0b11);
         switch (c) {
-            case 'A':
+            case 'G':
                 encoded |= 3;
                 break;
-            case 'C' :
+            case 'T' :
                 encoded |= 2;
                 break;
-            case 'G' :
+            case 'C' :
                 encoded |= 1;
                 break;
-            case 'T' :
+            case 'A' :
                 break;
             default :
                 throw std::invalid_argument( "received non nucleotidic value");
@@ -151,24 +151,14 @@ uint64_t encode(string kmer){
     return encoded;
 }
 
-string decode(uint64_t revhash, uint64_t k){
+string decode(uint64_t coded, uint64_t k){
     string kmer;
+    char rev[4] = {'A', 'C', 'T', 'G'};
+    uint64_t mask = mask_right(2);
 
     for (size_t i=0; i<k; i++){
-        switch(revhash & mask_right(2)){
-            case 3:
-                kmer = 'A' + kmer;
-                break;
-            case 2:
-                kmer = 'C' + kmer;
-                break;
-            case 1:
-                kmer = 'T' + kmer;
-                break;
-            default:
-                kmer = 'G' + kmer;
-        }
-        revhash >>= 2;
+        kmer.push_back(rev[coded>>(2*(k - 1)) & mask]);
+        coded <<= 2;
     }
 
     return kmer;
@@ -282,6 +272,29 @@ uint64_t revcomp64 (const uint64_t v, size_t bitsize){
     ((uint64_t)rev_table[(v >> 56) & 0xff])) >> (64-bitsize);
 }
 
+string revcomp(const string &kmer, size_t k) {
+    string rev = "";
+    char c;
+    for (uint64_t i = 0; i < k; i++) {
+        switch (kmer[k - i - 1]) {
+            case 'A':
+                c = 'T';
+                break;
+            case 'C':
+                c = 'G';
+                break;
+            case 'G' :
+                c = 'C';
+                break;
+            default :
+                c = 'A';
+                break;
+        }
+        rev.push_back(c);
+    }
+    return rev;
+}
+
 uint64_t canonical(uint64_t smer, size_t size){
     uint64_t revcomp = revcomp64(smer, size);
     if (revcomp < smer) { return revcomp; }
@@ -290,7 +303,10 @@ uint64_t canonical(uint64_t smer, size_t size){
 
 std::string canonical(const std::string& smer, size_t s){
   //debug purpose only
-  return decode(flip(canonical(flip(encode(smer), 2*s), 2*s), 2*s), s);
+  string rcomp = revcomp(smer, s);
+  uint64_t s_coded = encode(smer);
+  uint64_t rev_coded = encode(rcomp);
+  return (s_coded < rev_coded)? smer : rcomp;
 }
 
 std::ostream& operator<<(std::ostream& os, result_query const& res) {

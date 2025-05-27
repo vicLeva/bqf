@@ -23,14 +23,16 @@ bool Bqf_cf::is_second_add_to_counter(uint64_t position){
     if (verbose) {
         cout << "[ADD] to old_rem " << old_rem << endl;
     }
-    if (!(old_rem & 1ULL)){ // 2nd occurence
-        set_bits(filter, 
+    bool is_second = !(old_rem & 1ULL);
+    if (is_second){
+        uint64_t pos = position * remainder_size + ((1 + (position >> 6))<<6)*MET_UNIT;
+        filter[pos>>6] |= (1ULL << (pos&0b111111));
+        /* set_bits(filter, 
             get_remainder_word_position(position) * BLOCK_SIZE + get_remainder_shift_position(position), 
             old_rem | 1ULL, 
-            remainder_size);
-        return true;
+            remainder_size); */
     }
-    return false;
+    return is_second;
 }
 
 
@@ -39,6 +41,65 @@ bool Bqf_cf::is_second_add_to_counter(uint64_t position){
     HIGH-LEVEL METHODS
     ================================================================
 */ 
+void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string output) {
+    string to_write;
+    
+    fastx_parser::FastxParser<fastx_parser::ReadSeq> parser(files, 1, 1);
+    parser.start();
+    auto rg = parser.getReadGroup();
+    while (parser.refill(rg)) {
+        for (auto& rp : rg) {
+            insert_from_sequence(rp.seq, to_write);
+        }
+    }
+    parser.stop();
+    ofstream outfile(output);
+    if (!outfile.is_open()) {
+        throw std::runtime_error("Could not open file " + output);
+    }
+    outfile << to_write;
+    outfile.close();
+        
+}
+
+void Bqf_cf::insert_from_sequence (std::string sequence, string& to_write) {
+    if (verbose){
+        cout << "[INSERT] sequence " << sequence << endl;
+    }
+    uint64_t lgth = sequence.length();
+    /*the kmer and its revcomp are created character per character and left_to_compute indicates 
+    the nb of characters left to atke into account to create a kmer*/ 
+    uint64_t kmer = 0;
+    uint64_t revcomp = 0;
+    uint64_t mask = mask_right(2*kmer_size);
+    uint64_t left_to_compute = kmer_size;
+    for (uint64_t i = 0; i < lgth; i++) {
+        if (is_valid(sequence[i])) {
+            const uint64_t encoded = ((sequence[i] >> 1) & 0b11); //quickly encodes the character
+            kmer <<= 2;
+            kmer |= encoded;
+            kmer &= mask;
+
+            revcomp >>= 2;
+            revcomp |= ( (0b10 ^ encoded) << (2 * (kmer_size - 1)));
+
+            const uint64_t canon  = (kmer < revcomp) ? kmer : revcomp;
+
+
+            left_to_compute -= left_to_compute ? 1 : 0;
+            if (!left_to_compute) {
+                is_second_insert(canon, to_write);
+            }
+        }
+        else {
+            kmer = 0;
+            revcomp = 0;
+            left_to_compute = kmer_size;
+        }
+        
+    }
+}
+
 bool Bqf_cf::is_second_insert(uint64_t number){
     if (elements_inside+1 == size_limit){
         if (verbose){
@@ -116,65 +177,18 @@ void Bqf_cf::is_second_insert(string kmer, ofstream& output){
     }
 }
 
-void Bqf_cf::is_second_insert(uint64_t coded_kmer, ofstream& output){
+void Bqf_cf::is_second_insert(uint64_t coded_kmer, string &to_write){
     if (this->is_second_insert(kmer_to_hash(coded_kmer, kmer_size))) {
-        output << decode(~coded_kmer, kmer_size) << endl;
+        string kmer;
+        char rev[4] = {'A', 'C', 'T', 'G'};
+        uint64_t mask = mask_right(2);
+
+        for (size_t i=0; i<kmer_size; i++){
+            kmer.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
+            coded_kmer <<= 2;
+        }
+        kmer.push_back('\n');
+        to_write += kmer;
     }
 }
 
-void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string output) {
-    ofstream outfile(output, ios::binary);
-    if (!outfile.is_open()) {
-        throw std::runtime_error("Could not open file " + output);
-    }
-
-    fastx_parser::FastxParser<fastx_parser::ReadSeq> parser(files, 1, 1);
-    parser.start();
-    auto rg = parser.getReadGroup();
-    while (parser.refill(rg)) {
-        for (auto& rp : rg) {
-            insert_from_sequence(rp.seq, outfile);
-        }
-    }
-    parser.stop();
-    outfile.close();
-        
-}
-
-void Bqf_cf::insert_from_sequence (std::string sequence, ofstream& output) {
-    if (verbose){
-        cout << "[INSERT] sequence " << sequence << endl;
-    }
-    uint64_t lgth = sequence.length();
-    /*the kmer and its revcomp are created character per character and left_to_compute indicates 
-    the nb of characters left to atke into account to create a kmer*/ 
-    uint64_t kmer = 0;
-    uint64_t revcomp = 0;
-    uint64_t mask = mask_right(2*kmer_size);
-    uint64_t left_to_compute = kmer_size;
-    for (uint64_t i = 0; i < lgth; i++) {
-        if (is_valid(sequence[i])) {
-            const uint64_t encoded = ((sequence[i] >> 1) & 0b11); //quickly encodes the character
-            kmer <<= 2;
-            kmer |= encoded;
-            kmer &= mask;
-
-            revcomp >>= 2;
-            revcomp |= ( (0b10 ^ encoded) << (2 * (kmer_size - 1)));
-
-            const uint64_t canon  = (kmer < revcomp) ? kmer : revcomp;
-
-
-            left_to_compute -= left_to_compute ? 1 : 0;
-            if (!left_to_compute) {
-                is_second_insert(canon, output);
-            }
-        }
-        else {
-            kmer = 0;
-            revcomp = 0;
-            left_to_compute = kmer_size;
-        }
-        
-    }
-}
