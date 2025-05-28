@@ -4,7 +4,7 @@
 #include "bqf_ec.hpp"
 
 class Bqf_cf : public Bqf_ec {
-    //int counter = 0;
+    uint64_t counter = 0;
 public:
     Bqf_cf(){};
     /** 

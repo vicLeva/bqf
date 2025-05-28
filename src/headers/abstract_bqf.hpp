@@ -74,7 +74,10 @@ public:
 
     /**
      * \brief finds the position in which to insert a number in a run
-     * \param boundary boundaries of the run
+     * 
+     * It is done through a dichotomous search
+     * 
+     * \param boundary boundaries of the run (both boundaries are included)
      * \param quot quotient of the number
      * \param rem remainder of the number
      * \returns a pair containing the position in which the number should be inserted and a boolean indicating

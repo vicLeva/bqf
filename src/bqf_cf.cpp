@@ -25,8 +25,9 @@ bool Bqf_cf::is_second_add_to_counter(uint64_t position){
     }
     bool is_second = !(old_rem & 1ULL);
     if (is_second){
-        uint64_t pos = position * remainder_size + ((1 + (position >> 6))<<6)*MET_UNIT;
-        filter[pos>>6] |= (1ULL << (pos&0b111111));
+        //flipping count bit to one
+        uint64_t pos = position * remainder_size + ((1 + (position/MEM_UNIT))*MEM_UNIT)*MET_UNIT;
+        filter[pos/MEM_UNIT] |= (1ULL << (pos&(MEM_UNIT - 1)));
         /* set_bits(filter, 
             get_remainder_word_position(position) * BLOCK_SIZE + get_remainder_shift_position(position), 
             old_rem | 1ULL, 
@@ -57,6 +58,7 @@ void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string outpu
     if (!outfile.is_open()) {
         throw std::runtime_error("Could not open file " + output);
     }
+    outfile << counter << endl;
     outfile << to_write;
     outfile.close();
         
@@ -163,7 +165,7 @@ bool Bqf_cf::is_second_insert(uint64_t number){
             return is_second_add_to_counter(position);
         }
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
-        // SHIFT EVERYTHING RIGHT AND INSERTING THE NEW REMAINDER
+        // SHIFT EVERYTHING RIGHT AND INSERT NEW REMAINDER
         elements_inside++;
         shift_left_and_set_circ(position, fu_slot, rem_count);
 
@@ -179,16 +181,15 @@ void Bqf_cf::is_second_insert(string kmer, ofstream& output){
 
 void Bqf_cf::is_second_insert(uint64_t coded_kmer, string &to_write){
     if (this->is_second_insert(kmer_to_hash(coded_kmer, kmer_size))) {
-        string kmer;
+        counter++;
         char rev[4] = {'A', 'C', 'T', 'G'};
         uint64_t mask = mask_right(2);
 
         for (size_t i=0; i<kmer_size; i++){
-            kmer.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
+            to_write.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
             coded_kmer <<= 2;
         }
-        kmer.push_back('\n');
-        to_write += kmer;
+        to_write.push_back('\n');
     }
 }
 

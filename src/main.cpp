@@ -17,6 +17,7 @@ void print_commands(void) {
 }
 
 int main(int argc, char* argv[]) {
+    
     if (argc < 2) {
         print_commands();
         return EXIT_FAILURE;
@@ -209,6 +210,8 @@ int main(int argc, char* argv[]) {
                 return EXIT_FAILURE;
             }
         }
+
+        std::cout << (1ULL << q) << std::endl;
 
         if (q < 7) {
             std::cout << "Value of q must be greater than 7" << std::endl;

@@ -64,6 +64,11 @@ pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> bou
     // nb of quotients
     const uint64_t quots = (1ULL << this->quotient_size);
 
+    if (boundary.first >= quots || boundary.second >= quots){
+        cout << "[" << boundary.first << " ; " << boundary.second << "]" << endl;
+        cout << "Nb of quotients : " << quots << endl;
+    }
+
     // dichotomous search in [left; right] (included)
     uint64_t left = boundary.first;
     if (left < quot)   
@@ -106,6 +111,8 @@ pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> bou
     }
     return make_pair(position, false);
 }
+
+
 
 void Bqf::insert(uint64_t number, uint64_t count){
     if (elements_inside+1 == size_limit){
@@ -521,8 +528,8 @@ void Bqf::resize(uint n){
 
 uint64_t Bqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
     const uint64_t block = get_block_id(position);
-    const uint64_t pos_in_block = get_shift_in_block(position);
-    const uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
+    //const uint64_t pos_in_block = get_shift_in_block(position);
+    const uint64_t pos = position * remainder_size + ((1 + block)*MEM_UNIT)*MET_UNIT;
 
     if (w_counter) return get_bits(filter, pos, remainder_size);
     else return get_bits(filter, pos, remainder_size) >> count_size;
