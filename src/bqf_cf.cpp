@@ -70,7 +70,7 @@ void Bqf_cf::insert_from_sequence (std::string sequence, string& to_write) {
     }
     uint64_t lgth = sequence.length();
     /*the kmer and its revcomp are created character per character and left_to_compute indicates 
-    the nb of characters left to atke into account to create a kmer*/ 
+    the nb of characters left to take into account to create a kmer*/ 
     uint64_t kmer = 0;
     uint64_t revcomp = 0;
     uint64_t mask = mask_right(2*kmer_size);
@@ -83,7 +83,7 @@ void Bqf_cf::insert_from_sequence (std::string sequence, string& to_write) {
             kmer &= mask;
 
             revcomp >>= 2;
-            revcomp |= ( (0b10 ^ encoded) << (2 * (kmer_size - 1)));
+            revcomp |= ((0b10 ^ encoded) << (2 * (kmer_size - 1)));
 
             const uint64_t canon  = (kmer < revcomp) ? kmer : revcomp;
 
@@ -158,7 +158,7 @@ bool Bqf_cf::is_second_insert(uint64_t number){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
         }
 
-        pair<uint64_t, bool> pos_and_found = find_insert_position(boundary, quot, rem);
+        pair<uint64_t, bool> pos_and_found = find_insert_position(boundary, rem);
         uint64_t position = pos_and_found.first;
 
         if (pos_and_found.second) {

@@ -73,17 +73,16 @@ public:
     virtual void insert(uint64_t number, uint64_t count = 1);
 
     /**
-     * \brief finds the position in which to insert a number in a run
+     * \brief finds the position in which to insert a remainder in a run
      * 
-     * It is done through a dichotomous search
+     * It is done through a dichotomous search, in which both boundaries are included
      * 
      * \param boundary boundaries of the run (both boundaries are included)
-     * \param quot quotient of the number
-     * \param rem remainder of the number
-     * \returns a pair containing the position in which the number should be inserted and a boolean indicating
-     * if it is already present in the run and should only be added
+     * \param rem remainder to insert
+     * \returns a pair containing the position in which the remainder should be inserted and a boolean indicating
+     * if it is already present in the run
      */
-    std::pair<uint64_t, bool> find_insert_position(const std::pair<uint64_t,uint64_t> boundary, uint64_t quot, uint64_t rem);
+    std::pair<uint64_t, bool> find_insert_position(const std::pair<uint64_t,uint64_t> boundary, uint64_t rem);
 
     void query(std::ifstream& infile, std::ofstream& outfile);
 

@@ -127,7 +127,7 @@ string Rsqf::block2string(size_t block_id, bool bit_format) {
         if (! bit_format) {
             if (remainder_id % 4 == 0)
                 stream << "         ";
-            stream << setw(20) << current_remainder;
+            stream << setw(20) << current_remainder; //aligning nb
             if (remainder_id % 4 == 3)
                 stream << endl;
         }
@@ -138,7 +138,9 @@ string Rsqf::block2string(size_t block_id, bool bit_format) {
 
 
 /*
+**************************************************************
 HIGH LEVEL OPERATIONS
+**************************************************************
 */
 uint64_t Rsqf::get_quot_size(){
     return quotient_size;

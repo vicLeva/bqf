@@ -459,7 +459,7 @@ string string_of_int(uint16_t n) {
     return r;
 }
 
-/* class BqfCfTest : public ::testing::Test {
+class BqfCfTest : public ::testing::Test {
 protected:
     std::default_random_engine generator;
     std::uniform_int_distribution<uint16_t> distribution16;
@@ -540,4 +540,4 @@ TEST_F(BqfCfTest, FilterFastaFile) {
         }
     }
     kmc_results.close();
-} */
+}
