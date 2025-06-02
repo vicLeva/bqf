@@ -13,9 +13,11 @@ using namespace std;
     CONSTRUCTOR
     ================================================================
 */ 
-Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, bool verb) :
-    Bqf_ec(q_size, 1, k, 0, verb) {};
+Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, output_mode_t mode, bool verb) :
+    Bqf_ec(q_size, 1, k, 0, verb), mode(mode) {};
 
+Bqf_cf::Bqf_cf(uint64_t max_memory, output_mode_t mode, bool verb) :
+    Bqf_ec(max_memory, 1, verb), mode(mode) {};
 
 
 bool Bqf_cf::is_second_add_to_counter(uint64_t position){
@@ -26,12 +28,10 @@ bool Bqf_cf::is_second_add_to_counter(uint64_t position){
     bool is_second = !(old_rem & 1ULL);
     if (is_second){
         //flipping count bit to one
-        uint64_t pos = position * remainder_size + ((1 + (position/MEM_UNIT))*MEM_UNIT)*MET_UNIT;
-        filter[pos/MEM_UNIT] |= (1ULL << (pos&(MEM_UNIT - 1)));
-        /* set_bits(filter, 
+        set_bits(filter, 
             get_remainder_word_position(position) * BLOCK_SIZE + get_remainder_shift_position(position), 
             old_rem | 1ULL, 
-            remainder_size); */
+            remainder_size);
     }
     return is_second;
 }
@@ -43,28 +43,41 @@ bool Bqf_cf::is_second_add_to_counter(uint64_t position){
     ================================================================
 */ 
 void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string output) {
-    string to_write;
     
     fastx_parser::FastxParser<fastx_parser::ReadSeq> parser(files, 1, 1);
     parser.start();
     auto rg = parser.getReadGroup();
     while (parser.refill(rg)) {
         for (auto& rp : rg) {
-            insert_from_sequence(rp.seq, to_write);
+            insert_from_sequence(rp.seq);
         }
     }
     parser.stop();
-    ofstream outfile(output);
+    ofstream outfile(output, ios::binary);
     if (!outfile.is_open()) {
         throw std::runtime_error("Could not open file " + output);
     }
-    outfile << counter << endl;
-    outfile << to_write;
+    switch (mode) {
+        case text :
+            outfile << counter << endl;
+            outfile << str_buffer;
+            break;
+        case binary:
+            outfile.write(reinterpret_cast<const char*>(&counter), sizeof(uint64_t));
+            outfile.write(reinterpret_cast<const char*>(bin_buffer.data()), counter*sizeof(uint64_t));
+            break;
+        case stream:
+            std::cout << counter;
+            for (auto& kmer : bin_buffer) {
+                std::cout << kmer;
+            }
+            break;
+    }
     outfile.close();
         
 }
 
-void Bqf_cf::insert_from_sequence (std::string sequence, string& to_write) {
+void Bqf_cf::insert_from_sequence (std::string sequence) {
     if (verbose){
         cout << "[INSERT] sequence " << sequence << endl;
     }
@@ -90,7 +103,7 @@ void Bqf_cf::insert_from_sequence (std::string sequence, string& to_write) {
 
             left_to_compute -= left_to_compute ? 1 : 0;
             if (!left_to_compute) {
-                is_second_insert(canon, to_write);
+                insert_kmer(canon);
             }
         }
         else {
@@ -101,6 +114,7 @@ void Bqf_cf::insert_from_sequence (std::string sequence, string& to_write) {
         
     }
 }
+
 
 bool Bqf_cf::is_second_insert(uint64_t number){
     if (elements_inside+1 == size_limit){
@@ -153,11 +167,6 @@ bool Bqf_cf::is_second_insert(uint64_t number){
 
         //getting boundaries of the run
         const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
-
-        if (verbose){
-            cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
-        }
-
         pair<uint64_t, bool> pos_and_found = find_insert_position(boundary, rem);
         uint64_t position = pos_and_found.first;
 
@@ -173,23 +182,24 @@ bool Bqf_cf::is_second_insert(uint64_t number){
     }
 }
 
-void Bqf_cf::is_second_insert(string kmer, ofstream& output){
-    if (this->is_second_insert(kmer_to_hash(kmer, kmer_size))) {
-        output << kmer << endl;
-    }
-}
 
-void Bqf_cf::is_second_insert(uint64_t coded_kmer, string &to_write){
+void Bqf_cf::insert_kmer(uint64_t coded_kmer){
     if (this->is_second_insert(kmer_to_hash(coded_kmer, kmer_size))) {
         counter++;
         char rev[4] = {'A', 'C', 'T', 'G'};
         uint64_t mask = mask_right(2);
 
-        for (size_t i=0; i<kmer_size; i++){
-            to_write.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
-            coded_kmer <<= 2;
+        switch (mode) {
+        case text :
+            for (size_t i=0; i<kmer_size; i++){
+                str_buffer.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
+                coded_kmer <<= 2;
+            }
+            str_buffer.push_back('\n');
+            break;
+        default :
+            bin_buffer.push_back(coded_kmer);
+            break;  
         }
-        to_write.push_back('\n');
     }
 }
-

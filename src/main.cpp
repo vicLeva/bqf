@@ -11,7 +11,7 @@ void print_commands(void) {
     std::cout << "Commands:" << std::endl;
     std::cout << "\t./bqf build [-q <quotient size=8>] [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
     std::cout << "\t./bqf query -b <bqf_file> -i <reads_to_query> -o <results>" << std::endl;
-    std::cout << "\t./bqf filter [-q <quotient size=8>] [-k <k=32>] -i <fasta_file> -o <outfile>" << std::endl;
+    std::cout << "\t./bqf filter [-q <quotient size=8>] [-m <m=text|binary|stream>] [-k <k=32>] -i <fasta_file> -o <outfile>" << std::endl;
     std::cout << "\t./bqf help" << std::endl;
     std::cout << std::endl;
 }
@@ -85,6 +85,10 @@ int main(int argc, char* argv[]) {
 
         if (q <= 7 || c <= 0) {
             std::cerr << "Values of q, and c must be greater than 7, and 0." << std::endl;
+            return EXIT_FAILURE;
+        }
+        if (k > 32) {
+            std::cerr << "Value of k must be at most 32." << std::endl;
             return EXIT_FAILURE;
         }
 
@@ -171,6 +175,7 @@ int main(int argc, char* argv[]) {
     } else if (command == "filter") {
         int q = 8;
         int k = 32;
+        output_mode_t mode = text;
         std::vector<std::string> filenames;
 
         for (int i = 2; i < argc; i++) {
@@ -203,6 +208,22 @@ int main(int argc, char* argv[]) {
                     std::cerr << "The -o option requires an output file name." << std::endl;
                     return EXIT_FAILURE;
                 }
+            } else if (std::string(argv[i]) == "-m") {
+                if (++i < argc) {
+                    if (std::string(argv[i]) == "binary") {
+                        mode = binary;
+                    } else if (std::string(argv[i]) == "stream") {
+                        mode = stream;
+                    } else if (std::string(argv[i]) == "text") {
+                        mode = text;
+                    } else {
+                        std::cerr << "Invalid mode : please choose a value between \"text\", \"binary\", and \"stream\"" << std::endl;
+                        return EXIT_FAILURE;
+                    }
+                } else {
+                    std::cerr << "The -m option requires a mode." << std::endl;
+                    return EXIT_FAILURE;
+                }
             } else {
                 std::cerr << "Invalid argument : " << argv[i] <<std::endl;
                 print_commands();
@@ -211,7 +232,11 @@ int main(int argc, char* argv[]) {
         }
 
         if (q < 7) {
-            std::cout << "Value of q must be greater than 7" << std::endl;
+            std::cerr << "Value of q must be greater than 7" << std::endl;
+            return EXIT_FAILURE;
+        }
+        if (k > 32) {
+            std::cerr << "Value of k must be at most 32." << std::endl;
             return EXIT_FAILURE;
         }
         if (input_file.empty()) {
@@ -226,7 +251,7 @@ int main(int argc, char* argv[]) {
         try {
             begin = std::chrono::steady_clock::now();
 
-            Bqf_cf bqf = Bqf_cf(q, k);
+            Bqf_cf bqf = Bqf_cf(q, k, mode, false);
             bqf.filter_fastx_file(filenames, output_file);
 
             std::cout << "File successfully filtered. " << k << "-mers present more than once are stored in " << output_file << std::endl;
@@ -247,6 +272,7 @@ int main(int argc, char* argv[]) {
         std::cout << "-i is input_file, can be counted smers for \"build\" tool, sequences to query for \"query\" tool or a fasta/q file for \"filter\" tool" << std::endl;
         std::cout << "-o is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q) for \"build\" tool, sequences results file for \"query\" tool or a list of kmer for \"filter\" tool" << std::endl;
         std::cout << "-b is the file from which the BQF is loaded" << std::endl;
+        std::cout << "-m is the mode with which to write the output : default is text, which is human readable, binary is more space and time-efficient, and stream is not yet added" << std::endl;
     } else {
         std::cerr << "Invalid command or incorrect number of arguments." << std::endl;
         print_commands();

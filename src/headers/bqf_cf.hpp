@@ -3,8 +3,16 @@
 
 #include "bqf_ec.hpp"
 
+typedef enum {
+    text, binary, stream
+} output_mode_t;
+
 class Bqf_cf : public Bqf_ec {
     uint64_t counter = 0;
+    output_mode_t mode;
+    std::string str_buffer = "";
+    std::vector<uint64_t> bin_buffer;
+
 public:
     Bqf_cf(){};
     /** 
@@ -12,9 +20,12 @@ public:
      * \param q_size The desired size of quotient, will induce filter's size
      * \param k The length of a k_mer
      * \param z The length difference between a k-mer and the inserted s-mer
+     * \param mode with which the output shall be written (text : human-readable, binary : binary encoding of dna, stream : not in a file not yet added)
      * \param verb to print on-going operations in stdout (default: false)
      */
-    Bqf_cf(uint64_t q_size, uint64_t k, bool verb=false);
+    Bqf_cf(uint64_t q_size, uint64_t k, output_mode_t mode = text, bool verb=false);
+
+    Bqf_cf(uint64_t max_memory, output_mode_t mode = text, bool verb = false);
 
 
     /**
@@ -29,7 +40,7 @@ public:
      * \param sequence is the sequence from which the kmers are read
      * \param output is the stream in which kmers present more than once can be written
      */
-    void insert_from_sequence(std::string sequence, std::string& to_write);
+    void insert_from_sequence(std::string sequence);
 
     
 
@@ -46,13 +57,11 @@ public:
      */
     bool is_second_insert(uint64_t number);
     /**
-     * \brief adds an occurence of a kmer (in string format or already encoded) in the BQF, and if it has 
-     * already been inserted exactly once, writes the kmer in output
-     * \param kmer that should be inserted
-     * \param output where the kmer will be written if it is already present once in the BQF
+     * \brief adds an occurence of an encoded in the BQF, and if it has 
+     * already been inserted exactly once, writes the kmer in a buffer
+     * \param coded_kmer that should be inserted
      */
-    void is_second_insert(std::string kmer, std::ofstream& output);
-    void is_second_insert(uint64_t coded_kmer, std::string& to_write);
+    void insert_kmer(uint64_t coded_kmer);
 
 
     

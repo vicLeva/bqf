@@ -254,41 +254,9 @@ uint64_t Bqf::query(uint64_t number){
     if (!is_occupied(quot)) return 0;
 
     const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
-    const uint64_t quots = (1ULL << this->quotient_size);
-
-    // dichotomous search
-    uint64_t left = boundary.first;
-    if (left < quot)   
-        left += quots;
-
-    uint64_t right = boundary.second;
-    if (right < quot)
-        right += quots;
-
-    uint64_t middle = ceil((left + right) / 2);
-    uint64_t position = middle;
-    if (position >= quots)
-        position -= quots;
-    
-    uint64_t remainder_in_filter;
-
-    assert(left <= right);
-
-    while (left <= right) {
-        middle = ceil((left + right) / 2);
-        position = middle;
-        if (position >= quots)
-            position -= quots;
-        remainder_in_filter = get_remainder(position);
-
-        if (remainder_in_filter == rem) 
-            return query_process_count(get_remainder(position, true) & mask_right(count_size));
-        else if (left == right)
-            return 0;
-        else if (remainder_in_filter > rem)
-            right = middle;
-        else
-            left = middle + 1;
+    pair<uint64_t, bool> position = find_insert_position(boundary, rem);
+    if (position.second) {
+        return query_process_count(get_remainder(position.first, true) & mask_right(count_size));
     }
     return 0;
 }

@@ -471,8 +471,8 @@ protected:
     void SetUp() override {
         generator.seed(time(NULL));
         
-        small_bqf_cf = Bqf_cf(7, 8, false);
-        bigger_bqf_cf = Bqf_cf(18, 28, false);
+        small_bqf_cf = Bqf_cf(7, 8, text, false);
+        bigger_bqf_cf = Bqf_cf(18, 28, text, false);
     }
 };
 
@@ -483,11 +483,9 @@ TEST_F(BqfCfTest, SimpleInsert) {
         for (uint64_t i = 0; i < (1ULL<<17) -1; i++) {
             string kmer = string_of_int(distribution16(generator));
             n = kmer_to_hash(kmer, small_bqf_cf.kmer_size);
-            while (n==0) {
-                string kmer = string_of_int(distribution16(generator));
-                n = kmer_to_hash(kmer, small_bqf_cf.kmer_size);
-            }
+            
             ++verif[n];
+            cout << i << " === " << kmer << " with hash " << n << endl;
             EXPECT_EQ(small_bqf_cf.is_second_insert(n), verif[n] == 2) << "verif[" << n << "] = " << verif[n] << endl;
         }
     }
