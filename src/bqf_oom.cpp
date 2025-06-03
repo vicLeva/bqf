@@ -4,58 +4,19 @@ using namespace std;
 
 Bqf_oom::Bqf_oom(){}
 
-Bqf_oom::Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb){
-    assert(q_size >= 7);
-
-    verbose = verb;
-
-    elements_inside = 0;
-    quotient_size = q_size;
-    kmer_size = k;
-    smer_size = k-z;
+Bqf_oom::Bqf_oom(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, bool verb):
+    Bqf(c_size, k, k-z, q_size, verb)
+{
     const uint64_t hash_size = 2*smer_size;   
-    count_size = c_size; 
-
-    remainder_size = hash_size - q_size + c_size;
-    
-    
     if (verbose){ 
         cout << "q " << quotient_size << " r " << (hash_size - q_size) << " remainder_size " << remainder_size << " count_size " << count_size << endl; 
     }
-
-
-    const uint64_t num_quots = 1ULL << quotient_size; 
-    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
-
-    size_limit = num_quots * 0.95;
-
-    // In machine words
-    number_blocks = ceil(num_quots / BLOCK_SIZE);
-
-    filter = vector<uint64_t>(num_of_words);
 }
 
 
-Bqf_oom::Bqf_oom(uint64_t max_memory, uint64_t c_size, bool verb){ //TO CHANGE, MISS HASH INFORMATION
-    elements_inside = 0;
-
-    verbose = verb;
-    
-    // Size of the quotient/remainder to fit into max_memory MB
-    quotient_size = find_quotient_given_memory(max_memory, c_size);
-    assert (quotient_size >= 7);
-    remainder_size = MEM_UNIT - quotient_size + c_size;
-    count_size = c_size;
-
-    // Number of quotients must be >= MEM_UNIT
-    const uint64_t num_quots = 1ULL << quotient_size; //524.288
-    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
-
-    // In machine words
-    number_blocks = ceil(num_quots / BLOCK_SIZE);
-    
-    filter = vector<uint64_t>(num_of_words);
-}
+Bqf_oom::Bqf_oom(uint64_t max_memory, uint64_t c_size, bool verb) :
+    Bqf(max_memory, c_size, verb)
+{}
 
 
 
@@ -164,9 +125,9 @@ uint64_t Bqf_oom::query_process_count(uint64_t c) {
 }
 
 
-Bqf_oom Bqf_oom::load_from_disk(const std::string& filename){
+Bqf_oom Bqf_oom::load_from_disk(const string& filename){
     Bqf_oom qf;
-    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    ifstream file(filename, ios::in | ios::binary);
     if (file.is_open()) {
         file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(uint64_t));
@@ -183,7 +144,7 @@ Bqf_oom Bqf_oom::load_from_disk(const std::string& filename){
 
         qf.verbose = false;
     } else {
-        std::cerr << "Unable to open file for reading: " << filename << std::endl;
+        cerr << "Unable to open file for reading: " << filename << endl;
     }
     return qf;
 }

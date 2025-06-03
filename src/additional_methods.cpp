@@ -106,7 +106,7 @@ uint64_t get_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t len){
 
 using namespace std;
 void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t len) {
-    assert(pos + len <= vec.size() * 64);
+    assert(pos + len <= vec.size() * MEM_UNIT);
     if (len == 0) return;
 
     uint64_t mask = mask_right(len);
@@ -129,44 +129,36 @@ void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t
 uint64_t encode(string kmer){
     uint64_t encoded = 0;
     for(char& c : kmer) {
-        if (c=='A'){
-            encoded <<= 2;
-            encoded |= 3;
-        }
-        else if (c=='C'){
-            encoded <<= 2;
-            encoded |= 2;
-        }
-        else if (c=='G'){
-            encoded <<= 2;
-            encoded |= 1;
-        }
-        else{ //T is 00 so with reverse complementarity we won't get 0000000000000 as input for xorshift
-            encoded <<= 2;
+        encoded <<= 2;
+        //encoded |= ((c >> 1) & 0b11);
+        switch (c) {
+            case 'G':
+                encoded |= 3;
+                break;
+            case 'T' :
+                encoded |= 2;
+                break;
+            case 'C' :
+                encoded |= 1;
+                break;
+            case 'A' :
+                break;
+            default :
+                throw std::invalid_argument( "received non nucleotidic value");
+                break;
         }
     }
-
     return encoded;
 }
 
-string decode(uint64_t revhash, uint64_t k){
+string decode(uint64_t coded, uint64_t k){
     string kmer;
+    char rev[4] = {'A', 'C', 'T', 'G'};
+    uint64_t mask = mask_right(2);
 
     for (size_t i=0; i<k; i++){
-        switch(revhash & mask_right(2)){
-            case 3:
-                kmer = 'A' + kmer;
-                break;
-            case 2:
-                kmer = 'C' + kmer;
-                break;
-            case 1:
-                kmer = 'G' + kmer;
-                break;
-            default:
-                kmer = 'T' + kmer;
-        }
-        revhash >>= 2;
+        kmer.push_back(rev[coded>>(2*(k - 1)) & mask]);
+        coded <<= 2;
     }
 
     return kmer;
@@ -227,10 +219,23 @@ uint64_t kmer_to_hash(string kmer, uint64_t k){
     return bfc_hash_64(encode(kmer), mask_right(k*2));
 }
 
+uint64_t kmer_to_hash(uint64_t coded_kmer, uint64_t k){
+    return bfc_hash_64(coded_kmer, mask_right(k*2));
+}
+
 string hash_to_kmer(uint64_t hash, uint64_t k){
     return decode(bfc_hash_64_inv(hash, mask_right(k*2)), k);
 }
 
+
+bool is_valid(char c) {
+    switch (c) {
+        case 'A' : case 'C' : case 'G' : case 'T' :
+            return true;
+        default :
+            return false;
+    }
+}
 
 uint64_t nucl_encode(char nucl){
   //Returns the binary encoding of a nucleotide
@@ -239,12 +244,12 @@ uint64_t nucl_encode(char nucl){
   switch (nucl){
     case 'A':
       return 0;
-    case 'T':
-      return 3;
     case 'C':
       return 1;
     case 'G':
       return 2;
+    case 'T':
+      return 3;
     default :
         cout << "non nucl : " << nucl << endl;
         throw std::invalid_argument( "received non nucleotidic value" );
@@ -267,6 +272,29 @@ uint64_t revcomp64 (const uint64_t v, size_t bitsize){
     ((uint64_t)rev_table[(v >> 56) & 0xff])) >> (64-bitsize);
 }
 
+string revcomp(const string &kmer, size_t k) {
+    string rev = "";
+    char c;
+    for (uint64_t i = 0; i < k; i++) {
+        switch (kmer[k - i - 1]) {
+            case 'A':
+                c = 'T';
+                break;
+            case 'C':
+                c = 'G';
+                break;
+            case 'G' :
+                c = 'C';
+                break;
+            default :
+                c = 'A';
+                break;
+        }
+        rev.push_back(c);
+    }
+    return rev;
+}
+
 uint64_t canonical(uint64_t smer, size_t size){
     uint64_t revcomp = revcomp64(smer, size);
     if (revcomp < smer) { return revcomp; }
@@ -275,7 +303,10 @@ uint64_t canonical(uint64_t smer, size_t size){
 
 std::string canonical(const std::string& smer, size_t s){
   //debug purpose only
-  return decode(flip(canonical(flip(encode(smer), 2*s), 2*s), 2*s), s);
+  string rcomp = revcomp(smer, s);
+  uint64_t s_coded = encode(smer);
+  uint64_t rev_coded = encode(rcomp);
+  return (s_coded < rev_coded)? smer : rcomp;
 }
 
 std::ostream& operator<<(std::ostream& os, result_query const& res) {

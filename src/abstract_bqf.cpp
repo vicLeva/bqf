@@ -4,6 +4,21 @@
 
 using namespace std;
 
+Bqf::Bqf(uint64_t max_memory, uint64_t c_size, bool verb): 
+    Rsqf(max_memory, verb), count_size(c_size) {
+    // need to change remainder size to take into account the counting bits
+    remainder_size = MEM_UNIT - quotient_size + c_size;
+
+    // Number of quotients must be >= MEM_UNIT
+    const uint64_t num_quots = 1ULL << quotient_size; //524.288
+    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
+
+    // In machine words
+    number_blocks = ceil(num_quots / BLOCK_SIZE);
+    
+    filter = vector<uint64_t>(num_of_words);
+}
+
 void Bqf::insert(string kmc_input){
     try {
         ifstream infile(kmc_input);
@@ -40,6 +55,48 @@ void Bqf::insert(string kmc_input){
 void Bqf::insert(string kmer, uint64_t count){
     this->insert(kmer_to_hash(kmer, smer_size), count);
 }
+
+pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> boundary, uint64_t rem) {
+    if (verbose) {
+        cout << "[SEARCH] in [" << boundary.first << " ; " << boundary.second << "]" << endl;
+    }
+    uint64_t mask = mask_right(this->quotient_size);
+    uint64_t left = boundary.first;
+    uint64_t right = boundary.second;
+    //the BQF is circular so boundaries might need to be adjusted
+    if (right < left) 
+        right |= (1ULL << this->quotient_size);
+
+    uint64_t middle; 
+    uint64_t position;
+    uint64_t remainder_in_filter;
+
+    do {
+        middle = (left + right)>>1;
+        position = middle&mask; //position in the array
+        remainder_in_filter = get_remainder(position);
+
+        if (remainder_in_filter == rem)
+            return make_pair(position, true);
+        else if (left == right){
+            if (remainder_in_filter < rem)
+                position = get_next_quot(position);
+            break;
+        }
+        else if (remainder_in_filter > rem)
+            //this is an inequality and not an equality, so right = middle + 1 can't be used
+            right = middle; 
+        else
+            left = middle + 1;    
+    } while (left <= right);
+
+    if (verbose) {
+        cout << "[SEARCH] found position " << position << endl;
+    }
+    return make_pair(position, false);
+}
+
+
 
 void Bqf::insert(uint64_t number, uint64_t count){
     if (elements_inside+1 == size_limit){
@@ -95,46 +152,11 @@ void Bqf::insert(uint64_t number, uint64_t count){
             cout << "boundaries " << boundary.first << " || " << boundary.second << endl;
         }
 
-        // nb of quotients
-        const uint64_t quots = (1ULL << this->quotient_size);
+        pair<uint64_t, bool> pos_and_found = find_insert_position(boundary, rem);
+        uint64_t position = pos_and_found.first;
 
-        // dichotomous search and insertion
-        uint64_t left = boundary.first;
-        if (left < quot)   
-            left += quots;
-
-        uint64_t right = boundary.second;
-        if (right < quot) 
-            right += quots;
-
-        uint64_t middle = ceil((left + right) / 2);
-        uint64_t position = middle;
-        if (position >= quots)
-            position -= quots;
-        
-        uint64_t remainder_in_filter;
-
-        assert(left <= right);
-
-        while (left <= right) {
-            middle = ceil((left + right) / 2);
-            position = middle;
-            if (position >= quots)
-                position -= quots;
-            remainder_in_filter = get_remainder(position);
-
-            if (remainder_in_filter == rem)
-                return add_to_counter(position, rem_count);
-            else if (left == right){
-                if (remainder_in_filter < rem)
-                    position = get_next_quot(position);
-                break;
-            }
-            else if (remainder_in_filter > rem)
-                right = middle;
-            else
-                left = middle + 1;
-            
+        if (pos_and_found.second) {
+            return add_to_counter(position, rem_count);
         }
 
         shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
@@ -232,41 +254,9 @@ uint64_t Bqf::query(uint64_t number){
     if (!is_occupied(quot)) return 0;
 
     const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
-    const uint64_t quots = (1ULL << this->quotient_size);
-
-    // dichotomous search
-    uint64_t left = boundary.first;
-    if (left < quot)   
-        left += quots;
-
-    uint64_t right = boundary.second;
-    if (right < quot)
-        right += quots;
-
-    uint64_t middle = ceil((left + right) / 2);
-    uint64_t position = middle;
-    if (position >= quots)
-        position -= quots;
-    
-    uint64_t remainder_in_filter;
-
-    assert(left <= right);
-
-    while (left <= right) {
-        middle = ceil((left + right) / 2);
-        position = middle;
-        if (position >= quots)
-            position -= quots;
-        remainder_in_filter = get_remainder(position);
-
-        if (remainder_in_filter == rem) 
-            return query_process_count(get_remainder(position, true) & mask_right(count_size));
-        else if (left == right)
-            return 0;
-        else if (remainder_in_filter > rem)
-            right = middle;
-        else
-            left = middle + 1;
+    pair<uint64_t, bool> position = find_insert_position(boundary, rem);
+    if (position.second) {
+        return query_process_count(get_remainder(position.first, true) & mask_right(count_size));
     }
     return 0;
 }
@@ -490,8 +480,8 @@ void Bqf::resize(uint n){
 
 uint64_t Bqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
     const uint64_t block = get_block_id(position);
-    const uint64_t pos_in_block = get_shift_in_block(position);
-    const uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
+    //const uint64_t pos_in_block = get_shift_in_block(position);
+    const uint64_t pos = position * remainder_size + ((1 + block)*MEM_UNIT)*MET_UNIT;
 
     if (w_counter) return get_bits(filter, pos, remainder_size);
     else return get_bits(filter, pos, remainder_size) >> count_size;

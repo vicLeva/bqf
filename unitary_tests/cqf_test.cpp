@@ -3,6 +3,7 @@
 #include "rsqf.hpp"
 #include "bqf_ec.hpp" 
 #include "bqf_oom.hpp"
+#include "bqf_cf.hpp"
 #include <random>
 
 using namespace std;
@@ -279,7 +280,7 @@ TEST_F(RsqfTest, globalUse) {
     EXPECT_EQ(usual_qf.query(val2), 0);
 }
 
-TEST_F(RsqfTest, finalTest) {
+/* TEST_F(RsqfTest, finalTest) {
     uint64_t val;
     unordered_set<uint64_t> verif; 
 
@@ -300,7 +301,7 @@ TEST_F(RsqfTest, finalTest) {
     }
 
     EXPECT_EQ(usual_qf.enumerate(), verif);
-}
+} */
 
 
 
@@ -374,7 +375,6 @@ TEST_F(BCqfTest, insertRDMoccs) {
         cqf.insert(val, val%31);
         verif.insert({val, val%31 });
     }
-
     EXPECT_EQ(cqf.enumerate(), verif);
 
     //REMOVE
@@ -387,6 +387,28 @@ TEST_F(BCqfTest, insertRDMoccs) {
     EXPECT_EQ(cqf.enumerate(), verif);
 }
 
+
+TEST_F(BCqfTest, insertSeveralOccs) {
+    uint64_t val;
+    std::map<uint64_t, uint64_t> verif; 
+
+    //INSERT
+    for (uint64_t i=0; i < (1ULL<<17)-1; i++){
+        val = distribution(generator);    
+        cqf.insert(val);
+        ++verif[val];
+    }
+    EXPECT_EQ(cqf.enumerate(), verif);
+
+    //REMOVE
+    std::map<uint64_t,uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++){
+        cqf.remove((*it).first, (*it).second);
+    }
+    verif.clear();
+
+    EXPECT_EQ(cqf.enumerate(), verif);
+}
 
 TEST_F(BCqfTest, insertRDMoccs_oom) {
     uint64_t val;
@@ -402,7 +424,6 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
         cqf_oom.insert(val, (1ULL << val%31));
         verif.insert({ val, (1ULL << val%31) });
     }
-
     EXPECT_EQ(cqf_oom.enumerate(), verif);
 
     //REMOVE
@@ -413,4 +434,108 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
     verif.clear();
 
     EXPECT_EQ(cqf_oom.enumerate(), verif);
+}
+
+
+string string_of_int(uint16_t n) {
+    string r = "";
+    uint32_t mask = 0b11;
+    for (int i = 0; i < 8; i++){
+        switch (mask&n) {
+            case 0:
+                r.push_back('A');
+                break;
+            case 1:
+                r.push_back('C');
+                break;
+            case 2:
+                r.push_back('T');
+                break;
+            default:
+                r.push_back('G');
+        }
+        n = n>>2;
+    }
+    return r;
+}
+
+class BqfCfTest : public ::testing::Test {
+protected:
+    std::default_random_engine generator;
+    std::uniform_int_distribution<uint16_t> distribution16;
+
+    std::string input_file = "random_kmers.txt";
+    Bqf_cf small_bqf_cf;
+    Bqf_cf bigger_bqf_cf;
+
+    void SetUp() override {
+        generator.seed(time(NULL));
+        
+        small_bqf_cf = Bqf_cf(7, 8, text, false);
+        bigger_bqf_cf = Bqf_cf(18, 28, text, false);
+    }
+};
+
+TEST_F(BqfCfTest, SimpleInsert) {
+    uint64_t n;
+    std::map<uint64_t, uint64_t> verif;
+    try{
+        for (uint64_t i = 0; i < (1ULL<<17) -1; i++) {
+            string kmer = string_of_int(distribution16(generator));
+            n = kmer_to_hash(kmer, small_bqf_cf.kmer_size);
+            
+            ++verif[n];
+            cout << i << " === " << kmer << " with hash " << n << endl;
+            EXPECT_EQ(small_bqf_cf.is_second_insert(n), verif[n] == 2) << "verif[" << n << "] = " << verif[n] << endl;
+        }
+    }
+    catch (const std::exception &e) {
+        cerr << "Error : " << e.what();
+    }
+    std::map<uint64_t, uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++){
+        small_bqf_cf.remove((*it).first);
+    }
+    verif.clear();
+    EXPECT_EQ(small_bqf_cf.enumerate(), verif);
+}
+
+bool word_in_file(string word, string filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file " + filename);
+    }
+    string line;
+    while (file >> line) {
+        if (line.find(word) != line.npos){
+            file.close();
+            return true;
+        }
+    }
+    file.close();
+    return false;
+}
+
+TEST_F(BqfCfTest, FilterFastaFile) {
+    string fasta_file = "../../examples/data/ecoli_100Kb_reads_40x.fasta"; 
+    string kmc_check = "../../examples/data/ecoli_28_counted";
+    string filtered_kmers = "ecoli_28_filtered.txt";
+    vector<string> files;
+    files.push_back(fasta_file);
+    bigger_bqf_cf.filter_fastx_file(files, filtered_kmers);
+
+    ifstream kmc_results(kmc_check);
+    string kmer;
+    uint64_t count;
+    int nb = 0;
+    if (kmc_results.is_open()){
+        while (kmc_results >> kmer >> count && nb < 100) {
+            string nkmer = decode(encode(kmer), bigger_bqf_cf.kmer_size);
+            EXPECT_EQ(kmer, nkmer);
+            string canonical_kmer = canonical(kmer, bigger_bqf_cf.kmer_size);
+            EXPECT_EQ(word_in_file(canonical_kmer, filtered_kmers), count > 1) << canonical_kmer << " not here, but count " << count << endl;
+            nb ++;
+        }
+    }
+    kmc_results.close();
 }

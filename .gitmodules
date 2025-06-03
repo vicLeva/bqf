@@ -1,0 +1,3 @@
+[submodule "bundled/FQFeeder"]
+	path = bundled/FQFeeder
+	url = https://github.com/rob-p/FQFeeder

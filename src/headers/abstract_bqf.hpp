@@ -17,15 +17,26 @@ public:
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
     uint64_t count_size;
+
+    uint64_t kmer_size;
     
     /** 
      * \brief s, supposed to be hash_size/2
      */
     uint64_t smer_size;
 
-    uint64_t kmer_size;
+    
+    /*  
+        ================================================================
+        CONSTRUCTORS
+        ================================================================
+    */ 
+    Bqf(){};
+    Bqf(uint64_t c_size, uint64_t k, uint64_t s, uint64_t q_size, bool verbose = false) :
+        Rsqf(q_size, 2*s - q_size + c_size, verbose), count_size(c_size), kmer_size(k), smer_size(s) {};
+    Bqf(uint64_t max_memory, uint64_t c_size, bool verb);
 
-
+    
     /** 
      * \brief Insert every kmer + abundance of a kmer count software output file (eg KMC)
      * 
@@ -59,7 +70,19 @@ public:
      * \param number to insert
      * \param count number of occurences of the element to insert (default: 1)
      */
-    void insert(uint64_t number, uint64_t count = 1);
+    virtual void insert(uint64_t number, uint64_t count = 1);
+
+    /**
+     * \brief finds the position in which to insert a remainder in a run
+     * 
+     * It is done through a dichotomous search, in which both boundaries are included
+     * 
+     * \param boundary boundaries of the run (both boundaries are included)
+     * \param rem remainder to insert
+     * \returns a pair containing the position in which the remainder should be inserted and a boolean indicating
+     * if it is already present in the run
+     */
+    std::pair<uint64_t, bool> find_insert_position(const std::pair<uint64_t,uint64_t> boundary, uint64_t rem);
 
     void query(std::ifstream& infile, std::ofstream& outfile);
 
