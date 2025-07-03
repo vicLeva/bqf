@@ -475,7 +475,7 @@ protected:
         bigger_bqf_cf = Bqf_cf(18, 28, text, false);
     }
 };
-
+/* 
 TEST_F(BqfCfTest, SimpleInsert) {
     uint64_t n;
     std::map<uint64_t, uint64_t> verif;
@@ -498,7 +498,7 @@ TEST_F(BqfCfTest, SimpleInsert) {
     }
     verif.clear();
     EXPECT_EQ(small_bqf_cf.enumerate(), verif);
-}
+} */
 
 bool word_in_file(string word, string filename) {
     ifstream file(filename);

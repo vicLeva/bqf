@@ -1,5 +1,5 @@
 #include "bqf_cf.hpp"
-#pragma push_macro("BLOCK_SIZE")
+#pragma push_macro("BLOCK_SIZE") //overlapping macro definitions
 #undef BLOCK_SIZE
 #include "FastxParser.hpp"
 #pragma pop_macro ("BLOCK_SIZE")
@@ -20,7 +20,7 @@ Bqf_cf::Bqf_cf(uint64_t max_memory, output_mode_t mode, bool verb) :
     Bqf_ec(max_memory, 1, verb), mode(mode) {};
 
 
-bool Bqf_cf::is_second_add_to_counter(uint64_t position){
+bool Bqf_cf::add_one_to_counter(uint64_t position){
     const uint64_t old_rem = get_remainder(position, true);
     if (verbose) {
         cout << "[ADD] to old_rem " << old_rem << endl;
@@ -57,25 +57,74 @@ void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string outpu
     if (!outfile.is_open()) {
         throw std::runtime_error("Could not open file " + output);
     }
+    
+
     switch (mode) {
         case text :
             outfile << counter << endl;
             outfile << str_buffer;
             break;
         case binary:
+            bin_buffer = enumerate_solid();
+            counter = bin_buffer.size();
             outfile.write(reinterpret_cast<const char*>(&counter), sizeof(uint64_t));
             outfile.write(reinterpret_cast<const char*>(bin_buffer.data()), counter*sizeof(uint64_t));
             break;
         case stream:
-            std::cout << counter;
-            for (auto& kmer : bin_buffer) {
-                std::cout << kmer;
-            }
+            bin_buffer = enumerate_solid();
+            counter = bin_buffer.size();
             break;
     }
-    outfile.close();
-        
+    outfile.close();    
 }
+
+uint64_t Bqf_cf::yield_kmer(void) {
+    assert (mode == stream);
+    if (buffer_iterator > bin_buffer.size()) {
+        return EOF;
+    }
+    return bin_buffer[buffer_iterator++];
+}
+
+
+
+vector<uint64_t> Bqf_cf::enumerate_solid(){
+    vector<uint64_t> solid_kmers;
+    uint64_t curr_occ;
+    
+    std::pair<uint64_t, uint64_t> bounds;
+    uint64_t cursor;
+
+    uint64_t quotient;
+    uint64_t number;
+   
+    for(uint block = 0; block < number_blocks; ++block){
+        curr_occ = get_occupied_word(block);
+        if (curr_occ == 0) continue;
+
+        for (uint64_t i=0; i<BLOCK_SIZE; i++){
+            if (curr_occ & 1ULL){ //occupied
+                quotient = block*BLOCK_SIZE + i;
+                bounds = get_run_boundaries(quotient);
+                for (cursor = bounds.first; cursor != (bounds.second); cursor = get_next_quot(cursor)){ 
+                    //every remainder of the run
+                    if (get_remainder(cursor, true) & mask_right(count_size)){
+                        number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
+                        solid_kmers.push_back(number);
+                    }
+                }
+                if (get_remainder(cursor, true) & mask_right(count_size)){
+                    number = rebuild_number(quotient, get_remainder(cursor), quotient_size);
+                    solid_kmers.push_back(number);
+                }
+            }
+            curr_occ >>= 1; //next bit of occupied vector
+        }
+    }
+
+    return solid_kmers;
+}
+
 
 void Bqf_cf::insert_from_sequence (std::string sequence) {
     if (verbose){
@@ -171,13 +220,14 @@ bool Bqf_cf::is_second_insert(uint64_t number){
         uint64_t position = pos_and_found.first;
 
         if (pos_and_found.second) {
-            return is_second_add_to_counter(position);
+            return add_one_to_counter(position);
         }
-        shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
-        // SHIFT EVERYTHING RIGHT AND INSERT NEW REMAINDER
-        elements_inside++;
-        shift_left_and_set_circ(position, fu_slot, rem_count);
-
+        else {
+            shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
+            // SHIFT EVERYTHING RIGHT AND INSERT NEW REMAINDER
+            elements_inside++;
+            shift_left_and_set_circ(position, fu_slot, rem_count);
+        }
         return false;
     }
 }
@@ -190,16 +240,15 @@ void Bqf_cf::insert_kmer(uint64_t coded_kmer){
         uint64_t mask = mask_right(2);
 
         switch (mode) {
-        case text :
-            for (size_t i=0; i<kmer_size; i++){
-                str_buffer.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
-                coded_kmer <<= 2;
-            }
-            str_buffer.push_back('\n');
-            break;
-        default :
-            bin_buffer.push_back(coded_kmer);
-            break;  
+            case text :
+                for (size_t i=0; i<kmer_size; i++){
+                    str_buffer.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
+                    coded_kmer <<= 2;
+                }
+                str_buffer.push_back('\n');
+                break;
+            default :
+                break;  
         }
     }
 }

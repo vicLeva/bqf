@@ -224,6 +224,15 @@ int main(int argc, char* argv[]) {
                     std::cerr << "The -m option requires a mode." << std::endl;
                     return EXIT_FAILURE;
                 }
+            } else if (std::string(argv[i]) == "-h") {
+                print_commands();
+                std::cout << "-q is quotient size, it sets the filter size (there will be 2^q slots) so 2^(q-1) < nb_unique_elements < 2^q is highly recommanded" << std::endl;
+                std::cout << "-k is the kmer size." << std::endl;
+                std::cout << "-i is input_file : a fasta/q file containing from which the kmers will be indexed" << std::endl;
+                std::cout << "-o is a list of all solid kmers" << std::endl;
+                std::cout << "-m is the mode with which to write the output : default is text, which is human readable, binary is more space and time-efficient, and stream makes it possible to yield the next solid kmer through" << std::endl;
+                std::cout << "\t An output file is not necessary if the output mode is streaming" << std::endl;
+
             } else {
                 std::cerr << "Invalid argument : " << argv[i] <<std::endl;
                 print_commands();
@@ -243,7 +252,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Input file name is missing" << std::endl;
             return EXIT_FAILURE;
         }
-        if (output_file.empty()) {
+        if (output_file.empty() && mode != stream) {
             std::cerr << "Output file name is missing" << std::endl;
             return EXIT_FAILURE;
         }

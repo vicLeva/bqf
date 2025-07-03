@@ -2,6 +2,7 @@
 #define BQF_CF
 
 #include "bqf_ec.hpp"
+#include <gtest/gtest.h>
 
 typedef enum {
     text, binary, stream
@@ -12,6 +13,7 @@ class Bqf_cf : public Bqf_ec {
     output_mode_t mode;
     std::string str_buffer = "";
     std::vector<uint64_t> bin_buffer;
+    uint64_t buffer_iterator = 0;
 
 public:
     Bqf_cf(){};
@@ -35,25 +37,32 @@ public:
      */
     void filter_fastx_file(std::vector<std::string> files, std::string output);
 
+
+    /**
+     * @brief if the stream mode is the one chosen, this function can be called to get the next kmer
+     * \returns the following solid kmer
+     */
+    uint64_t yield_kmer(void);
+
+private :
+    //unitary tests
+    friend class BqfCfTest;
+    FRIEND_TEST(BqfCfTest, SimpleInsert);
+
     /**
      * @brief inserts all kmers from a DNA sequence and writes all k-mers present more than once in a stream
      * \param sequence is the sequence from which the kmers are read
-     * \param output is the stream in which kmers present more than once can be written
      */
     void insert_from_sequence(std::string sequence);
-
-    
 
     /**
      * \brief adds an occurence of an element in a certain position
      * \param position where the element should be counted once more
-     * \returns if the element has already been inserted exactly once before
      */
-    bool is_second_add_to_counter(uint64_t position);
+    bool add_one_to_counter(uint64_t position);
     /**
      * \brief adds an occurence of a number in the BQF
      * \param number that should be inserted
-     * \returns if the number has already been inserted exactly once before
      */
     bool is_second_insert(uint64_t number);
     /**
@@ -62,8 +71,13 @@ public:
      * \param coded_kmer that should be inserted
      */
     void insert_kmer(uint64_t coded_kmer);
+    /**
+     * @brief enumerates all hashes of solid (appearing at least twice) kmers in the BQF
+     * \returns a vector of all hashes of the solid kmers
+     */
+    std::vector<uint64_t> enumerate_solid();
 
-
+    
     
 };
 

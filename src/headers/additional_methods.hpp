@@ -158,6 +158,21 @@ uint64_t encode(std::string data);
 std::string decode(uint64_t hash, uint64_t size);
 
 /** 
+ * \brief encodes a kmer using non-traditional encoding
+ * \param data the kmer you want to encode
+ * A->00 C->10 G->11 T->10, (used for checking quick encoding using ASCII value)
+ * \return a uint64, encoding the kmer
+ */
+uint64_t quick_encoding(std::string kmer);
+/** 
+ * \brief decodes a number into a kmer, if the kmer has been encoded through quick ASCII encoding
+ * \param hash the number to turn into a kmer
+ * \param size the size of the kmer, to know where to stop in the 64bits number
+ * \return the kmer string decoded
+ */
+std::string quick_decoding(uint64_t coded, uint64_t k);
+
+/** 
  * \brief modular and reversible xorshift64
  * \param key the number to hash (usually an encoded kmer)
  * \param mask the hash output size (in bits) as a mask (see mask_right())
@@ -230,6 +245,13 @@ const uint8_t rev_table[256] = {
 
 uint64_t revcomp64 (const uint64_t v, size_t bitsize);
 
+
+/**
+ * \brief canoncial value of an smer,using quick encoding, i.e. min between the smer and its revcomp
+ * \param smer the smer from which the canonical value will be computed
+ * \param s the size of the smer
+ * \returns a string that is the canonical representation of the smer
+ */
 uint64_t canonical(uint64_t smer, size_t size);
 
 /** 

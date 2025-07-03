@@ -132,6 +132,44 @@ uint64_t encode(string kmer){
         encoded <<= 2;
         //encoded |= ((c >> 1) & 0b11);
         switch (c) {
+            case 'A':
+                encoded |= 3;
+                break;
+            case 'C' :
+                encoded |= 2;
+                break;
+            case 'G' :
+                encoded |= 1;
+                break;
+            case 'T' :
+                break;
+            default :
+                throw std::invalid_argument( "received non nucleotidic value");
+                break;
+        }
+    }
+    return encoded;
+}
+
+string decode(uint64_t coded, uint64_t k){
+    string kmer;
+    char rev[4] = {'T', 'G', 'C', 'A'};
+    uint64_t mask = mask_right(2);
+
+    for (size_t i=0; i<k; i++){
+        kmer.push_back(rev[coded>>(2*(k - 1)) & mask]);
+        coded <<= 2;
+    }
+
+    return kmer;
+}
+
+uint64_t quick_encoding(string kmer){
+    uint64_t encoded = 0;
+    for(char& c : kmer) {
+        encoded <<= 2;
+        //encoded |= ((c >> 1) & 0b11);
+        switch (c) {
             case 'G':
                 encoded |= 3;
                 break;
@@ -151,7 +189,7 @@ uint64_t encode(string kmer){
     return encoded;
 }
 
-string decode(uint64_t coded, uint64_t k){
+string quick_decoding(uint64_t coded, uint64_t k){
     string kmer;
     char rev[4] = {'A', 'C', 'T', 'G'};
     uint64_t mask = mask_right(2);
@@ -163,7 +201,6 @@ string decode(uint64_t coded, uint64_t k){
 
     return kmer;
 }
-
 
 // Thomas Wang's integer hash functions. See <https://gist.github.com/lh3/59882d6b96166dfc3d8d> for a snapshot.
 uint64_t bfc_hash_64(uint64_t key, uint64_t mask) {
@@ -304,8 +341,8 @@ uint64_t canonical(uint64_t smer, size_t size){
 std::string canonical(const std::string& smer, size_t s){
   //debug purpose only
   string rcomp = revcomp(smer, s);
-  uint64_t s_coded = encode(smer);
-  uint64_t rev_coded = encode(rcomp);
+  uint64_t s_coded = quick_encoding(smer);
+  uint64_t rev_coded = quick_encoding(rcomp);
   return (s_coded < rev_coded)? smer : rcomp;
 }
 
