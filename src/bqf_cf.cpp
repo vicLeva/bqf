@@ -20,7 +20,7 @@ Bqf_cf::Bqf_cf(uint64_t max_memory, output_mode_t mode, bool verb) :
     Bqf_ec(max_memory, 1, verb), mode(mode) {};
 
 
-void Bqf_cf::add_one_to_counter(uint64_t position){
+bool Bqf_cf::add_one_to_counter(uint64_t position){
     const uint64_t old_rem = get_remainder(position, true);
     if (verbose) {
         cout << "[ADD] to old_rem " << old_rem << endl;
@@ -33,7 +33,7 @@ void Bqf_cf::add_one_to_counter(uint64_t position){
             old_rem | 1ULL, 
             remainder_size);
     }
-    //return is_second;
+    return is_second;
 }
 
 
@@ -57,8 +57,7 @@ void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string outpu
     if (!outfile.is_open()) {
         throw std::runtime_error("Could not open file " + output);
     }
-    bin_buffer = enumerate_solid();
-    counter = bin_buffer.size();
+    
 
     switch (mode) {
         case text :
@@ -66,10 +65,14 @@ void Bqf_cf::filter_fastx_file(std::vector<std::string> files, std::string outpu
             outfile << str_buffer;
             break;
         case binary:
+            bin_buffer = enumerate_solid();
+            counter = bin_buffer.size();
             outfile.write(reinterpret_cast<const char*>(&counter), sizeof(uint64_t));
             outfile.write(reinterpret_cast<const char*>(bin_buffer.data()), counter*sizeof(uint64_t));
             break;
         case stream:
+            bin_buffer = enumerate_solid();
+            counter = bin_buffer.size();
             break;
     }
     outfile.close();    
@@ -162,7 +165,7 @@ void Bqf_cf::insert_from_sequence (std::string sequence) {
 }
 
 
-void Bqf_cf::is_second_insert(uint64_t number){
+bool Bqf_cf::is_second_insert(uint64_t number){
     if (elements_inside+1 == size_limit){
         if (verbose){
             cout << "RESIZING, nbElem: " << elements_inside << endl;
@@ -202,7 +205,7 @@ void Bqf_cf::is_second_insert(uint64_t number){
         elements_inside++;
         shift_left_and_set_circ(starting_position, fu_slot, rem_count);
 
-        //return false;
+        return false;
     }
     // IF THE QUOTIENT HAS BEEN USED BEFORE
     // GET POSITION WHERE TO INSERT TO (BASED ON VALUE) IN THE RUN (INCREASING ORDER)
@@ -217,7 +220,7 @@ void Bqf_cf::is_second_insert(uint64_t number){
         uint64_t position = pos_and_found.first;
 
         if (pos_and_found.second) {
-            add_one_to_counter(position);
+            return add_one_to_counter(position);
         }
         else {
             shift_bits_left_metadata(quot, 0, boundary.first, fu_slot);
@@ -225,29 +228,27 @@ void Bqf_cf::is_second_insert(uint64_t number){
             elements_inside++;
             shift_left_and_set_circ(position, fu_slot, rem_count);
         }
-        //return false;
+        return false;
     }
 }
 
 
 void Bqf_cf::insert_kmer(uint64_t coded_kmer){
-    this->is_second_insert(kmer_to_hash(coded_kmer, kmer_size));
-    /* if (this->is_second_insert(kmer_to_hash(coded_kmer, kmer_size))) {
+    if (this->is_second_insert(kmer_to_hash(coded_kmer, kmer_size))) {
         counter++;
         char rev[4] = {'A', 'C', 'T', 'G'};
         uint64_t mask = mask_right(2);
 
         switch (mode) {
-        case text :
-            for (size_t i=0; i<kmer_size; i++){
-                str_buffer.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
-                coded_kmer <<= 2;
-            }
-            str_buffer.push_back('\n');
-            break;
-        default :
-            bin_buffer.push_back(coded_kmer);
-            break;  
+            case text :
+                for (size_t i=0; i<kmer_size; i++){
+                    str_buffer.push_back(rev[coded_kmer>>(2*(kmer_size - 1)) & mask]);
+                    coded_kmer <<= 2;
+                }
+                str_buffer.push_back('\n');
+                break;
+            default :
+                break;  
         }
-    } */
+    }
 }
