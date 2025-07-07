@@ -68,22 +68,24 @@ From `bqf/build/`
 
 ## Examples 
 
-(KMC step example with Dataset XX, count 32-mers)
+(KMC3 (commit `72d1abf`) step example with Dataset XX, count 28-mers)
 
 ``` bash 
-kmc -k [32] -m24 -ci2 -v XX.fastq XX.res tmp_working_dir
-kmc_tools dump XX.res XX_counted
+kmc -k28 -m8 -ci1 -v -fa XX.fasta XX.res tmp_working_dir
+kmc_tools transform XX.res dump XX_28_counted.txt
 rm XX.res.kmc_*
 ```
 
+This step has been done for this example.  
+
 From `bqf/build/`
   
-1. + `./bin/bqf build -q 18 -z 4 -i ../examples/data/ecoli_28_counted -o /tmp/ecoli_bqf`
+1. + `./bin/bqf build -q 18 -z 4 -i ../examples/data/ecoli_28_counted.txt -o ../examples/ecoli_bqf`
      - build a 2^18 slots filter with (32-4 = 28)-mers aiming to query 32-mers later. 5 bits for counters, max value =2^5=64  
-   + `./bin/bqf query -b /tmp/ecoli_bqf -i ../examples/data/queries.fasta -o ./results.out`
+   + `./bin/bqf query -b ../examples/ecoli_bqf -i ../examples/data/queries.fasta -o ./results.out`
      - load bqf then query each sequence of the file given with `-i`
 
-   + (`rm /tmp/ecoli_bqf`)
+   + (`rm ../examples/ecoli_bqf`)
 
 
 Real scale data example with [this dataset](ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR172/ERR1726642/AHX_ACXIOSF_6_1_C2FGHACXX.IND4_clean.fastq.gz) from Tara Oceans metagenomic project (7.7GB). Assuming 19-mers have been counted with KMC.
