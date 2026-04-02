@@ -242,7 +242,7 @@ class Rsqf {
      * \param quotient quotient of the numbers where we want to have the associated
      * \return a std::pair with start and end position of the run
      */
-    std::pair<uint64_t,uint64_t> get_run_boundaries(uint64_t quotient); //const
+    std::pair<uint64_t,uint64_t> get_run_boundaries(uint64_t quotient);
 
     /** 
      * \brief gets the end of the previous run of the selected quotient (or its own if it exists). 

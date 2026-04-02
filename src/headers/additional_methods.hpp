@@ -128,7 +128,7 @@ uint64_t get_bit_from_word(uint64_t word, uint64_t pos_bit);
  * \param len   how many bits you want to extract (up to 64)
  * \return a uint64 with the bits you extracted
  */
-uint64_t get_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t len);
+uint64_t get_bits(const std::vector<uint64_t>& vec, uint64_t pos, uint64_t len);
 
 /** 
  * \brief set 'len' bits of the vector from the bitposition pos. Up to 64 bits at a time (value is a uint64)

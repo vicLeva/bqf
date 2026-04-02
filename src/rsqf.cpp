@@ -936,7 +936,7 @@ uint64_t Rsqf::get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t off
 }
 
 
-pair<uint64_t,uint64_t> Rsqf::get_run_boundaries(uint64_t quotient){ //const
+pair<uint64_t,uint64_t> Rsqf::get_run_boundaries(uint64_t quotient){
     //SUB OPTI
     assert(is_occupied(quotient));
     

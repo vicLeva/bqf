@@ -90,7 +90,7 @@ uint64_t get_bit_from_word(uint64_t word, uint64_t pos_bit){
     return ((word >> pos_bit) & 0b1);
 }
 
-uint64_t get_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t len){
+uint64_t get_bits(const std::vector<uint64_t>& vec, uint64_t pos, uint64_t len){
 
     if (!len) return 0;
 
