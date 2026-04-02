@@ -75,8 +75,6 @@ bool Bqf_oom::remove(uint64_t number){
 
     
 
-    if (pos_element == end_slot) {}
-
     //METADATA
     if(boundary.first == boundary.second) {
         // LAST ELEMENT, ZERO OCC

@@ -82,8 +82,6 @@ bool Bqf_ec::remove(uint64_t number, uint64_t count){
         cout << "[REMOVE] FUS " << end_slot << endl;
     }
 
-    if (pos_element == end_slot) {}
-
     //METADATA
     if(boundary.first == boundary.second) {
         // LAST ELEMENT, ZERO OCC
