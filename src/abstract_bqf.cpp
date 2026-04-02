@@ -35,8 +35,7 @@ void Bqf::insert(string kmc_input){
         if (smer.size() == this->smer_size){
             this->insert(smer, count);
         } else {
-            std::cerr << "BQF has been configured to welcome " << this->smer_size << "mers but trying to insert " << smer.size() << "mers, end of insertions" << std::endl;
-            return;
+            throw std::runtime_error("BQF expects " + std::to_string(this->smer_size) + "-mers but input has " + std::to_string(smer.size()) + "-mers");
         }
         
 
