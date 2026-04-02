@@ -165,9 +165,17 @@ Bqf_ec Bqf_ec::load_from_disk(const string& filename){
         file.read(reinterpret_cast<char*>(&qf.size_limit), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.number_blocks), sizeof(uint64_t));
         file.read(reinterpret_cast<char*>(&qf.elements_inside), sizeof(uint64_t));
+        if (!file.good()) {
+            cerr << "Error reading header from file: " << filename << endl;
+            return qf;
+        }
         const uint64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
         qf.filter.resize(num_words);
         file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(uint64_t) * num_words);
+        if (!file.good()) {
+            cerr << "Error reading filter data from file: " << filename << endl;
+            return qf;
+        }
         file.close();
 
         qf.verbose = false;
