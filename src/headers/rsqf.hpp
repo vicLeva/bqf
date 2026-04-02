@@ -66,7 +66,7 @@ class Rsqf {
      * 
      * This function inserts a number in the RSQF. IF the number is already present, it just adds another copy of the number.
      * If a number has the same quotient but different remainders, it stores remainders in a monothonic way
-     * (i.e. each reminder in a run is greater or equal than the predecessor).
+     * (i.e. each remainder in a run is greater or equal than the predecessor).
      * If the filter is full, new insertions are authomatically discarded.
      * When adding a new element, all remainders and runend bits are shifted right of 1 position.
      * 

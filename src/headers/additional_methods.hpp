@@ -81,8 +81,8 @@ uint64_t get_block_id(uint64_t position);
 
 /** 
  * \brief returns the position in the (corresponding) block of the quotient
- * e..g. if blocks have 64 quotients inside,
- * get_shit_in_block(155) = 28
+ * e.g. if blocks have 64 quotients inside,
+ * get_shift_in_block(155) = 28
  * \param position the quotient of which you want to know the position in its block
  * \return the position in which it is in the block
  */
