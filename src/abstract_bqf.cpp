@@ -198,15 +198,15 @@ result_query Bqf::query(string seq){
     
     if (k == s && s == n) { 
         const uint64_t res = this->query(bfc_hash_64(flip(canonical(flip(encode(seq), 2*s), 2*s), 2*s), mask_right(s*2)));
-        return result_query {(int)res, (int)res, (float)res, (float)(res!=0)};
+        return result_query {res, res, (double)res, (double)(res!=0)};
     }
     const uint z = k-s;
-    int last_smers_abundances[z+1];
-    int* kmer_abundance;
-    uint nb_presence = 0;
-    uint avg = 0;
-    int minimum = numeric_limits<int>::max();
-    int maximum = 0;
+    uint64_t last_smers_abundances[z+1];
+    uint64_t* kmer_abundance;
+    uint64_t nb_presence = 0;
+    uint64_t avg = 0;
+    uint64_t minimum = numeric_limits<uint64_t>::max();
+    uint64_t maximum = 0;
 
     uint64_t current_smer = 0;
     
@@ -243,7 +243,7 @@ result_query Bqf::query(string seq){
         }
     }
 
-    return result_query {minimum, maximum, (float)(avg / (n-k+1)), (float)nb_presence/(n-k+1)};
+    return result_query {minimum, maximum, (double)avg / (n-k+1), (double)nb_presence/(n-k+1)};
 }
 
 uint64_t Bqf::query(uint64_t number){

@@ -268,10 +268,10 @@ std::string canonical(const std::string& smer, size_t s);
  * \brief Result of a sequence query : statistics over all kmers queries of this sequence
  */
 struct result_query {
-  int minimum; ///< minimum of all kmer abundances queried
-  int maximum; ///< maximum of all kmer abundances queried
-  float average; ///< average of all kmer abundances queried
-  float kmer_present_ratio; ///< Ratio of present kmers (abundance > 0) over all kmers of queried sequence
+  uint64_t minimum; ///< minimum of all kmer abundances queried
+  uint64_t maximum; ///< maximum of all kmer abundances queried
+  double average; ///< average of all kmer abundances queried
+  double kmer_present_ratio; ///< Ratio of present kmers (abundance > 0) over all kmers of queried sequence
 };
 std::ostream& operator<<(std::ostream& os, result_query const& res);
 
