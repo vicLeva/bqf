@@ -316,8 +316,7 @@ bool Rsqf::remove(uint64_t number){
 
     // GET POSITION
     while(position != boundary.second){
-        remainder_in_filter = get_remainder(position); 
-        cout << "rem_infilt " << remainder_in_filter << endl;
+        remainder_in_filter = get_remainder(position);
         if (remainder_in_filter == rem) {
             pos_element = position;
             found = true;
@@ -327,8 +326,7 @@ bool Rsqf::remove(uint64_t number){
         position = get_next_quot(position);
     }
     
-    remainder_in_filter = get_remainder(boundary.second); 
-    cout << "rem_infilt " << remainder_in_filter << endl;
+    remainder_in_filter = get_remainder(boundary.second);
     if (remainder_in_filter == rem) {
         pos_element = position;
         found = true;
