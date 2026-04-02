@@ -12,8 +12,10 @@ Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) :
 {
     if (q_size < 7)
         throw std::invalid_argument("quotient size is " + to_string(q_size) + " (< 7)");
+    if (q_size >= 64)
+        throw std::invalid_argument("quotient size is " + to_string(q_size) + " (>= 64, would overflow)");
 
-    uint64_t num_quots = 1ULL << quotient_size; 
+    uint64_t num_quots = 1ULL << quotient_size;
     uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT;
     
     size_limit = num_quots * 0.95;
