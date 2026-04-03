@@ -201,7 +201,9 @@ result_query Bqf::query(string seq){
         return result_query {res, res, (double)res, (double)(res!=0)};
     }
     const uint z = k-s;
-    uint64_t last_smers_abundances[z+1];
+    const uint zp1 = z+1;
+    const uint64_t smer_mask = mask_right(2*s);
+    uint64_t last_smers_abundances[zp1];
     uint64_t* kmer_abundance;
     uint64_t nb_presence = 0;
     uint64_t avg = 0;
@@ -209,28 +211,28 @@ result_query Bqf::query(string seq){
     uint64_t maximum = 0;
 
     uint64_t current_smer = 0;
-    
+
     //build current_smer (s first chars)
     for (auto i = 0; i < s-1; i++){
         current_smer <<= 2;
         current_smer |= nucl_encode(seq[i]);
-    } 
+    }
 
     //1st kmer (s+z first chars), skipped if k==s
     for (auto i = s-1; i < k-1; i++){
         current_smer <<= 2;
-        current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
+        current_smer = (current_smer | nucl_encode(seq[i])) & smer_mask;
 
-        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), smer_mask));
     }
 
 
     //all kmers
     for (auto i = k-1; i < n; i++){
         current_smer <<= 2;
-        current_smer = (current_smer | nucl_encode(seq[i])) & mask_right(2*s);
+        current_smer = (current_smer | nucl_encode(seq[i])) & smer_mask;
 
-        last_smers_abundances[(i-s+1)%(z+1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), mask_right(s*2)));
+        last_smers_abundances[(i-s+1)%zp1] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), smer_mask));
 
         kmer_abundance = min_element(last_smers_abundances, last_smers_abundances+z+1);
         if (*kmer_abundance == 0){
