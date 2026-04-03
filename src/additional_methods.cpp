@@ -275,22 +275,10 @@ bool is_valid(char c) {
 }
 
 uint64_t nucl_encode(char nucl){
-  //Returns the binary encoding of a nucleotide
-  //different from encode() function because this is for query, so we have to check for canonical smer
-  //and this encoding allows fast comparison (<) of lexico order 
-  switch (nucl){
-    case 'A':
-      return 0;
-    case 'C':
-      return 1;
-    case 'G':
-      return 2;
-    case 'T':
-      return 3;
-    default :
-        cout << "non nucl : " << nucl << endl;
-        throw std::invalid_argument( "received non nucleotidic value" );
-  }
+  // Branchless: (c>>1)&3 maps A→0, C→1, G→3, T→2; lut swaps G and T.
+  // A→0, C→1, G→2, T→3 (lexicographic order for canonical comparison)
+  static constexpr uint8_t lut[4] = {0, 1, 3, 2};
+  return lut[(nucl >> 1) & 3];
 }
 
 uint64_t flip(uint64_t encoding, size_t bitsize){
