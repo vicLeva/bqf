@@ -165,15 +165,25 @@ class Rsqf {
      */
     uint64_t number_blocks;
 
-    /** 
+    /**
      * \brief number of elements (non distinct in RSQF, distinct in BCQF) inserted in the filter
      */
     uint64_t elements_inside = 0;
 
-    /** 
+    /**
+     * \brief MET_UNIT + remainder_size (words per block), precomputed to avoid repeated runtime addition
+     */
+    uint64_t words_per_block;
+
+    /**
+     * \brief words_per_block * BLOCK_SIZE (bits per block), precomputed for remainder addressing
+     */
+    uint64_t bits_per_block;
+
+    /**
      * \brief used mainly for debug, displays in stdout what's going on in the QF
      */
-    bool verbose; 
+    bool verbose;
 
     /** 
      * \brief unittests

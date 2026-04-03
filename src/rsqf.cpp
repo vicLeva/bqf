@@ -7,7 +7,7 @@ using namespace std;
 Rsqf::Rsqf(){
 }
 
-Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) : 
+Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) :
     quotient_size(q_size), remainder_size(r_size), verbose(verbose)
 {
     if (q_size < 7)
@@ -15,9 +15,12 @@ Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) :
     if (q_size >= 64)
         throw std::invalid_argument("quotient size is " + to_string(q_size) + " (>= 64, would overflow)");
 
+    words_per_block = MET_UNIT + remainder_size;
+    bits_per_block = words_per_block * BLOCK_SIZE;
+
     uint64_t num_quots = 1ULL << quotient_size;
-    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT;
-    
+    uint64_t num_of_words = num_quots * words_per_block / MEM_UNIT;
+
     size_limit = num_quots * 0.95;
 
     // In machine words
@@ -27,21 +30,24 @@ Rsqf::Rsqf(uint64_t q_size, uint64_t r_size, bool verbose) :
 }
 
 
-Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) { 
-    
+Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) {
+
     // Size of the quotient/remainder to fit into max_memory MB
     quotient_size = find_quotient_given_memory(max_memory);
     if (quotient_size < 7)
         throw std::invalid_argument("quotient size is " + to_string(quotient_size) + " (< 7)");
     remainder_size = MEM_UNIT - quotient_size;
 
+    words_per_block = MET_UNIT + remainder_size;
+    bits_per_block = words_per_block * BLOCK_SIZE;
+
     // Number of quotients must be >= MEM_UNIT
     uint64_t num_quots = 1ULL << quotient_size; //524.288
-    uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; 
+    uint64_t num_of_words = num_quots * words_per_block / MEM_UNIT;
 
     // In machine words
     number_blocks = ceil(num_quots / BLOCK_SIZE);
-    
+
     filter = vector<uint64_t>(num_of_words);
 }
 
@@ -49,7 +55,7 @@ string Rsqf::block2string(size_t block_id, bool bit_format) {
     stringstream stream;
 
     // Init the position in filter to the first machine word of the block
-    uint64_t position = block_id * (MET_UNIT + this->remainder_size);
+    uint64_t position = block_id * words_per_block;
 
     stream << "BLOCK " << block_id;
     stream << "   first quotient: " << block_id*MEM_UNIT << endl;
@@ -418,9 +424,11 @@ void Rsqf::resize(int n){
 
     this->quotient_size += n;
     this->remainder_size -= n;
-    
-    uint64_t num_quots = 1ULL << this->quotient_size; 
-    uint64_t num_of_words = num_quots * (MET_UNIT + this->remainder_size) / MEM_UNIT; 
+    this->words_per_block = MET_UNIT + this->remainder_size;
+    this->bits_per_block = this->words_per_block * BLOCK_SIZE;
+
+    uint64_t num_quots = 1ULL << this->quotient_size;
+    uint64_t num_of_words = num_quots * this->words_per_block / MEM_UNIT;
 
     this->size_limit = num_quots * 0.95;
 
@@ -448,12 +456,9 @@ uint64_t Rsqf::remainder(uint64_t num) const{
 // REMAINDER OPERATIONS
 
 uint64_t Rsqf::get_remainder(uint64_t position){
-    uint64_t block = get_block_id(position);
-    uint64_t pos_in_block = get_shift_in_block(position);
-
-    uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size; 
-    // ----------| all remainders slots before current block -----| all metadata slots -| all remainder slots before current slot 
-
+    const uint64_t block = position >> 6;
+    const uint64_t pos_in_block = position & 63;
+    const uint64_t pos = block * bits_per_block + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size;
     return get_bits(filter, pos, remainder_size);
 }
 
@@ -461,20 +466,18 @@ uint64_t Rsqf::get_remainder(uint64_t position){
 void Rsqf::set_remainder(uint64_t position, uint64_t value){
     assert(position < number_blocks*BLOCK_SIZE);
 
-    uint64_t block = get_block_id(position);
-    uint64_t pos_in_block = get_shift_in_block(position);
-
-    uint64_t pos = block * ((MET_UNIT+remainder_size)*BLOCK_SIZE) + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size;
-
+    const uint64_t block = position >> 6;
+    const uint64_t pos_in_block = position & 63;
+    const uint64_t pos = block * bits_per_block + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size;
     set_bits(filter, pos, value, remainder_size);
 }
 
 uint64_t Rsqf::get_remainder_word_position(uint64_t quotient){
-    return (get_block_id(quotient) * (MET_UNIT + remainder_size) + MET_UNIT + ((remainder_size * get_shift_in_block(quotient)) / BLOCK_SIZE)); 
+    return (get_block_id(quotient) * words_per_block + MET_UNIT + ((remainder_size * get_shift_in_block(quotient)) / BLOCK_SIZE));
 }
 
 uint64_t Rsqf::get_remainder_shift_position(uint64_t quotient){
-    return (get_shift_in_block(quotient) * remainder_size ) % BLOCK_SIZE;
+    return (get_shift_in_block(quotient) * remainder_size) % BLOCK_SIZE;
 }
 
 void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient, uint64_t next_remainder){
@@ -541,8 +544,8 @@ void Rsqf::shift_left_and_set_circ(uint64_t start_quotient,uint64_t end_quotient
 
         // we advance by 1 position
         curr_word_pos += 1;
-        if (curr_word_pos % (MET_UNIT + remainder_size) == 0)
-            curr_word_pos += 3;
+        if (curr_word_pos % words_per_block == 0)
+            curr_word_pos += MET_UNIT;
         curr_word_pos %= filter.size();
     }
 
@@ -593,13 +596,13 @@ void Rsqf::shift_right_and_rem_circ(uint64_t start_quotient,uint64_t end_quotien
 // CIRCULAR FILTER OPERATIONS
 
 uint64_t Rsqf::get_next_remainder_word(uint64_t current_word) const{
-    uint64_t current_block = current_word / (MET_UNIT + remainder_size);
-    uint64_t pos_in_block = current_word % (MET_UNIT + remainder_size);
+    uint64_t current_block = current_word / words_per_block;
+    uint64_t pos_in_block = current_word % words_per_block;
 
-    if (pos_in_block != (MET_UNIT + remainder_size - 1)) return ++current_word;
+    if (pos_in_block != words_per_block - 1) return ++current_word;
     else{
         uint64_t next_block = get_next_block_id(current_block);
-        return next_block * (MET_UNIT + remainder_size) + (MET_UNIT); 
+        return next_block * words_per_block + MET_UNIT;
     }
 }
 
@@ -626,29 +629,23 @@ uint64_t Rsqf::get_next_block_id(uint64_t current_block) const{
 }
 
 uint64_t Rsqf::get_runend_word(uint64_t current_block) const{
-    uint64_t runend_id = (current_block *(MET_UNIT+remainder_size)) + RUN_POS;
-    return filter[runend_id];
+    return filter[current_block * words_per_block + RUN_POS];
 }
 
 uint64_t Rsqf::get_occupied_word(uint64_t current_block) const{
-    uint64_t occupied_id = (current_block *(MET_UNIT+remainder_size)) + OCC_POS;
-    return filter[occupied_id];
+    return filter[current_block * words_per_block + OCC_POS];
 }
 
 uint64_t Rsqf::get_offset_word(uint64_t current_block) const{
-    uint64_t offset_id = (current_block *(MET_UNIT+remainder_size)) + OFF_POS;
-    assert(filter[offset_id] >= 0);
-    return filter[offset_id];
+    return filter[current_block * words_per_block + OFF_POS];
 }
 
-void Rsqf::set_runend_word(uint64_t current_block, uint64_t value ){
-    uint64_t runend_id = (current_block *(MET_UNIT+remainder_size)) + RUN_POS;
-    filter[runend_id] = value;
+void Rsqf::set_runend_word(uint64_t current_block, uint64_t value){
+    filter[current_block * words_per_block + RUN_POS] = value;
 }
 
-void Rsqf::set_offset_word(uint64_t current_block, uint64_t value ){
-    uint64_t offset_id = (current_block *(MET_UNIT+remainder_size)) + OFF_POS;
-    filter[offset_id] = value;
+void Rsqf::set_offset_word(uint64_t current_block, uint64_t value){
+    filter[current_block * words_per_block + OFF_POS] = value;
 }
 
 void Rsqf::decrement_offset(uint64_t current_block){
@@ -656,30 +653,16 @@ void Rsqf::decrement_offset(uint64_t current_block){
     set_offset_word(current_block, (0 == old_offset)? 0 : old_offset-1);
 }
 
-void Rsqf::set_occupied_bit(uint64_t current_block, uint64_t value ,uint64_t bit_pos){
-    uint64_t occupied_id = (current_block *(MET_UNIT+remainder_size)) + OCC_POS;
-    uint64_t occ_word = get_occupied_word(current_block);
-
-    value &= mask_right(1ULL);
-    value <<= bit_pos;
-    uint64_t out_value = ((occ_word & mask_right(bit_pos)) | value);
-
-    out_value |= (occ_word & mask_left(MEM_UNIT-bit_pos-1));
-    filter[occupied_id] = out_value;
-
+void Rsqf::set_occupied_bit(uint64_t current_block, uint64_t value, uint64_t bit_pos){
+    uint64_t& word = filter[current_block * words_per_block + OCC_POS];
+    if (value) word |=  (1ULL << bit_pos);
+    else        word &= ~(1ULL << bit_pos);
 }
 
-void Rsqf::set_runend_bit(uint64_t current_block, uint64_t value ,uint64_t bit_pos){
-    uint64_t runend_id = (current_block *(MET_UNIT+remainder_size)) + RUN_POS;
-    uint64_t rend_word = get_runend_word(current_block);
-
-    value &= mask_right(1ULL);
-    value <<= bit_pos;
-    uint64_t out_value = ((rend_word & mask_right(bit_pos)) | value);
-
-    out_value |= (rend_word & mask_left(MEM_UNIT-bit_pos-1));
-    filter[runend_id] = out_value;
-
+void Rsqf::set_runend_bit(uint64_t current_block, uint64_t value, uint64_t bit_pos){
+    uint64_t& word = filter[current_block * words_per_block + RUN_POS];
+    if (value) word |=  (1ULL << bit_pos);
+    else        word &= ~(1ULL << bit_pos);
 }
 
 //BITVECTOR AND METADATA OPERATIONS
@@ -1112,7 +1095,7 @@ void Rsqf::save_on_disk(const string& filename) { //remove 5
     if (file.is_open()) {
         file.write(reinterpret_cast<const char*>(&this->quotient_size), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->remainder_size), sizeof(uint64_t));
-        uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
+        uint64_t num_words = (1ULL<<this->quotient_size) * words_per_block / MEM_UNIT;
         file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
         file.close();
     } else {
@@ -1127,7 +1110,9 @@ Rsqf Rsqf::load_from_disk(const string& filename){
     if (file.is_open()) {
         file.read(reinterpret_cast<char*>(&qf.quotient_size), sizeof(int64_t));
         file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(int64_t));
-        uint64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
+        qf.words_per_block = MET_UNIT + qf.remainder_size;
+        qf.bits_per_block = qf.words_per_block * BLOCK_SIZE;
+        uint64_t num_words = (1ULL<<qf.quotient_size) * qf.words_per_block / MEM_UNIT;
         qf.filter.resize(num_words);
         file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(int64_t) * num_words);
         file.close();

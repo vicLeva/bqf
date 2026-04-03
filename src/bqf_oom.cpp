@@ -139,7 +139,9 @@ Bqf_oom Bqf_oom::load_from_disk(const string& filename){
             cerr << "Error reading header from file: " << filename << endl;
             return qf;
         }
-        const uint64_t num_words = (1ULL<<qf.quotient_size) * (MET_UNIT + qf.remainder_size) / MEM_UNIT;
+        qf.words_per_block = MET_UNIT + qf.remainder_size;
+        qf.bits_per_block = qf.words_per_block * BLOCK_SIZE;
+        const uint64_t num_words = (1ULL<<qf.quotient_size) * qf.words_per_block / MEM_UNIT;
         qf.filter.resize(num_words);
         file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(uint64_t) * num_words);
         if (!file.good()) {

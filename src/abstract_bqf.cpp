@@ -4,18 +4,20 @@
 
 using namespace std;
 
-Bqf::Bqf(uint64_t max_memory, uint64_t c_size, bool verb): 
+Bqf::Bqf(uint64_t max_memory, uint64_t c_size, bool verb):
     Rsqf(max_memory, verb), count_size(c_size) {
     // need to change remainder size to take into account the counting bits
     remainder_size = MEM_UNIT - quotient_size + c_size;
+    words_per_block = MET_UNIT + remainder_size;
+    bits_per_block = words_per_block * BLOCK_SIZE;
 
     // Number of quotients must be >= MEM_UNIT
     const uint64_t num_quots = 1ULL << quotient_size; //524.288
-    const uint64_t num_of_words = num_quots * (MET_UNIT + remainder_size) / MEM_UNIT; //393.216
+    const uint64_t num_of_words = num_quots * words_per_block / MEM_UNIT; //393.216
 
     // In machine words
     number_blocks = ceil(num_quots / BLOCK_SIZE);
-    
+
     filter = vector<uint64_t>(num_of_words);
 }
 
@@ -308,7 +310,7 @@ void Bqf::resize(uint n){
     const uint64_t new_quotient_size = this->quotient_size + n;
     const uint64_t new_remainder_size = this->remainder_size - n;
 
-    const uint64_t num_quots = 1ULL << new_quotient_size; 
+    const uint64_t num_quots = 1ULL << new_quotient_size;
     const uint64_t num_of_words = num_quots * (MET_UNIT + new_remainder_size) / MEM_UNIT;
 
     // In machine words
@@ -471,18 +473,19 @@ void Bqf::resize(uint n){
 
     this->quotient_size = new_quotient_size;
     this->remainder_size = new_remainder_size;
+    this->words_per_block = MET_UNIT + new_remainder_size;
+    this->bits_per_block = this->words_per_block * BLOCK_SIZE;
 
     this->size_limit = num_quots * 0.95;
 
     this->number_blocks = new_number_blocks;
-    
+
     this->filter.swap(new_filter);
 }
 
-uint64_t Bqf::get_remainder(uint64_t position, bool w_counter ){ //default=false
-    const uint64_t block = get_block_id(position);
-    //const uint64_t pos_in_block = get_shift_in_block(position);
-    const uint64_t pos = position * remainder_size + ((1 + block)*MEM_UNIT)*MET_UNIT;
+uint64_t Bqf::get_remainder(uint64_t position, bool w_counter){ //default=false
+    const uint64_t block = position >> 6;
+    const uint64_t pos = block * bits_per_block + MET_UNIT*BLOCK_SIZE + (position & 63) * remainder_size;
 
     if (w_counter) return get_bits(filter, pos, remainder_size);
     else return get_bits(filter, pos, remainder_size) >> count_size;
