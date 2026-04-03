@@ -1,5 +1,5 @@
 /*
-	Generates n random integers and feed the cqf with them.
+	Generates n random integers and inserts them into the filter.
 */
 #include "rsqf.hpp"
 #include <random>
@@ -23,8 +23,8 @@ int main (int argc, char * argv[]) {
 	parse_cmd(argc, argv, n, filter_size, seed, verbose, debug);
 
 	//verbose = true;
-	// Creation of the cqf (size is MB)
-	Rsqf cqf(filter_size, verbose);
+	// Create the filter (size in MB)
+	Rsqf rsqf(filter_size, verbose);
 
 
 	// uint64 generators
@@ -35,14 +35,14 @@ int main (int argc, char * argv[]) {
 	// Debug
 	unordered_set<uint64_t> verif;
 
-	// Add the uints one by one into the cqf
+	// Insert the uints one by one
 	if (verbose) {std::cout << "insertions 0/" << n << "\n";}
 	for (size_t i=0 ; i<n ; i++) {
 		uint64_t val = distribution(generator);
-		
+
 		if (debug)
 			verif.insert(val);
-		cqf.insert(val);
+		rsqf.insert(val);
 	
 	} 
 	
@@ -56,7 +56,7 @@ int main (int argc, char * argv[]) {
 		std::cout << "Querying present values" << endl;
 		for (const uint64_t val : verif) {
 			std::cout << "QUERYING " << val << endl;
-			uint64_t count = cqf.query(val);
+			uint64_t count = rsqf.query(val);
 			total_present += count;
 			if (count != 1) cerr << "Missing value " << val << endl;
 		}
@@ -67,7 +67,7 @@ int main (int argc, char * argv[]) {
 		std::cout << "Querying absent values" << endl;
 		for (size_t i=0 ; i<n ; i++) {
 			uint64_t val = distribution(generator);
-			uint64_t count = cqf.query(val);
+			uint64_t count = rsqf.query(val);
 			total_absent += count == 0 ? 1 : 0;
 		}
 		std::cout << total_absent << "/" << n << " are correctly absent" << endl;

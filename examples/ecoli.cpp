@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "bqf_ec.hpp" 
+#include "abstract_bqf.hpp"
 #include "additional_methods.hpp"
 
 std::string cwd = DATA_DIR;
@@ -19,19 +19,18 @@ int main (int argc, char * argv[]) {
         "=> 2^17=130.000 < 182.332 < 2^18=260.000 so we choose q=18 and r=56-18\n\n"
         "with 5 bits for counter, the quotient filter will weight 2^18*(3+5+38)bits = 1.5MB\n\n";
 
-        Bqf_ec ecoli_cqf(18, 5, 32, 4, false);
-        ecoli_cqf.insert(cwd + "data/ecoli_28_counted");
+        Bqf ecoli_bqf(18, 5, 32, 4);
+        ecoli_bqf.insert(cwd + "data/ecoli_28_counted");
 
-        
-        ecoli_cqf.save_on_disk("/udd/nbuchin/Documents/ecoli_bqf");
-        std::cout << ecoli_cqf.block2string(0) << "\n";
+        ecoli_bqf.save_on_disk("/udd/nbuchin/Documents/ecoli_bqf");
+        std::cout << ecoli_bqf.block2string(0) << "\n";
 
-        Bqf_ec ecoli_cqf2 = Bqf_ec::load_from_disk("/udd/nbuchin/Documents/ecoli_bqf");
+        Bqf ecoli_bqf2 = Bqf::load_from_disk("/udd/nbuchin/Documents/ecoli_bqf");
 
-        std::cout << ecoli_cqf2.block2string(2244) << "\n";
-        cout << ecoli_cqf2.query("ACAACGTTTGCTCGATGATCGCCTGCTCATCG").minimum << endl; //30
-        cout << ecoli_cqf2.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGA").minimum << endl; //25
-        cout << ecoli_cqf2.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGAG").minimum << endl; //0
+        std::cout << ecoli_bqf2.block2string(2244) << "\n";
+        cout << ecoli_bqf2.query("ACAACGTTTGCTCGATGATCGCCTGCTCATCG").minimum << endl; //30
+        cout << ecoli_bqf2.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGA").minimum << endl; //25
+        cout << ecoli_bqf2.query("ACCTTTGTTCAGGCGAGTCAGGGCGTCACGGAG").minimum << endl; //0
 
 	
 	return 0;

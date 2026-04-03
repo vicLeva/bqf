@@ -12,7 +12,7 @@ FetchContent_MakeAvailable(gtest)
 
 add_executable(
     unit_tests
-    cqf_test.cpp
+    bqf_test.cpp
     additional_methods_test.cpp
     )
 
@@ -21,6 +21,8 @@ target_link_libraries(unit_tests
     RSQF
     gtest_main #main auto de googletest
   )
+
+target_compile_definitions(unit_tests PRIVATE DATA_DIR="${CMAKE_SOURCE_DIR}/examples/data/")
 
 # automatic discovery of unit tests
 include(GoogleTest)

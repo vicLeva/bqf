@@ -16,8 +16,6 @@ add_library(RSQF
 	additional_methods.cpp
 	rsqf.cpp
 	abstract_bqf.cpp
-	bqf_ec.cpp
-	bqf_oom.cpp
 	bqf_cf.cpp
 )
 

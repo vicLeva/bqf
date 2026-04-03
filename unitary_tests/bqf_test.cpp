@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "rsqf.hpp"
-#include "bqf_ec.hpp"
-#include "bqf_oom.hpp"
+#include "abstract_bqf.hpp"
 #include "bqf_cf.hpp"
 #include <random>
 #include <filesystem>
@@ -234,30 +233,30 @@ TEST_F(RsqfTest, shift_bits_right_metadata) {
 // TEST_F(RsqfTest, finalTest) { ... }
 
 
-class BCqfTest : public ::testing::Test {
+class BqfTest : public ::testing::Test {
  protected:
   void SetUp() override {
     generator.seed(time(NULL));
 
-    small_cqf = Bqf_ec(7, 5, 32, 0, false);
-    cqf = Bqf_ec(1, 5, false);
+    small_bqf = Bqf(7, 5, 32, 0);
+    bqf = Bqf(1, 5);
 
-    small_cqf_oom = Bqf_oom(7, 5, 32, 0, false);
-    cqf_oom = Bqf_oom(1, 5, false);
+    small_bqf_oom = Bqf(7, 5, 32, 0, CountMode::OrderOfMagnitude);
+    bqf_oom = Bqf(1, 5, CountMode::OrderOfMagnitude);
   }
 
   std::default_random_engine generator;
   std::uniform_int_distribution<uint64_t> distribution;
 
-  Bqf_ec small_cqf;
-  Bqf_ec cqf;
+  Bqf small_bqf;
+  Bqf bqf;
 
-  Bqf_oom small_cqf_oom;
-  Bqf_oom cqf_oom;
+  Bqf small_bqf_oom;
+  Bqf bqf_oom;
 };
 
 
-TEST_F(BCqfTest, insert1occs) {
+TEST_F(BqfTest, insert1occs) {
     uint64_t val;
     std::map<uint64_t, uint64_t> verif;
 
@@ -267,23 +266,23 @@ TEST_F(BCqfTest, insert1occs) {
             val = distribution(generator);
         }
 
-        cqf.insert(val);
+        bqf.insert(val);
         verif.insert({ val, 1 });
     }
 
-    EXPECT_EQ(cqf.enumerate(), verif);
+    EXPECT_EQ(bqf.enumerate(), verif);
 
     std::map<uint64_t, uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
-        cqf.remove((*it).first);
+        bqf.remove((*it).first);
     }
     verif.clear();
 
-    EXPECT_EQ(cqf.enumerate(), verif);
+    EXPECT_EQ(bqf.enumerate(), verif);
 }
 
 
-TEST_F(BCqfTest, insertRDMoccs) {
+TEST_F(BqfTest, insertRDMoccs) {
     uint64_t val;
     std::map<uint64_t, uint64_t> verif;
 
@@ -293,42 +292,42 @@ TEST_F(BCqfTest, insertRDMoccs) {
             val = distribution(generator);
         }
 
-        cqf.insert(val, val%31);
+        bqf.insert(val, val%31);
         verif.insert({val, val%31 });
     }
-    EXPECT_EQ(cqf.enumerate(), verif);
+    EXPECT_EQ(bqf.enumerate(), verif);
 
     std::map<uint64_t,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
-        cqf.remove((*it).first, (*it).second);
+        bqf.remove((*it).first, (*it).second);
     }
     verif.clear();
 
-    EXPECT_EQ(cqf.enumerate(), verif);
+    EXPECT_EQ(bqf.enumerate(), verif);
 }
 
 
-TEST_F(BCqfTest, insertSeveralOccs) {
+TEST_F(BqfTest, insertSeveralOccs) {
     uint64_t val;
     std::map<uint64_t, uint64_t> verif;
 
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
         val = distribution(generator);
-        cqf.insert(val);
+        bqf.insert(val);
         ++verif[val];
     }
-    EXPECT_EQ(cqf.enumerate(), verif);
+    EXPECT_EQ(bqf.enumerate(), verif);
 
     std::map<uint64_t,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
-        cqf.remove((*it).first, (*it).second);
+        bqf.remove((*it).first, (*it).second);
     }
     verif.clear();
 
-    EXPECT_EQ(cqf.enumerate(), verif);
+    EXPECT_EQ(bqf.enumerate(), verif);
 }
 
-TEST_F(BCqfTest, insertRDMoccs_oom) {
+TEST_F(BqfTest, insertRDMoccs_oom) {
     uint64_t val;
     std::map<uint64_t, uint64_t> verif;
 
@@ -338,65 +337,65 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
             val = distribution(generator);
         }
 
-        cqf_oom.insert(val, (1ULL << val%31));
+        bqf_oom.insert(val, (1ULL << val%31));
         verif.insert({ val, (1ULL << val%31) });
     }
-    EXPECT_EQ(cqf_oom.enumerate(), verif);
+    EXPECT_EQ(bqf_oom.enumerate(), verif);
 
     std::map<uint64_t,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
-        cqf_oom.remove((*it).first);
+        bqf_oom.remove((*it).first);
     }
     verif.clear();
 
-    EXPECT_EQ(cqf_oom.enumerate(), verif);
+    EXPECT_EQ(bqf_oom.enumerate(), verif);
 }
 
 
-TEST_F(BCqfTest, serializeRoundtrip_ec) {
+TEST_F(BqfTest, serializeRoundtrip_ec) {
     uint64_t val;
     std::map<uint64_t, uint64_t> verif;
 
     for (uint64_t i = 0; i < (1ULL<<14); i++){
         val = distribution(generator);
         while (verif.count(val) == 1) { val = distribution(generator); }
-        cqf.insert(val, val % 15 + 1);
+        bqf.insert(val, val % 15 + 1);
         verif.insert({ val, val % 15 + 1 });
     }
 
     const std::string path = "/tmp/bqf_test_ec_roundtrip";
-    cqf.save_on_disk(path);
-    Bqf_ec loaded = Bqf_ec::load_from_disk(path);
+    bqf.save_on_disk(path);
+    Bqf loaded = Bqf::load_from_disk(path);
     std::filesystem::remove(path);
 
     EXPECT_EQ(loaded.enumerate(), verif);
-    EXPECT_EQ(loaded.quotient_size,  cqf.quotient_size);
-    EXPECT_EQ(loaded.remainder_size, cqf.remainder_size);
-    EXPECT_EQ(loaded.count_size,     cqf.count_size);
-    EXPECT_EQ(loaded.elements_inside, cqf.elements_inside);
+    EXPECT_EQ(loaded.quotient_size,  bqf.quotient_size);
+    EXPECT_EQ(loaded.remainder_size, bqf.remainder_size);
+    EXPECT_EQ(loaded.count_size,     bqf.count_size);
+    EXPECT_EQ(loaded.elements_inside, bqf.elements_inside);
 }
 
 
-TEST_F(BCqfTest, serializeRoundtrip_oom) {
+TEST_F(BqfTest, serializeRoundtrip_oom) {
     uint64_t val;
     std::map<uint64_t, uint64_t> verif;
 
     for (uint64_t i = 0; i < (1ULL<<14); i++){
         val = distribution(generator);
         while (verif.count(val) == 1) { val = distribution(generator); }
-        cqf_oom.insert(val, (1ULL << (val % 5)));
+        bqf_oom.insert(val, (1ULL << (val % 5)));
         verif.insert({ val, (1ULL << (val % 5)) });
     }
 
     const std::string path = "/tmp/bqf_test_oom_roundtrip";
-    cqf_oom.save_on_disk(path);
-    Bqf_oom loaded = Bqf_oom::load_from_disk(path);
+    bqf_oom.save_on_disk(path);
+    Bqf loaded = Bqf::load_from_disk(path);
     std::filesystem::remove(path);
 
     EXPECT_EQ(loaded.enumerate(), verif);
-    EXPECT_EQ(loaded.quotient_size,  cqf_oom.quotient_size);
-    EXPECT_EQ(loaded.remainder_size, cqf_oom.remainder_size);
-    EXPECT_EQ(loaded.elements_inside, cqf_oom.elements_inside);
+    EXPECT_EQ(loaded.quotient_size,  bqf_oom.quotient_size);
+    EXPECT_EQ(loaded.remainder_size, bqf_oom.remainder_size);
+    EXPECT_EQ(loaded.elements_inside, bqf_oom.elements_inside);
 }
 
 
@@ -452,8 +451,8 @@ bool word_in_file(string word, string filename) {
 }
 
 TEST_F(BqfCfTest, FilterFastaFile) {
-    string fasta_file = "../../examples/data/ecoli_100Kb_reads_40x.fasta";
-    string kmc_check = "../../examples/data/ecoli_28_counted";
+    string fasta_file = DATA_DIR "ecoli_100Kb_reads_40x.fasta";
+    string kmc_check = DATA_DIR "ecoli_28_counted.txt";
     string filtered_kmers = "ecoli_28_filtered.txt";
     vector<string> files;
     files.push_back(fasta_file);

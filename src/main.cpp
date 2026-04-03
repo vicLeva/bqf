@@ -1,4 +1,4 @@
-#include "bqf_ec.hpp"
+#include "abstract_bqf.hpp"
 #include "bqf_cf.hpp"
 
 #include <chrono>
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
         begin = std::chrono::steady_clock::now();
 
-		Bqf_ec bqf = Bqf_ec(q, c, k, z, false);
+		Bqf bqf(q, c, k, z);
 		bqf.insert(input_file);
 		bqf.save_on_disk(output_file);
 
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
         }
 
         begin = std::chrono::steady_clock::now();
-		Bqf_ec bqf = Bqf_ec::load_from_disk(input_file);
+		Bqf bqf = Bqf::load_from_disk(input_file);
 
 		try {
 			std::ifstream infile(input_reads_file_to_query);

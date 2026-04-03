@@ -16,9 +16,6 @@
 #include "additional_methods.hpp"
 
 
-class Backpack_cqf;
-
-
 /**
  * \brief Represents a RSQF
  *
@@ -166,7 +163,7 @@ class Rsqf {
     uint64_t number_blocks;
 
     /**
-     * \brief number of elements (non distinct in RSQF, distinct in BCQF) inserted in the filter
+     * \brief number of elements (non distinct in RSQF, distinct in BQF) inserted in the filter
      */
     uint64_t elements_inside = 0;
 

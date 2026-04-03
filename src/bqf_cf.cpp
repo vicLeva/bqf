@@ -14,10 +14,10 @@ using namespace std;
     ================================================================
 */ 
 Bqf_cf::Bqf_cf(uint64_t q_size, uint64_t k, output_mode_t mode, bool verb) :
-    Bqf_ec(q_size, 1, k, 0, verb), mode(mode) {};
+    Bqf(q_size, 1, k, 0, CountMode::ExactCount, verb), mode(mode) {};
 
 Bqf_cf::Bqf_cf(uint64_t max_memory, output_mode_t mode, bool verb) :
-    Bqf_ec(max_memory, 1, verb), mode(mode) {};
+    Bqf(max_memory, 1, CountMode::ExactCount, verb), mode(mode) {};
 
 
 bool Bqf_cf::add_one_to_counter(uint64_t position){

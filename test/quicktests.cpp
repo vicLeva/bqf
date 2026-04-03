@@ -1,10 +1,9 @@
 /*
 PRINTING, DEBUGGING AND TESTING
 */
-#include "rsqf.hpp" 
-#include "additional_methods.hpp" 
-#include "bqf_ec.hpp" 
-#include "bqf_oom.hpp" 
+#include "rsqf.hpp"
+#include "additional_methods.hpp"
+#include "abstract_bqf.hpp"
 
 #include <random>
 #include <ctime>
@@ -48,7 +47,7 @@ std::string generateRandomKMer(int k) {
 
 
 
-void test_lots_of_full_cqf(){
+void test_lots_of_full_rsqf(){
   uint64_t seed = time(NULL);
   default_random_engine generator;
   generator.seed(seed);
@@ -81,7 +80,7 @@ void test_lots_of_full_cqf(){
 }
 
 
-void test_lots_of_full_cqf_enumerate() {
+void test_lots_of_full_rsqf_enumerate() {
   uint64_t seed = time(NULL);
   default_random_engine generator;
   generator.seed(seed);
@@ -117,7 +116,7 @@ void test_lots_of_full_cqf_enumerate() {
 
 
 
-void test_lots_of_full_cqf_remove() {
+void test_lots_of_full_rsqf_remove() {
   uint64_t seed = time(NULL);
   default_random_engine generator;
   generator.seed(seed);
@@ -172,7 +171,7 @@ void test_lots_of_full_cqf_remove() {
 
 
 
-void test_one_cqf(){
+void test_one_bqf(){
   uint64_t seed = 9915022754138594861ULL; 
   default_random_engine generator;
   generator.seed(seed);
@@ -183,7 +182,7 @@ void test_one_cqf(){
 
   int qsize = 8;
   int hashsize = 56;
-  Bqf_ec cqf(qsize, 5, 32, 32-(hashsize/2), true);
+  Bqf bqf(qsize, 5, 32, 32-(hashsize/2), CountMode::ExactCount, true);
 
   
 
@@ -201,7 +200,7 @@ void test_one_cqf(){
 
     print_bits(val);
     std::cout << "inserting " << val << " => " << (val%63) << endl; 
-    cqf.insert(val, val%63);
+    bqf.insert(val, val%63);
     verif.insert({ val, val%63 });
   }
 
@@ -211,10 +210,10 @@ void test_one_cqf(){
 
   
   //CHECK ENUMERATE
-  enu = cqf.enumerate();
+  enu = bqf.enumerate();
   std::cout << "done inserting, verif size " << verif.size() << " enum size " << enu.size() << endl;
 
-  std::cout << cqf.block2string(0) << "\n" << cqf.block2string(1) << "\n" << cqf.block2string(2) << "\n" << cqf.block2string(3);
+  std::cout << bqf.block2string(0) << "\n" << bqf.block2string(1) << "\n" << bqf.block2string(2) << "\n" << bqf.block2string(3);
 
   if (verif.size() != enu.size()) {
     std::cout << "error verif != enum" << endl;
@@ -236,15 +235,15 @@ void test_one_cqf(){
    //REMOVE ELEMS
   for (std::map<uint64_t,uint64_t>::iterator it = verif.begin(); it != verif.end(); it++){
     std::cout << "removing " << (*it).first << " => " << (*it).second << endl; 
-    cqf.remove((*it).first, (*it).second);
+    bqf.remove((*it).first, (*it).second);
   }
   verif.clear();
 
 
-  //std::cout << cqf.block2string(0) << "\n" << cqf.block2string(1);
+  //std::cout << bqf.block2string(0) << "\n" << bqf.block2string(1);
 
   //CHECK ENUMERATE
-  enu = cqf.enumerate();
+  enu = bqf.enumerate();
   if (verif.size() != enu.size()) {
     std::cout << "error verif != enum (post remove, size) verif:" << verif.size() << "  " << enu.size() << endl;
     exit(0);
@@ -260,7 +259,7 @@ void test_one_cqf(){
 }
 
 
-void test_time_fill_cqf(int q, int n){
+void test_time_fill_rsqf(int q, int n){
   uint64_t seed = time(NULL);
   default_random_engine generator;
   generator.seed(seed);
@@ -305,7 +304,7 @@ void nb_false_positive(){
   std::cout << "START EXPERIMENT\n";
 
   std::cout << "gut_32 ========================================================================\n";
-  Bqf_ec bqf = Bqf_ec::load_from_disk("/scratch/vlevallois/bqf_gut_32");
+  Bqf bqf = Bqf::load_from_disk("/scratch/vlevallois/bqf_gut_32");
   auto ttot = std::chrono::high_resolution_clock::now(); //timer build structure + inserts 
   //verif taux de fp
   std::ifstream infile("/scratch/vlevallois/data/neg_queries.fasta");
@@ -320,7 +319,7 @@ void nb_false_positive(){
   std::cout << "nb de FP sur 1billion neg (supposément) queries : " << nb_fp << "\n";
 
   std::cout << "gut_19 ========================================================================\n";
-  bqf = Bqf_ec::load_from_disk("/scratch/vlevallois/bqf_gut_19");
+  bqf = Bqf::load_from_disk("/scratch/vlevallois/bqf_gut_19");
   ttot = std::chrono::high_resolution_clock::now(); //timer build structure + inserts 
   //verif taux de fp
   infile.clear();
@@ -341,7 +340,7 @@ void experiments(){
   std::cout << "START EXPERIMENTs\n";
 
 
-  Bqf_ec bqf = Bqf_ec::load_from_disk("/scratch/vlevallois/bqf_gut_19");
+  Bqf bqf = Bqf::load_from_disk("/scratch/vlevallois/bqf_gut_19");
   std::cout << "/scratch/vlevallois/bqf_gut\n";
 
   auto ttot = std::chrono::high_resolution_clock::now(); //pos queries 
@@ -367,15 +366,15 @@ void experiments(){
 }
 
 int main(int argc, char** argv) {
-    //test_one_cqf();
+    //test_one_bqf();
 
-    //test_lots_of_full_cqf();
+    //test_lots_of_full_rsqf();
 
-    //test_lots_of_full_cqf_enumerate();
+    //test_lots_of_full_rsqf_enumerate();
 
-    //test_lots_of_full_cqf_remove();
+    //test_lots_of_full_rsqf_remove();
 
-    //test_time_fill_cqf(22, 1);
+    //test_time_fill_rsqf(22, 1);
 
     //nb_false_positive();
 

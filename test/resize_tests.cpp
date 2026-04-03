@@ -1,6 +1,5 @@
 #include "rsqf.hpp"
-#include "abstract_bqf.hpp" 
-#include "bqf_ec.hpp"
+#include "abstract_bqf.hpp"
 
 #include <chrono>
 #include <iomanip>
@@ -273,8 +272,8 @@ std::pair<bool, std::string> compare(Bqf* mock, Bqf* resize){
 
 template <typename F>
 void test(bool printExceptations, F* insert, std::string test_name, const uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z, uint n, uint* success, uint* total, double* avg){
-  Bqf_ec mock = Bqf_ec(q_size, c_size, k, z, false);
-  Bqf_ec resize = Bqf_ec(q_size, c_size, k, z, false);
+  Bqf mock = Bqf(q_size, c_size, k, z);
+  Bqf resize = Bqf(q_size, c_size, k, z);
 
   (*insert)(&mock);
   (*insert)(&resize);

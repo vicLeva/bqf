@@ -1,14 +1,14 @@
 #ifndef BQF_CF
 #define BQF_CF
 
-#include "bqf_ec.hpp"
+#include "abstract_bqf.hpp"
 #include <gtest/gtest.h>
 
 typedef enum {
     text, binary, stream
 } output_mode_t;
 
-class Bqf_cf : public Bqf_ec {
+class Bqf_cf : public Bqf {
     uint64_t counter = 0;
     output_mode_t mode;
     std::string str_buffer = "";
@@ -18,7 +18,7 @@ class Bqf_cf : public Bqf_ec {
 public:
     Bqf_cf(){};
     /** 
-     * \brief Constructor that instantiates a BackpackCQF from quotient and remainder sizes
+     * \brief Constructor that instantiates a BQF from quotient and remainder sizes
      * \param q_size The desired size of quotient, will induce filter's size
      * \param k The length of a k_mer
      * \param z The length difference between a k-mer and the inserted s-mer

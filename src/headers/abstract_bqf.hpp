@@ -7,37 +7,88 @@
 
 #include "rsqf.hpp"
 
+enum class CountMode { ExactCount, OrderOfMagnitude };
+
 /**
- * \brief Abstract class of BQF, user can use else Bqf_ec or Bqf_oom
+ * \brief Backpack Quotient Filter — single concrete class, counting mode selected at construction
  *
+ * Use CountMode::ExactCount (default) for exact abundance counting,
+ * or CountMode::OrderOfMagnitude for log2-bucketed counting.
  */
 class Bqf : public Rsqf {
 public:
-    /** 
+    /**
      * \brief size in bits of the counter, will determine filter's size in addition to remainder's size
      */
     uint64_t count_size;
 
     uint64_t kmer_size;
-    
-    /** 
+
+    /**
      * \brief s, supposed to be hash_size/2
      */
     uint64_t smer_size;
 
-    
-    /*  
+    CountMode count_mode;
+
+
+    /*
         ================================================================
         CONSTRUCTORS
         ================================================================
-    */ 
+    */
     Bqf(){};
-    Bqf(uint64_t c_size, uint64_t k, uint64_t s, uint64_t q_size, bool verbose = false) :
-        Rsqf(q_size, 2*s - q_size + c_size, verbose), count_size(c_size), kmer_size(k), smer_size(s) {};
-    Bqf(uint64_t max_memory, uint64_t c_size, bool verb);
+
+    /**
+     * \brief Constructor from explicit sizes
+     * \param q_size  quotient size (filter has 2^q_size slots)
+     * \param c_size  counter size in bits
+     * \param k       k-mer length
+     * \param z       k - s (Fimpera parameter)
+     * \param mode    CountMode::ExactCount (default) or CountMode::OrderOfMagnitude
+     * \param verb    verbose output
+     */
+    Bqf(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z,
+        CountMode mode = CountMode::ExactCount, bool verb = false);
+
+    /**
+     * \brief Constructor from a memory limit
+     * \param max_memory  max size in MBytes
+     * \param c_size      counter size in bits
+     * \param mode        CountMode::ExactCount (default) or CountMode::OrderOfMagnitude
+     * \param verb        verbose output
+     */
+    Bqf(uint64_t max_memory, uint64_t c_size,
+        CountMode mode = CountMode::ExactCount, bool verb = false);
 
     
-    /** 
+    /**
+     * \brief Removes (if present) an element from the filter.
+     *
+     * For ExactCount mode, if count < stored abundance the counter is decremented;
+     * otherwise the element is fully removed.
+     * For OrderOfMagnitude mode, the element is always fully removed.
+     *
+     * \param number element to remove
+     * \param count  abundance to subtract (default: 1)
+     * \return 1 if found, 0 if absent
+     */
+    bool remove(uint64_t number, uint64_t count = 1);
+
+    /**
+     * \brief Removes (if present) a kmer from the filter.
+     * \param kmer   k-mer string to remove
+     * \param count  abundance to subtract (default: 1)
+     * \return 1 if found, 0 if absent
+     */
+    bool remove(std::string kmer, uint64_t count = 1);
+
+    /**
+     * \brief Loads a BQF from a binary file saved with save_on_disk()
+     */
+    static Bqf load_from_disk(const std::string& filename);
+
+    /**
      * \brief Insert every kmer + abundance of a kmer count software output file (eg KMC)
      * 
      * This function will read every line of the file to insert every pair <kmer, count> into the BQF
@@ -50,7 +101,7 @@ public:
      * TODO: allow user to choose hash function
      * \brief Insert a kmer in the filter alongside with his count. 
      * 
-     * This function inserts a kmer in the BackpackCQF.
+     * This function inserts a kmer in the BQF.
      * It is advised that the kmer is in a canonical form, it will be hashed then inserted.
      * 
      * \param kmer to insert
@@ -61,7 +112,7 @@ public:
     /** 
      * \brief Insert a NEW number in the filter alongside with his count (reduced to the power of 2 just below). 
      * 
-     * This function inserts a NEW number in the BackpackCQF. 
+     * This function inserts a NEW number in the BQF. 
      * If a number has the same quotient but different remainders, it stores remainders in a monothonic way
      * (i.e. each remainder in a run is greater or equal than the predecessor).
      * If the filter is full, new insertions are authomatically discarded.
@@ -154,26 +205,16 @@ public:
     uint64_t find_quotient_given_memory(uint64_t max_memory, uint64_t count_size);
 
 
-    /** 
-     * \brief Adds the insertion abundance to the filter abundance
-     * 
-     * In the exact count case, if an element is already present, we simply add the count newly inserted
-     * to the one already present in the filter. If it overflows the counter size, then the abundance is
-     * set to (2^counter_size)-1
-     * 
-     * \param position the position of the remainder to update
-     * \param rem_count the new abundance to add
-     **/
-    virtual void add_to_counter(uint64_t position, uint64_t rem_count) = 0;
-
-    virtual uint64_t insert_process_count(uint64_t count) = 0;
-    virtual uint64_t query_process_count(uint64_t count) = 0;
-
-    /** 
+    /**
      * \brief Serializes BQF on disk without compression, can be loaded later for queries.
-     * 
-     **/
+     */
     void save_on_disk(const std::string& filename);
+
+private:
+    void add_to_counter(uint64_t position, uint64_t rem_count);
+    uint64_t insert_process_count(uint64_t count);
+    uint64_t query_process_count(uint64_t count);
+    void sub_to_counter(uint64_t position, uint64_t count);
 };
 
 #endif

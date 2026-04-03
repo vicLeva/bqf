@@ -1,24 +1,166 @@
-#include "abstract_bqf.hpp" 
+#include "abstract_bqf.hpp"
 #include <stdio.h>
+#include <fstream>
 
 
 using namespace std;
 
-Bqf::Bqf(uint64_t max_memory, uint64_t c_size, bool verb):
-    Rsqf(max_memory, verb), count_size(c_size) {
-    // need to change remainder size to take into account the counting bits
+Bqf::Bqf(uint64_t q_size, uint64_t c_size, uint64_t k, uint64_t z,
+         CountMode mode, bool verb) :
+    Rsqf(q_size, 2*(k-z) - q_size + c_size, verb),
+    count_size(c_size), kmer_size(k), smer_size(k-z), count_mode(mode) {}
+
+Bqf::Bqf(uint64_t max_memory, uint64_t c_size, CountMode mode, bool verb):
+    Rsqf(max_memory, verb), count_size(c_size), count_mode(mode) {
+    // override remainder_size to include the counting bits
     remainder_size = MEM_UNIT - quotient_size + c_size;
     words_per_block = MET_UNIT + remainder_size;
     bits_per_block = words_per_block * BLOCK_SIZE;
 
-    // Number of quotients must be >= MEM_UNIT
-    const uint64_t num_quots = 1ULL << quotient_size; //524.288
-    const uint64_t num_of_words = num_quots * words_per_block / MEM_UNIT; //393.216
-
-    // In machine words
+    const uint64_t num_quots = 1ULL << quotient_size;
+    const uint64_t num_of_words = num_quots * words_per_block / MEM_UNIT;
     number_blocks = ceil(num_quots / BLOCK_SIZE);
-
     filter = vector<uint64_t>(num_of_words);
+}
+
+bool Bqf::remove(string kmer, uint64_t count) {
+    return this->remove(kmer_to_hash(kmer, smer_size), count);
+}
+
+bool Bqf::remove(uint64_t number, uint64_t count) {
+    if (elements_inside == 0) return 0;
+
+    const uint64_t quot = quotient(number);
+    const uint64_t rem = remainder(number);
+
+    if (verbose) {
+        cout << "[REMOVE] quot " << quot << endl;
+        cout << "[REMOVE] rem "  << rem  << endl;
+    }
+
+    if (!is_occupied(quot)) return 0;
+
+    const pair<uint64_t,uint64_t> boundary = get_run_boundaries(quot);
+
+    uint64_t pos_element = boundary.first;
+    bool found = false;
+    uint64_t position = boundary.first;
+    uint64_t remainder_in_filter;
+
+    while (position != boundary.second) {
+        remainder_in_filter = get_remainder(position);
+        if (remainder_in_filter == rem) {
+            pos_element = position;
+            found = true;
+            break;
+        }
+        else if (remainder_in_filter > rem) return 0;
+        position = get_next_quot(position);
+    }
+    remainder_in_filter = get_remainder(boundary.second);
+    if (remainder_in_filter == rem) {
+        pos_element = position;
+        found = true;
+    }
+    if (!found) return 0;
+
+    // EC-only: partial removal (decrement counter without deleting the slot)
+    if (count_mode == CountMode::ExactCount &&
+        count < (get_remainder(pos_element, true) & mask_right(count_size))) {
+        sub_to_counter(pos_element, count);
+        return 1;
+    }
+
+    // Full removal
+    const uint64_t end_slot = first_unshiftable_slot(quot);
+
+    if (verbose) cout << "[REMOVE] FUS " << end_slot << endl;
+
+    if (boundary.first == boundary.second) {
+        set_occupied_bit(get_block_id(quot), 0, get_shift_in_block(quot));
+        if (boundary.second == end_slot) {
+            if (get_shift_in_block(quot) == 0)
+                decrement_offset(get_block_id(quot));
+            set_runend_bit(get_block_id(end_slot), 0, get_shift_in_block(end_slot));
+        } else {
+            shift_bits_right_metadata(quot, pos_element, end_slot);
+        }
+    } else {
+        shift_bits_right_metadata(quot, pos_element, end_slot);
+    }
+
+    shift_right_and_rem_circ(pos_element, end_slot);
+    elements_inside--;
+    return 1;
+}
+
+void Bqf::sub_to_counter(uint64_t position, uint64_t count) {
+    const uint64_t old_rem = get_remainder(position, true);
+    uint64_t sub = (old_rem & mask_right(count_size)) - count;
+    sub |= old_rem & mask_left(MEM_UNIT - count_size);
+    set_bits(filter,
+        get_remainder_word_position(position) * BLOCK_SIZE + get_remainder_shift_position(position),
+        sub, remainder_size);
+}
+
+void Bqf::add_to_counter(uint64_t position, uint64_t remainder_w_count) {
+    if (count_mode == CountMode::OrderOfMagnitude) return;
+    const uint64_t old_rem = get_remainder(position, true);
+    uint64_t sum = (old_rem & mask_right(count_size)) + (remainder_w_count & mask_right(count_size));
+    if (!(sum < 1ULL << count_size))
+        sum = (1ULL << count_size) - 1;
+    sum |= old_rem & mask_left(MEM_UNIT - count_size);
+    set_bits(filter,
+        get_remainder_word_position(position) * BLOCK_SIZE + get_remainder_shift_position(position),
+        sum, remainder_size);
+}
+
+uint64_t Bqf::insert_process_count(uint64_t c) {
+    if (count_mode == CountMode::ExactCount)
+        return (c < (1ULL << count_size) ? c : (1ULL << count_size) - 1);
+    const uint64_t val = bitselectasm(c, bitrankasm(c, MEM_UNIT - 1));
+    return val < (1ULL << count_size) ? val : (1ULL << count_size) - 1;
+}
+
+uint64_t Bqf::query_process_count(uint64_t c) {
+    if (count_mode == CountMode::ExactCount) return c;
+    return (1ULL << c);
+}
+
+Bqf Bqf::load_from_disk(const string& filename) {
+    Bqf qf;
+    ifstream file(filename, ios::in | ios::binary);
+    if (file.is_open()) {
+        file.read(reinterpret_cast<char*>(&qf.quotient_size),  sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.remainder_size), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.count_size),     sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.kmer_size),      sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.smer_size),      sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.size_limit),     sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.number_blocks),  sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&qf.elements_inside),sizeof(uint64_t));
+        uint64_t mode_val = 0;
+        file.read(reinterpret_cast<char*>(&mode_val), sizeof(uint64_t));
+        qf.count_mode = static_cast<CountMode>(mode_val);
+        if (!file.good()) {
+            cerr << "Error reading header from file: " << filename << endl;
+            return qf;
+        }
+        qf.words_per_block = MET_UNIT + qf.remainder_size;
+        qf.bits_per_block  = qf.words_per_block * BLOCK_SIZE;
+        const uint64_t num_words = (1ULL << qf.quotient_size) * qf.words_per_block / MEM_UNIT;
+        qf.filter.resize(num_words);
+        file.read(reinterpret_cast<char*>(qf.filter.data()), sizeof(uint64_t) * num_words);
+        if (!file.good()) {
+            cerr << "Error reading filter data from file: " << filename << endl;
+            return qf;
+        }
+        file.close();
+        qf.verbose = false;
+    } else {
+        cerr << "Unable to open file for reading: " << filename << endl;
+    }
+    return qf;
 }
 
 void Bqf::insert(string kmc_input){
@@ -531,6 +673,8 @@ void Bqf::save_on_disk(const std::string& filename) {
         file.write(reinterpret_cast<const char*>(&this->size_limit), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->number_blocks), sizeof(uint64_t));
         file.write(reinterpret_cast<const char*>(&this->elements_inside), sizeof(uint64_t));
+        const uint64_t mode_val = static_cast<uint64_t>(this->count_mode);
+        file.write(reinterpret_cast<const char*>(&mode_val), sizeof(uint64_t));
         const uint64_t num_words = (1ULL<<this->quotient_size) * (MET_UNIT + remainder_size) / MEM_UNIT;
         file.write(reinterpret_cast<const char*>(this->filter.data()), sizeof(uint64_t) * num_words);
         file.close();
