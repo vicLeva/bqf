@@ -95,9 +95,10 @@ class Bqf_oom : public Bqf{
     uint64_t insert_process_count(uint64_t count) override;
     uint64_t query_process_count(uint64_t count) override;
 
-    /** 
+    public:
+    /**
      * \brief loads a BQF_oom from a binary representation on disk
-     * 
+     *
      **/
     static Bqf_oom load_from_disk(const std::string& filename);
 };

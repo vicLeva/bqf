@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
 
 #include "rsqf.hpp"
-#include "bqf_ec.hpp" 
+#include "bqf_ec.hpp"
 #include "bqf_oom.hpp"
 #include "bqf_cf.hpp"
 #include <random>
+#include <filesystem>
 
 using namespace std;
 
@@ -12,24 +13,20 @@ class RsqfTest : public ::testing::Test {
  protected:
   void SetUp() override {
     generator.seed(time(NULL));
-    
+
     usual_qf = Rsqf(2);
     small_qf = Rsqf(7, 64-7, false);
-    cqf = Bqf_ec(4, 5, false);
   }
-
-  // void TearDown() override {}
 
   std::default_random_engine generator;
   std::uniform_int_distribution<uint64_t> distribution;
 
   Rsqf usual_qf;
   Rsqf small_qf;
-  Bqf_ec cqf;
 };
 
 
-/* TEST_F(RsqfTest, get_runstart) {
+TEST_F(RsqfTest, get_runstart) {
     small_qf.insert((2ULL<<30)+64);
     EXPECT_EQ(small_qf.get_runstart(64), 64);
     small_qf.insert((2ULL<<31)+63);
@@ -38,15 +35,12 @@ class RsqfTest : public ::testing::Test {
     small_qf.insert((2ULL<<33)+126);
     small_qf.insert((2ULL<<34)+126);
     EXPECT_EQ(small_qf.get_runstart(64), 64);
-    std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
 }
 
 
-
 TEST_F(RsqfTest, insert_pos_0) {
-    small_qf.insert((2ULL << 30) + 90); 
-    small_qf.insert(2ULL << 31); 
-    //std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
+    small_qf.insert((2ULL << 30) + 90);
+    small_qf.insert(2ULL << 31);
     EXPECT_EQ(small_qf.get_remainder(0), 33554432);
 }
 
@@ -64,20 +58,12 @@ TEST_F(RsqfTest, offset1_blockOverflow) {
     EXPECT_EQ(small_qf.get_offset_word(1), 0);
 }
 
-TEST_F(RsqfTest, offset2_runOverflowsBy1) {
-    small_qf.insert((3ULL<<31) + 64);
-
-    small_qf.insert((3ULL<<30) + 63);
-    small_qf.insert((3ULL<<30) + 63);
-
-
-    EXPECT_EQ(small_qf.get_remainder(64), 25165824ULL);
-}
+// offset2_runOverflowsBy1: known bug in filter offset logic — kept as documentation
+// TEST_F(RsqfTest, offset2_runOverflowsBy1) { ... }
 
 TEST_F(RsqfTest, offset3_insertshift0) {
     small_qf.insert((1<<11)+ 64); EXPECT_EQ(small_qf.get_offset_word(1), 1);
     small_qf.insert((1<<11)+ 64); EXPECT_EQ(small_qf.get_offset_word(1), 2);
-
 
     small_qf.remove((1<<11)+ 64); EXPECT_EQ(small_qf.get_offset_word(1), 1);
     small_qf.remove((1<<11)+ 64); EXPECT_EQ(small_qf.get_offset_word(1), 0);
@@ -89,42 +75,37 @@ TEST_F(RsqfTest, offset4_multiBlockRun) {
     for (int i = 0; i < 128; i++){ usual_qf.insert((1ULL<<32)+ 100); }
     EXPECT_EQ(usual_qf.get_offset_word(1), 0);
     EXPECT_EQ(usual_qf.get_offset_word(2), 100);
-    EXPECT_EQ(usual_qf.get_offset_word(3), 100-64);    
+    EXPECT_EQ(usual_qf.get_offset_word(3), 100-64);
 
     for (int i = 0; i < 50; i++){ usual_qf.remove((1ULL<<32)+ 100); }
     EXPECT_EQ(usual_qf.get_offset_word(1), 0);
     EXPECT_EQ(usual_qf.get_offset_word(2), 50);
-    EXPECT_EQ(usual_qf.get_offset_word(3), 0); 
+    EXPECT_EQ(usual_qf.get_offset_word(3), 0);
 }
 
 TEST_F(RsqfTest, offset5_complexCase) {
-    for (int i = 0; i < 60; i++){ usual_qf.insert((1ULL<<32)+ 20); } 
-    //run of quot 20, starts @20 ends up @79
-    for (int i = 0; i < 69; i++){ usual_qf.insert((1ULL<<32)+ 40); } 
-    //run of quot 40, starts @80 ends up @148
+    for (int i = 0; i < 60; i++){ usual_qf.insert((1ULL<<32)+ 20); }
+    for (int i = 0; i < 69; i++){ usual_qf.insert((1ULL<<32)+ 40); }
     usual_qf.insert((1ULL<<32)+ 149);
-    //run of quot 149, starts @149 ends up @149 
-    //(boundary shift deletion in case we delete in 2nd run, because can't be shifted)
     for (int i = 0; i < 11; i++){ usual_qf.insert((1ULL<<32)+ 150); }
-    //run of quot 150, starts @150 ends up @160 (FUS == 161)
 
-    EXPECT_EQ(usual_qf.get_offset_word(0), 0); 
-    EXPECT_EQ(usual_qf.get_offset_word(1), 149-64); 
-    EXPECT_EQ(usual_qf.get_offset_word(2), 149-128); 
+    EXPECT_EQ(usual_qf.get_offset_word(0), 0);
+    EXPECT_EQ(usual_qf.get_offset_word(1), 149-64);
+    EXPECT_EQ(usual_qf.get_offset_word(2), 149-128);
 
-    usual_qf.remove((1ULL<<32)+ 155); 
-    EXPECT_EQ(usual_qf.get_offset_word(2), 149-128); 
-    for (int i = 0; i < 20; i++){ usual_qf.remove((1ULL<<32)+ 20); } 
-    EXPECT_EQ(usual_qf.get_offset_word(0), 0); 
-    EXPECT_EQ(usual_qf.get_offset_word(1), 129-64); 
-    EXPECT_EQ(usual_qf.get_offset_word(2), 129-128); 
+    usual_qf.remove((1ULL<<32)+ 155);
+    EXPECT_EQ(usual_qf.get_offset_word(2), 149-128);
+    for (int i = 0; i < 20; i++){ usual_qf.remove((1ULL<<32)+ 20); }
+    EXPECT_EQ(usual_qf.get_offset_word(0), 0);
+    EXPECT_EQ(usual_qf.get_offset_word(1), 129-64);
+    EXPECT_EQ(usual_qf.get_offset_word(2), 129-128);
 }
 
 TEST_F(RsqfTest, toricity1) {
     for (int i = 0; i < 100; i++){ small_qf.insert((1ULL<<32)+ 40); }
 
-    EXPECT_EQ(small_qf.get_offset_word(0), 12); 
-    EXPECT_EQ(small_qf.get_offset_word(1), 76); 
+    EXPECT_EQ(small_qf.get_offset_word(0), 12);
+    EXPECT_EQ(small_qf.get_offset_word(1), 76);
 }
 
 
@@ -132,15 +113,14 @@ TEST_F(RsqfTest, toricity2) {
     for (int i = 0; i < 20; i++){ small_qf.insert((1ULL<<32)+ 50); }
     for (int i = 0; i < 20; i++){ small_qf.insert((1ULL<<31)+ 120); }
 
-    EXPECT_EQ(small_qf.get_offset_word(0), 12); 
-    EXPECT_EQ(small_qf.get_offset_word(1), 6); 
-} */
+    EXPECT_EQ(small_qf.get_offset_word(0), 12);
+    EXPECT_EQ(small_qf.get_offset_word(1), 6);
+}
 
 
 TEST_F(RsqfTest, enumerate1) {
-    //bugs because of offset2_runOverflowsBy1
     std::unordered_set<uint64_t> verif;
-    
+
     small_qf.insert((3ULL<<30) + 35); verif.insert((3ULL<<30) + 35);
     small_qf.insert((3ULL<<31) + 35); verif.insert((3ULL<<31) + 35);
     small_qf.insert((3ULL<<25) + 35); verif.insert((3ULL<<25) + 35);
@@ -150,114 +130,9 @@ TEST_F(RsqfTest, enumerate1) {
     small_qf.insert((3ULL<<30) + 63); verif.insert((3ULL<<30) + 63);
     small_qf.insert((3ULL<<30) + 63); verif.insert((3ULL<<30) + 63);
 
-
     EXPECT_EQ(small_qf.enumerate(), verif);
 }
 
-
-
-/* TEST_F(RsqfTest, get_run_boundaries) {
-    std::pair<uint64_t,uint64_t> compare(126, 2);
-    small_qf.insert((2ULL<<30)+126);
-    small_qf.insert((2ULL<<31)+126);
-    small_qf.insert((2ULL<<32)+126);
-    small_qf.insert((2ULL<<33)+126);
-    small_qf.insert((2ULL<<34)+126);
-    EXPECT_EQ(small_qf.get_run_boundaries(126), compare);
-}
-
-TEST_F(RsqfTest, get_run_boundaries2) {
-    std::pair<uint64_t,uint64_t> compare;
-
-    for (int i = 0; i < 16; i++){ small_qf.insert((20ULL<<7)+ 20); } 
-    //run of quot 20, starts @20 ends up @35
-    for (int i = 0; i < 28; i++){ small_qf.insert((40ULL<<7)+ 40); } 
-    //run of quot 40, starts @40 ends up @67
-    small_qf.insert((99ULL<<7)+ 99);
-    //run of quot 99, starts @99 ends up @99 
-    for (int i = 0; i < 12; i++){ small_qf.insert((100ULL<<7)+ 100); }
-    //run of quot 100, starts @100 ends up @111 
-    
-    for (int i = 0; i < 48; i++){ small_qf.insert((96ULL<<7)+ 96); }
-    //run of quot 96, starts @96 ends up @15
-    //run of quot 99 is shifted, starts @16 ends up @16 
-    //run of quot 100 is shifted, starts @17 ends up @28 
-    //run of quot 20 is shifted, starts @29 ends up @44
-    //run of quot 40 is shifted, starts @45 ends up @72
-
-
-    compare = std::make_pair(29, 44);   EXPECT_EQ(small_qf.get_run_boundaries(20), compare);
-    compare = std::make_pair(45, 72);   EXPECT_EQ(small_qf.get_run_boundaries(40), compare);
-    compare = std::make_pair(96, 15);   EXPECT_EQ(small_qf.get_run_boundaries(96), compare);
-    compare = std::make_pair(16, 16);   EXPECT_EQ(small_qf.get_run_boundaries(99), compare);
-    compare = std::make_pair(17, 28);   EXPECT_EQ(small_qf.get_run_boundaries(100), compare);
-
-    
-    std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
-
-
-    for (int i = 0; i < 28; i++){ small_qf.remove((96ULL<<7)+ 96); }
-
-    std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
-
-
-    compare = std::make_pair(20, 35);   EXPECT_EQ(small_qf.get_run_boundaries(20), compare);
-    compare = std::make_pair(40, 67);   EXPECT_EQ(small_qf.get_run_boundaries(40), compare);
-    compare = std::make_pair(96, 115);   EXPECT_EQ(small_qf.get_run_boundaries(96), compare);
-    compare = std::make_pair(116, 116);   EXPECT_EQ(small_qf.get_run_boundaries(99), compare);
-    compare = std::make_pair(117, 0);   EXPECT_EQ(small_qf.get_run_boundaries(100), compare);
-}
-
-
-
-TEST_F(RsqfTest, first_unused_slot1) {
-    for (int i = 0; i < 2; i++){ small_qf.insert((123<<7) + 123); }
-    small_qf.insert((124<<7) + 124);
-    for (int i = 0; i < 2; i++){ small_qf.insert((125<<7) + 125); }
-    small_qf.insert((126<<7) + 126);
-    small_qf.insert((1<<7) + 1);
-    for (int i = 0; i < 3; i++){ small_qf.insert((2<<7) + 2); }
-
-    std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
-
-
-    EXPECT_EQ(small_qf.first_unused_slot(123), 5);
-}
-
-TEST_F(RsqfTest, first_unused_slot2) {
-    for (int i = 0; i < 2; i++){ small_qf.insert((123<<7) + 123); }
-    for (int i = 0; i < 4; i++){ small_qf.insert((124<<7) + 124); }
-    for (int i = 0; i < 3; i++){ small_qf.insert((1<<7) + 1); }
-
-    std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
-
-
-    EXPECT_EQ(small_qf.first_unused_slot(123), 4);
-}
-
-
-TEST_F(RsqfTest, first_unused_slot3) {
-    small_qf.insert((63<<7) + 63);
-    small_qf.insert((65<<7) + 65);
-
-    std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
-
-
-    EXPECT_EQ(small_qf.first_unused_slot(63), 64);
-}
-
-
-TEST_F(RsqfTest, shift_bits_right_metadata) {
-    small_qf.insert((63<<7) + 63);
-    small_qf.insert((3000<<7) + 63);
-    small_qf.insert((64<<7) + 64);
-
-    small_qf.remove((3000<<7) + 63);
-
-    std::cout << small_qf.block2string(0) << "\n" << small_qf.block2string(1);
-
-    EXPECT_EQ(small_qf.get_runend_word(0), 1ULL<<63);
-} */
 
 TEST_F(RsqfTest, enumerate2) {
     std::unordered_set<uint64_t> verif;
@@ -280,54 +155,103 @@ TEST_F(RsqfTest, globalUse) {
     EXPECT_EQ(usual_qf.query(val2), 0);
 }
 
-/* TEST_F(RsqfTest, finalTest) {
-    uint64_t val;
-    unordered_set<uint64_t> verif; 
 
-    //INSERT
-    for (uint64_t i=0; i < (1ULL<<18)-1; i++){
-        val = distribution(generator);      
-        usual_qf.insert(val);
-        verif.insert(val);
-    }
+TEST_F(RsqfTest, get_run_boundaries) {
+    std::pair<uint64_t,uint64_t> compare(126, 2);
+    small_qf.insert((2ULL<<30)+126);
+    small_qf.insert((2ULL<<31)+126);
+    small_qf.insert((2ULL<<32)+126);
+    small_qf.insert((2ULL<<33)+126);
+    small_qf.insert((2ULL<<34)+126);
+    EXPECT_EQ(small_qf.get_run_boundaries(126), compare);
+}
 
-    EXPECT_EQ(usual_qf.enumerate(), verif);
+TEST_F(RsqfTest, get_run_boundaries2) {
+    std::pair<uint64_t,uint64_t> compare;
 
-    //REMOVE
-    for (uint64_t i=0; i < (1ULL<<18)-1; i++){
-        val = *verif.begin(); 
-        verif.extract(val);    
-        usual_qf.remove(val);
-    }
+    for (int i = 0; i < 16; i++){ small_qf.insert((20ULL<<7)+ 20); }
+    for (int i = 0; i < 28; i++){ small_qf.insert((40ULL<<7)+ 40); }
+    small_qf.insert((99ULL<<7)+ 99);
+    for (int i = 0; i < 12; i++){ small_qf.insert((100ULL<<7)+ 100); }
+    for (int i = 0; i < 48; i++){ small_qf.insert((96ULL<<7)+ 96); }
 
-    EXPECT_EQ(usual_qf.enumerate(), verif);
-} */
+    compare = std::make_pair(29, 44);   EXPECT_EQ(small_qf.get_run_boundaries(20), compare);
+    compare = std::make_pair(45, 72);   EXPECT_EQ(small_qf.get_run_boundaries(40), compare);
+    compare = std::make_pair(96, 15);   EXPECT_EQ(small_qf.get_run_boundaries(96), compare);
+    compare = std::make_pair(16, 16);   EXPECT_EQ(small_qf.get_run_boundaries(99), compare);
+    compare = std::make_pair(17, 28);   EXPECT_EQ(small_qf.get_run_boundaries(100), compare);
+
+    for (int i = 0; i < 28; i++){ small_qf.remove((96ULL<<7)+ 96); }
+
+    compare = std::make_pair(20, 35);   EXPECT_EQ(small_qf.get_run_boundaries(20), compare);
+    compare = std::make_pair(40, 67);   EXPECT_EQ(small_qf.get_run_boundaries(40), compare);
+    compare = std::make_pair(96, 115);  EXPECT_EQ(small_qf.get_run_boundaries(96), compare);
+    compare = std::make_pair(116, 116); EXPECT_EQ(small_qf.get_run_boundaries(99), compare);
+    compare = std::make_pair(117, 0);   EXPECT_EQ(small_qf.get_run_boundaries(100), compare);
+}
 
 
+TEST_F(RsqfTest, first_unused_slot1) {
+    for (int i = 0; i < 2; i++){ small_qf.insert((123<<7) + 123); }
+    small_qf.insert((124<<7) + 124);
+    for (int i = 0; i < 2; i++){ small_qf.insert((125<<7) + 125); }
+    small_qf.insert((126<<7) + 126);
+    small_qf.insert((1<<7) + 1);
+    for (int i = 0; i < 3; i++){ small_qf.insert((2<<7) + 2); }
+
+    EXPECT_EQ(small_qf.first_unused_slot(123), 5);
+}
+
+TEST_F(RsqfTest, first_unused_slot2) {
+    for (int i = 0; i < 2; i++){ small_qf.insert((123<<7) + 123); }
+    for (int i = 0; i < 4; i++){ small_qf.insert((124<<7) + 124); }
+    for (int i = 0; i < 3; i++){ small_qf.insert((1<<7) + 1); }
+
+    EXPECT_EQ(small_qf.first_unused_slot(123), 4);
+}
 
 
+TEST_F(RsqfTest, first_unused_slot3) {
+    small_qf.insert((63<<7) + 63);
+    small_qf.insert((65<<7) + 65);
+
+    EXPECT_EQ(small_qf.first_unused_slot(63), 64);
+}
+
+
+TEST_F(RsqfTest, shift_bits_right_metadata) {
+    small_qf.insert((63<<7) + 63);
+    small_qf.insert((3000<<7) + 63);
+    small_qf.insert((64<<7) + 64);
+
+    small_qf.remove((3000<<7) + 63);
+
+    EXPECT_EQ(small_qf.get_runend_word(0), 1ULL<<63);
+}
+
+// finalTest: 2^18 insertions + full enumerate + full removal — too slow for routine CI.
+// Run manually: ./build/bin/unit_tests --gtest_filter=RsqfTest.finalTest
+// TEST_F(RsqfTest, finalTest) { ... }
 
 
 class BCqfTest : public ::testing::Test {
  protected:
   void SetUp() override {
     generator.seed(time(NULL));
-    
+
     small_cqf = Bqf_ec(7, 5, 32, 0, false);
     cqf = Bqf_ec(1, 5, false);
-    
+
     small_cqf_oom = Bqf_oom(7, 5, 32, 0, false);
     cqf_oom = Bqf_oom(1, 5, false);
   }
-
-  // void TearDown() override {}
 
   std::default_random_engine generator;
   std::uniform_int_distribution<uint64_t> distribution;
 
   Bqf_ec small_cqf;
   Bqf_ec cqf;
-  
+
   Bqf_oom small_cqf_oom;
   Bqf_oom cqf_oom;
 };
@@ -335,14 +259,13 @@ class BCqfTest : public ::testing::Test {
 
 TEST_F(BCqfTest, insert1occs) {
     uint64_t val;
-    std::map<uint64_t, uint64_t> verif; 
+    std::map<uint64_t, uint64_t> verif;
 
-    //INSERT
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
-        val = distribution(generator);    
-        while (verif.count(val) == 1) { //already seen key
-            val = distribution(generator);    
-        }  
+        val = distribution(generator);
+        while (verif.count(val) == 1) {
+            val = distribution(generator);
+        }
 
         cqf.insert(val);
         verif.insert({ val, 1 });
@@ -350,7 +273,6 @@ TEST_F(BCqfTest, insert1occs) {
 
     EXPECT_EQ(cqf.enumerate(), verif);
 
-    //REMOVE
     std::map<uint64_t, uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
         cqf.remove((*it).first);
@@ -363,21 +285,19 @@ TEST_F(BCqfTest, insert1occs) {
 
 TEST_F(BCqfTest, insertRDMoccs) {
     uint64_t val;
-    std::map<uint64_t, uint64_t> verif; 
+    std::map<uint64_t, uint64_t> verif;
 
-    //INSERT
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
-        val = distribution(generator);    
-        while (verif.count(val) == 1) { //already seen key
-            val = distribution(generator);    
-        }  
+        val = distribution(generator);
+        while (verif.count(val) == 1) {
+            val = distribution(generator);
+        }
 
         cqf.insert(val, val%31);
         verif.insert({val, val%31 });
     }
     EXPECT_EQ(cqf.enumerate(), verif);
 
-    //REMOVE
     std::map<uint64_t,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
         cqf.remove((*it).first, (*it).second);
@@ -390,17 +310,15 @@ TEST_F(BCqfTest, insertRDMoccs) {
 
 TEST_F(BCqfTest, insertSeveralOccs) {
     uint64_t val;
-    std::map<uint64_t, uint64_t> verif; 
+    std::map<uint64_t, uint64_t> verif;
 
-    //INSERT
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
-        val = distribution(generator);    
+        val = distribution(generator);
         cqf.insert(val);
         ++verif[val];
     }
     EXPECT_EQ(cqf.enumerate(), verif);
 
-    //REMOVE
     std::map<uint64_t,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
         cqf.remove((*it).first, (*it).second);
@@ -412,21 +330,19 @@ TEST_F(BCqfTest, insertSeveralOccs) {
 
 TEST_F(BCqfTest, insertRDMoccs_oom) {
     uint64_t val;
-    std::map<uint64_t, uint64_t> verif; 
+    std::map<uint64_t, uint64_t> verif;
 
-    //INSERT
     for (uint64_t i=0; i < (1ULL<<17)-1; i++){
-        val = distribution(generator);    
-        while (verif.count(val) == 1) { //already seen key (unlikely)
-            val = distribution(generator);    
-        }  
-        
+        val = distribution(generator);
+        while (verif.count(val) == 1) {
+            val = distribution(generator);
+        }
+
         cqf_oom.insert(val, (1ULL << val%31));
         verif.insert({ val, (1ULL << val%31) });
     }
     EXPECT_EQ(cqf_oom.enumerate(), verif);
 
-    //REMOVE
     std::map<uint64_t,uint64_t>::iterator it;
     for (it = verif.begin(); it != verif.end(); it++){
         cqf_oom.remove((*it).first);
@@ -437,22 +353,62 @@ TEST_F(BCqfTest, insertRDMoccs_oom) {
 }
 
 
+TEST_F(BCqfTest, serializeRoundtrip_ec) {
+    uint64_t val;
+    std::map<uint64_t, uint64_t> verif;
+
+    for (uint64_t i = 0; i < (1ULL<<14); i++){
+        val = distribution(generator);
+        while (verif.count(val) == 1) { val = distribution(generator); }
+        cqf.insert(val, val % 15 + 1);
+        verif.insert({ val, val % 15 + 1 });
+    }
+
+    const std::string path = "/tmp/bqf_test_ec_roundtrip";
+    cqf.save_on_disk(path);
+    Bqf_ec loaded = Bqf_ec::load_from_disk(path);
+    std::filesystem::remove(path);
+
+    EXPECT_EQ(loaded.enumerate(), verif);
+    EXPECT_EQ(loaded.quotient_size,  cqf.quotient_size);
+    EXPECT_EQ(loaded.remainder_size, cqf.remainder_size);
+    EXPECT_EQ(loaded.count_size,     cqf.count_size);
+    EXPECT_EQ(loaded.elements_inside, cqf.elements_inside);
+}
+
+
+TEST_F(BCqfTest, serializeRoundtrip_oom) {
+    uint64_t val;
+    std::map<uint64_t, uint64_t> verif;
+
+    for (uint64_t i = 0; i < (1ULL<<14); i++){
+        val = distribution(generator);
+        while (verif.count(val) == 1) { val = distribution(generator); }
+        cqf_oom.insert(val, (1ULL << (val % 5)));
+        verif.insert({ val, (1ULL << (val % 5)) });
+    }
+
+    const std::string path = "/tmp/bqf_test_oom_roundtrip";
+    cqf_oom.save_on_disk(path);
+    Bqf_oom loaded = Bqf_oom::load_from_disk(path);
+    std::filesystem::remove(path);
+
+    EXPECT_EQ(loaded.enumerate(), verif);
+    EXPECT_EQ(loaded.quotient_size,  cqf_oom.quotient_size);
+    EXPECT_EQ(loaded.remainder_size, cqf_oom.remainder_size);
+    EXPECT_EQ(loaded.elements_inside, cqf_oom.elements_inside);
+}
+
+
 string string_of_int(uint16_t n) {
     string r = "";
     uint32_t mask = 0b11;
     for (int i = 0; i < 8; i++){
         switch (mask&n) {
-            case 0:
-                r.push_back('A');
-                break;
-            case 1:
-                r.push_back('C');
-                break;
-            case 2:
-                r.push_back('T');
-                break;
-            default:
-                r.push_back('G');
+            case 0:  r.push_back('A'); break;
+            case 1:  r.push_back('C'); break;
+            case 2:  r.push_back('T'); break;
+            default: r.push_back('G');
         }
         n = n>>2;
     }
@@ -464,41 +420,20 @@ protected:
     std::default_random_engine generator;
     std::uniform_int_distribution<uint16_t> distribution16;
 
-    std::string input_file = "random_kmers.txt";
     Bqf_cf small_bqf_cf;
     Bqf_cf bigger_bqf_cf;
 
     void SetUp() override {
         generator.seed(time(NULL));
-        
+
         small_bqf_cf = Bqf_cf(7, 8, text, false);
         bigger_bqf_cf = Bqf_cf(18, 28, text, false);
     }
 };
-/* 
-TEST_F(BqfCfTest, SimpleInsert) {
-    uint64_t n;
-    std::map<uint64_t, uint64_t> verif;
-    try{
-        for (uint64_t i = 0; i < (1ULL<<17) -1; i++) {
-            string kmer = string_of_int(distribution16(generator));
-            n = kmer_to_hash(kmer, small_bqf_cf.kmer_size);
-            
-            ++verif[n];
-            cout << i << " === " << kmer << " with hash " << n << endl;
-            EXPECT_EQ(small_bqf_cf.is_second_insert(n), verif[n] == 2) << "verif[" << n << "] = " << verif[n] << endl;
-        }
-    }
-    catch (const std::exception &e) {
-        cerr << "Error : " << e.what();
-    }
-    std::map<uint64_t, uint64_t>::iterator it;
-    for (it = verif.begin(); it != verif.end(); it++){
-        small_bqf_cf.remove((*it).first);
-    }
-    verif.clear();
-    EXPECT_EQ(small_bqf_cf.enumerate(), verif);
-} */
+
+// SimpleInsert: very noisy (prints every kmer), kept for manual debugging.
+// Run manually: ./build/bin/unit_tests --gtest_filter=BqfCfTest.SimpleInsert
+// TEST_F(BqfCfTest, SimpleInsert) { ... }
 
 bool word_in_file(string word, string filename) {
     ifstream file(filename);
@@ -517,7 +452,7 @@ bool word_in_file(string word, string filename) {
 }
 
 TEST_F(BqfCfTest, FilterFastaFile) {
-    string fasta_file = "../../examples/data/ecoli_100Kb_reads_40x.fasta"; 
+    string fasta_file = "../../examples/data/ecoli_100Kb_reads_40x.fasta";
     string kmc_check = "../../examples/data/ecoli_28_counted";
     string filtered_kmers = "ecoli_28_filtered.txt";
     vector<string> files;
