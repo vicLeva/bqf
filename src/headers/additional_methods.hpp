@@ -147,7 +147,7 @@ void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t
  * which wd be problematic for hashing
  * \return a uint64, encoding the kmer
  */
-uint64_t encode(std::string data);
+uint64_t encode(const std::string& data);
 
 /** 
  * \brief decode a number into a kmer
@@ -163,7 +163,7 @@ std::string decode(uint64_t hash, uint64_t size);
  * A->00 C->10 G->11 T->10, (used for checking quick encoding using ASCII value)
  * \return a uint64, encoding the kmer
  */
-uint64_t quick_encoding(std::string kmer);
+uint64_t quick_encoding(const std::string& kmer);
 /** 
  * \brief decodes a number into a kmer, if the kmer has been encoded through quick ASCII encoding
  * \param hash the number to turn into a kmer
@@ -196,7 +196,7 @@ uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask);
  * \param size the kmer size (in base)
  * \return uint64_t, the hash
  */
-uint64_t kmer_to_hash(std::string data, uint64_t size);
+uint64_t kmer_to_hash(const std::string& data, uint64_t size);
 
 /** 
  * \brief hashes the encoded kmer

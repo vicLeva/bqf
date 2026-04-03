@@ -126,27 +126,12 @@ void set_bits(std::vector<uint64_t>& vec, uint64_t pos, uint64_t value, uint64_t
     }
 }
 
-uint64_t encode(string kmer){
+uint64_t encode(const std::string& kmer){
+    // Branchless: (c>>1)&3 maps A→0,C→1,G→3,T→2; lut gives A→3,C→2,G→1,T→0
+    static constexpr uint8_t lut[4] = {3, 2, 0, 1};
     uint64_t encoded = 0;
-    for(char& c : kmer) {
-        encoded <<= 2;
-        //encoded |= ((c >> 1) & 0b11);
-        switch (c) {
-            case 'A':
-                encoded |= 3;
-                break;
-            case 'C' :
-                encoded |= 2;
-                break;
-            case 'G' :
-                encoded |= 1;
-                break;
-            case 'T' :
-                break;
-            default :
-                throw std::invalid_argument( "received non nucleotidic value");
-                break;
-        }
+    for (char c : kmer) {
+        encoded = (encoded << 2) | lut[(c >> 1) & 3];
     }
     return encoded;
 }
@@ -164,27 +149,11 @@ string decode(uint64_t coded, uint64_t k){
     return kmer;
 }
 
-uint64_t quick_encoding(string kmer){
+uint64_t quick_encoding(const std::string& kmer){
+    // (c>>1)&3 directly gives A→0,C→1,G→3,T→2 — no lookup needed
     uint64_t encoded = 0;
-    for(char& c : kmer) {
-        encoded <<= 2;
-        //encoded |= ((c >> 1) & 0b11);
-        switch (c) {
-            case 'G':
-                encoded |= 3;
-                break;
-            case 'T' :
-                encoded |= 2;
-                break;
-            case 'C' :
-                encoded |= 1;
-                break;
-            case 'A' :
-                break;
-            default :
-                throw std::invalid_argument( "received non nucleotidic value");
-                break;
-        }
+    for (char c : kmer) {
+        encoded = (encoded << 2) | ((c >> 1) & 3);
     }
     return encoded;
 }
@@ -252,7 +221,7 @@ uint64_t bfc_hash_64_inv(uint64_t key, uint64_t mask){
 }
 
 
-uint64_t kmer_to_hash(string kmer, uint64_t k){
+uint64_t kmer_to_hash(const string& kmer, uint64_t k){
     return bfc_hash_64(encode(kmer), mask_right(k*2));
 }
 
