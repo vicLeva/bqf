@@ -205,6 +205,7 @@ result_query Bqf::query(string seq){
     const uint z = k-s;
     const uint zp1 = z+1;
     const uint64_t smer_mask = mask_right(2*s);
+    const uint64_t rc_top_shift = 2*(s-1); // shift to place complement at MSB of s-mer
     uint64_t last_smers_abundances[zp1];
     uint64_t* kmer_abundance;
     uint64_t nb_presence = 0;
@@ -213,28 +214,34 @@ result_query Bqf::query(string seq){
     uint64_t maximum = 0;
 
     uint64_t current_smer = 0;
+    uint64_t current_revcomp = 0;
 
-    //build current_smer (s first chars)
+    //build current_smer and current_revcomp (s first chars)
     for (auto i = 0; i < s-1; i++){
-        current_smer <<= 2;
-        current_smer |= nucl_encode(seq[i]);
+        const uint64_t n_enc = nucl_encode(seq[i]);
+        current_smer = (current_smer << 2) | n_enc;
+        current_revcomp = (current_revcomp >> 2) | ((n_enc ^ 3ULL) << rc_top_shift);
     }
 
     //1st kmer (s+z first chars), skipped if k==s
     for (auto i = s-1; i < k-1; i++){
-        current_smer <<= 2;
-        current_smer = (current_smer | nucl_encode(seq[i])) & smer_mask;
+        const uint64_t n_enc = nucl_encode(seq[i]);
+        current_smer = ((current_smer << 2) | n_enc) & smer_mask;
+        current_revcomp = (current_revcomp >> 2) | ((n_enc ^ 3ULL) << rc_top_shift);
+        const uint64_t canon = current_smer < current_revcomp ? current_smer : current_revcomp;
 
-        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), smer_mask));
+        last_smers_abundances[i-(s-1)] = this->query(bfc_hash_64(canon ^ smer_mask, smer_mask));
     }
 
 
     //all kmers
     for (auto i = k-1; i < n; i++){
-        current_smer <<= 2;
-        current_smer = (current_smer | nucl_encode(seq[i])) & smer_mask;
+        const uint64_t n_enc = nucl_encode(seq[i]);
+        current_smer = ((current_smer << 2) | n_enc) & smer_mask;
+        current_revcomp = (current_revcomp >> 2) | ((n_enc ^ 3ULL) << rc_top_shift);
+        const uint64_t canon = current_smer < current_revcomp ? current_smer : current_revcomp;
 
-        last_smers_abundances[(i-s+1)%zp1] = this->query(bfc_hash_64(flip(canonical(current_smer, 2*s), 2*s), smer_mask));
+        last_smers_abundances[(i-s+1)%zp1] = this->query(bfc_hash_64(canon ^ smer_mask, smer_mask));
 
         kmer_abundance = min_element(last_smers_abundances, last_smers_abundances+z+1);
         if (*kmer_abundance == 0){
