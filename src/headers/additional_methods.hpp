@@ -1,12 +1,17 @@
 #ifndef ADDITIONAL_METHODS_HPP
 #define ADDITIONAL_METHODS_HPP
 
-#include <stdint.h> 
+#include <stdint.h>
 #include <string>
 #include <iostream>
 #include <bitset>
 #include <cassert>
 #include <vector>
+#if defined(__aarch64__) || defined(_M_ARM64)
+#  include <arm_neon.h>
+#else
+#  include <immintrin.h>
+#endif
 
 
 // STATIC VARIABLES 
@@ -97,21 +102,34 @@ uint64_t get_shift_in_block(uint64_t position);
  */
 uint64_t get_quot_from_block_shift(uint64_t block, uint64_t shift);
 
-/** 
- * \brief bitwise select operation
+/**
+ * \brief bitwise select operation — inline for cross-TU inlining
  * \param num word of the bitvector of runends
  * \param rank rank position
  * \return the select operation
  */
-uint64_t bitselectasm(uint64_t num, uint64_t rank);
+inline uint64_t bitselectasm(uint64_t num, uint64_t rank) {
+#if defined(__aarch64__) || defined(_M_ARM64)
+    // ARM: clear (rank-1) lowest set bits, then ctz gives the rank-th bit position
+    for (uint64_t i = 1; i < rank; i++)
+        num &= num - 1;
+    return num ? __builtin_ctzll(num) : 64ULL;
+#else
+    // pdep returns 0 when rank > popcount(num); __builtin_ctzll(0) is UB so guard it
+    const uint64_t j = _pdep_u64(1ULL << (rank - 1), num);
+    return j ? __builtin_ctzll(j) : 64ULL;
+#endif
+}
 
-/** 
- * \brief bitwise rank operation
+/**
+ * \brief bitwise rank operation — inline for cross-TU inlining
  * \param val   word of the bitvector of occupieds
  * \param pos   position of the bit in the word
  * \return the rank operation
  */
-uint64_t bitrankasm(uint64_t val, uint64_t pos);
+inline uint64_t bitrankasm(uint64_t val, uint64_t pos) {
+    return __builtin_popcountll(val & ((2ULL << pos) - 1));
+}
 
 /** 
  * \brief get a specific bit from a uint64 word given its position in it
