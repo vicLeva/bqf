@@ -36,11 +36,11 @@ uint64_t rebuild_number(uint64_t quot, uint64_t rem, uint64_t shift){
 }
 
 uint64_t get_block_id(uint64_t position){
-    return position / MEM_UNIT;
+    return position >> 6;
 }
 
 uint64_t get_shift_in_block(uint64_t position){
-    return position % MEM_UNIT;
+    return position & 63;
 }
 
 uint64_t get_quot_from_block_shift(uint64_t block, uint64_t shift){
@@ -138,6 +138,7 @@ uint64_t encode(const std::string& kmer){
 
 string decode(uint64_t coded, uint64_t k){
     string kmer;
+    kmer.reserve(k);
     char rev[4] = {'T', 'G', 'C', 'A'};
     uint64_t mask = mask_right(2);
 
@@ -160,6 +161,7 @@ uint64_t quick_encoding(const std::string& kmer){
 
 string quick_decoding(uint64_t coded, uint64_t k){
     string kmer;
+    kmer.reserve(k);
     char rev[4] = {'A', 'C', 'T', 'G'};
     uint64_t mask = mask_right(2);
 
