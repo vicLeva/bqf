@@ -57,8 +57,12 @@ TEST_F(RsqfTest, offset1_blockOverflow) {
     EXPECT_EQ(small_qf.get_offset_word(1), 0);
 }
 
-// offset2_runOverflowsBy1: known bug in filter offset logic — kept as documentation
-// TEST_F(RsqfTest, offset2_runOverflowsBy1) { ... }
+TEST_F(RsqfTest, offset2_runOverflowsBy1) {
+    small_qf.insert((3ULL<<31) + 64);
+    small_qf.insert((3ULL<<30) + 63);
+    small_qf.insert((3ULL<<30) + 63);
+    EXPECT_EQ(small_qf.get_remainder(64), 25165824ULL);
+}
 
 TEST_F(RsqfTest, offset3_insertshift0) {
     small_qf.insert((1<<11)+ 64); EXPECT_EQ(small_qf.get_offset_word(1), 1);
@@ -228,9 +232,24 @@ TEST_F(RsqfTest, shift_bits_right_metadata) {
     EXPECT_EQ(small_qf.get_runend_word(0), 1ULL<<63);
 }
 
-// finalTest: 2^18 insertions + full enumerate + full removal — too slow for routine CI.
-// Run manually: ./build/bin/unit_tests --gtest_filter=RsqfTest.finalTest
-// TEST_F(RsqfTest, finalTest) { ... }
+TEST_F(RsqfTest, finalTest) {
+    uint64_t val;
+    std::unordered_set<uint64_t> verif;
+
+    for (uint64_t i = 0; i < (1ULL<<18)-1; i++) {
+        val = distribution(generator);
+        usual_qf.insert(val);
+        verif.insert(val);
+    }
+    EXPECT_EQ(usual_qf.enumerate(), verif);
+
+    for (uint64_t i = 0; i < (1ULL<<18)-1; i++) {
+        val = *verif.begin();
+        verif.extract(val);
+        usual_qf.remove(val);
+    }
+    EXPECT_EQ(usual_qf.enumerate(), verif);
+}
 
 
 class BqfTest : public ::testing::Test {
@@ -430,9 +449,27 @@ protected:
     }
 };
 
-// SimpleInsert: very noisy (prints every kmer), kept for manual debugging.
-// Run manually: ./build/bin/unit_tests --gtest_filter=BqfCfTest.SimpleInsert
-// TEST_F(BqfCfTest, SimpleInsert) { ... }
+TEST_F(BqfCfTest, SimpleInsert) {
+    uint64_t n;
+    std::map<uint64_t, uint64_t> verif;
+    try {
+        for (uint64_t i = 0; i < (1ULL<<17)-1; i++) {
+            string kmer = string_of_int(distribution16(generator));
+            n = kmer_to_hash(kmer, small_bqf_cf.kmer_size);
+            ++verif[n];
+            cout << i << " === " << kmer << " with hash " << n << endl;
+            EXPECT_EQ(small_bqf_cf.is_second_insert(n), verif[n] == 2) << "verif[" << n << "] = " << verif[n] << endl;
+        }
+    } catch (const std::exception& e) {
+        cerr << "Error: " << e.what();
+    }
+    std::map<uint64_t, uint64_t>::iterator it;
+    for (it = verif.begin(); it != verif.end(); it++) {
+        small_bqf_cf.remove((*it).first);
+    }
+    verif.clear();
+    EXPECT_EQ(small_bqf_cf.enumerate(), verif);
+}
 
 bool word_in_file(string word, string filename) {
     ifstream file(filename);

@@ -45,6 +45,7 @@ public:
 
 private :
     friend class BqfCfTest;
+    friend class BqfCfTest_SimpleInsert_Test;
 
     /**
      * @brief inserts all kmers from a DNA sequence and writes all k-mers present more than once in a stream
