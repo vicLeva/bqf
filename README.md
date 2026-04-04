@@ -27,9 +27,19 @@ It relies on a hash-table-like structure called Quotient Filter. Part of the inf
 git clone git@github.com:vicLeva/bqf.git
 cd bqf
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake ..
 make 
 ```
+
+Enable `build` by choosing compile-time `k/z`:
+
+```bash
+cmake .. -DBQF_INDEX_K=32 -DBQF_INDEX_Z=11
+make
+```
+
+Note: this project sets `Release` as default build type in CMake.
+
 
 ## Binary usage 
 
