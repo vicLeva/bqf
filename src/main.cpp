@@ -9,7 +9,7 @@ void print_commands(void) {
     std::cout << std::endl;
     std::cout << "Usage: ./bqf <command>" << std::endl;
     std::cout << "Commands:" << std::endl;
-    std::cout << "\t./bqf build [-q <quotient size=8>] [-c <count size=5>] [-k <k=32>] [-z <z=5>] -i <counted_smers> -o <BQF_file>" << std::endl;
+    std::cout << "\t./bqf build [-q <quotient size=8>] [-c <count size=5>] [-k <k=32>] [-z <z=11>] -i <counted_smers> -o <BQF_file>" << std::endl;
     std::cout << "\t./bqf query -b <bqf_file> -i <reads_to_query> -o <results>" << std::endl;
     std::cout << "\t./bqf filter [-q <quotient size=8>] [-m <m=text|binary|stream>] [-k <k=32>] -i <fasta_file> -o <outfile>" << std::endl;
     std::cout << "\t./bqf help" << std::endl;
@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
         std::cout << "-i is input_file, can be counted smers for \"build\" tool, sequences to query for \"query\" tool or a fasta/q file for \"filter\" tool" << std::endl;
         std::cout << "-o is the file on which the BQF is saved in binary form after building (weights around 2^q*(3+c+r) bits, r being 2s-q) for \"build\" tool, sequences results file for \"query\" tool or a list of kmer for \"filter\" tool" << std::endl;
         std::cout << "-b is the file from which the BQF is loaded" << std::endl;
-        std::cout << "-m is the mode with which to write the output : default is text, which is human readable, binary is more space and time-efficient, and stream is not yet added" << std::endl;
+        std::cout << "-m is the mode with which to write the output : default is text (human readable), binary is more space and time-efficient, stream yields solid k-mers one at a time via yield_kmer()" << std::endl;
     } else {
         std::cerr << "Invalid command or incorrect number of arguments." << std::endl;
         print_commands();

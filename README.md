@@ -27,7 +27,7 @@ It relies on a hash-table-like structure called Quotient Filter. Part of the inf
 git clone git@github.com:vicLeva/bqf.git
 cd bqf
 mkdir build && cd build
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make 
 ```
 
@@ -41,6 +41,7 @@ From `bqf/build/`
 [TOOL] : 
     build           Build a BQF from a counted s-mers file
     query           Query sequence(s) in a BQF
+    filter          Filter a fasta/q file, writing k-mers present more than once
     help            Display commands and parameters
 
 
@@ -64,6 +65,18 @@ From `bqf/build/`
     -i  [mandatory]     Input file path. Sequences to query in the BQF, 1 per line or .fasta format.
 
     -o  [mandatory]     Output file path. Results of queries, 1 per line. Results are formated this way (min:X, max:X, average:X, presence ratio:X). min, max and average are k-mers abundances statistics of the queried sequence S. presence ratio is the ratio of present k-mers over all k-mers of S.
+
+
+[PARAMETERS] : filter
+    -q  (default = 8)   Quotient size, defines filter size (2^q slots).
+
+    -k  (default = 32)  k-mer size.
+
+    -i  [mandatory]     Input fasta/q file path. k-mers are read from this file.
+
+    -o  [mandatory]     Output file path. k-mers present more than once are written here (not required in stream mode).
+
+    -m  (default = text) Output mode: text (human-readable), binary (compact encoding), stream (yield k-mers via API).
 ```
 
 ## Examples 
@@ -108,7 +121,7 @@ Then you can find a html file (`index.html`) in the so-created html directory.
 From `build/` directory
 
 ```bash
-ctest
+ctest        # runs all 37 tests
 ```
 
 ## Slides presentation
