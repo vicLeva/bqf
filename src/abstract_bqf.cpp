@@ -163,15 +163,15 @@ Bqf Bqf::load_from_disk(const string& filename) {
     return qf;
 }
 
-void Bqf::insert(string kmc_input){
+void Bqf::insert_from_file(const string& filename){
     try {
-        ifstream infile(kmc_input);
+        ifstream infile(filename);
 
         if (!infile) {
-            throw std::runtime_error("File not found: " + kmc_input);
+            throw std::runtime_error("File not found: " + filename);
         }
 
-        string smer; 
+        string smer;
         uint64_t count;
 
         //1st elem, check s == smer_size
@@ -181,7 +181,6 @@ void Bqf::insert(string kmc_input){
         } else {
             throw std::runtime_error("BQF expects " + std::to_string(this->smer_size) + "-mers but input has " + std::to_string(smer.size()) + "-mers");
         }
-        
 
         while (infile >> smer >> count) {
             this->insert(smer, count);
@@ -189,17 +188,16 @@ void Bqf::insert(string kmc_input){
 
         infile.close();
     } catch (const std::exception &e) {
-        // Gérez l'exception ici, par exemple, affichez un message d'erreur
         std::cerr << "Error: " << e.what() << std::endl;
     }
-}   
+}
 
 
 void Bqf::insert(string kmer, uint64_t count){
     this->insert(kmer_to_hash(kmer, smer_size), count);
 }
 
-pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> boundary, uint64_t rem) {
+pair<uint64_t, bool> Bqf::find_insert_position(const pair<uint64_t,uint64_t> boundary, uint64_t rem) const {
     if (verbose) {
         cout << "[SEARCH] in [" << boundary.first << " ; " << boundary.second << "]" << endl;
     }
@@ -335,7 +333,7 @@ void Bqf::query(std::ifstream& infile, std::ofstream& outfile){
 
 
 
-result_query Bqf::query(string seq){
+result_query Bqf::query(string seq) const {
     const int s = this->smer_size;
     const int k = this->kmer_size;
     const int n = seq.length();
@@ -399,7 +397,7 @@ result_query Bqf::query(string seq){
     return result_query {minimum, maximum, (double)avg / (n-k+1), (double)nb_presence/(n-k+1)};
 }
 
-uint64_t Bqf::query(uint64_t number){
+uint64_t Bqf::query(uint64_t number) const {
     if (elements_inside == 0) return 0;
     const uint64_t quot = quotient(number);
     const uint64_t rem = remainder(number);
@@ -413,7 +411,7 @@ uint64_t Bqf::query(uint64_t number){
     return 0;
 }
 
-std::map<uint64_t, uint64_t> Bqf::enumerate(){
+std::map<uint64_t, uint64_t> Bqf::enumerate() const {
     std::map<uint64_t, uint64_t> finalSet;
     uint64_t curr_occ;
     
@@ -451,7 +449,7 @@ std::map<uint64_t, uint64_t> Bqf::enumerate(){
     return finalSet;
 }
 
-void Bqf::resize(uint n){
+void Bqf::resize(uint64_t n){
     if(n == 0) return;
     
     assert(n <= this->remainder_size);
@@ -632,7 +630,7 @@ void Bqf::resize(uint n){
     this->filter.swap(new_filter);
 }
 
-uint64_t Bqf::get_remainder(uint64_t position, bool w_counter){ //default=false
+uint64_t Bqf::get_remainder(uint64_t position, bool w_counter) const { //default=false
     const uint64_t block = position >> 6;
     const uint64_t pos = block * bits_per_block + MET_UNIT*BLOCK_SIZE + (position & 63) * remainder_size;
 
@@ -641,7 +639,7 @@ uint64_t Bqf::get_remainder(uint64_t position, bool w_counter){ //default=false
 }
 
 
-uint64_t Bqf::find_quotient_given_memory(uint64_t max_memory, uint64_t count_size){
+uint64_t Bqf::find_quotient_given_memory(uint64_t max_memory, uint64_t count_size) const {
     uint64_t quotient_size;
     uint64_t curr_m;
     

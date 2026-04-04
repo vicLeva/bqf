@@ -81,9 +81,9 @@ class Rsqf {
      * \param number Number to query
      * \return the presence (1) or the absence (0) of the given number in the filter
      */
-    bool query(uint64_t number);
+    bool query(uint64_t number) const;
 
-    /** 
+    /**
      * \brief Remove (if present) a number from the filter
      * 
      * This method removes an element from the filter. At the beginning it works like a query. If it finds the 
@@ -108,11 +108,9 @@ class Rsqf {
      * 
      * \return a uint64_t unordered set of number, present in the filter
      */
-    std::unordered_set<uint64_t> enumerate(); 
+    std::unordered_set<uint64_t> enumerate() const;
 
 
-    //tmp public
-    void resize(int n); 
 
 
     /*  
@@ -128,7 +126,7 @@ class Rsqf {
      * \param bitformat a flag to print remainders as bitvector instead of numbers.
      * \return The block represented as string
      */
-    std::string block2string(size_t block_id, bool bit_format = false);
+    std::string block2string(uint64_t block_id, bool bit_format = false) const;
 
 
     //protected:
@@ -199,29 +197,29 @@ class Rsqf {
     /** 
      * \brief returns the size in bits of the quotient
      */    
-    uint64_t get_quot_size();
+    uint64_t get_quot_size() const;
 
-    /** 
-     * \brief returns the number of numbers inserted 
-     */ 
-    uint64_t get_num_el_inserted();
+    /**
+     * \brief returns the number of numbers inserted
+     */
+    uint64_t get_num_el_inserted() const;
 
-    /** 
+    /**
      * \brief check if the occupied bit of the given quotient is 1 or 0.
      * It extracts the related bit of the occupied word in the block of the quotient
      * \param position quotient to query
      * \return true if 1, false if 0.
      */
-    bool is_occupied(uint64_t position);
+    bool is_occupied(uint64_t position) const;
 
-    /** 
+    /**
      * \brief returns the remainder slot associated to the requested quotient
-     * \param position quotient 
+     * \param position quotient
      * \return an uint64 with the value stored in the slot
      */
-    uint64_t get_remainder(uint64_t position);
+    uint64_t get_remainder(uint64_t position) const;
 
-    /** 
+    /**
      * \brief gets the word where the slot starts
      * returns the id of the word in the filter that contains (or starts containing) the
      * remainder slot associated to a certain quotient (by this I mean quotient 155 is associated to
@@ -229,61 +227,52 @@ class Rsqf {
      * \param quotient the *th quotient
      * \return uint64 returning the id of *th word in the vector.
      */
-    uint64_t get_remainder_word_position(uint64_t quotient);
+    uint64_t get_remainder_word_position(uint64_t quotient) const;
 
-    /** 
+    /**
      * \brief It returns the bit of word where the slot starts.
      * complementary to "get_remainder_word_position", it gives back the bit in the word where the requested slot
      * starts.
      * \param quotient the *th slot requested
      * \return uint64 with the shift in the word where the slot starts
      */
-    uint64_t get_remainder_shift_position(uint64_t quotient);
+    uint64_t get_remainder_shift_position(uint64_t quotient) const;
 
-    /** 
+    /**
      * \brief start and end positions of quotient's run
-     * returns the start and the end of the run that contains all the remainders of the numbers inserted that have 
-     * the given quotient. I.e. I have quotient 1 and want to see where the run that contains the remainders that are linked to it in the qf
-     * start and ends.
-     * I have the start and end of the run of the remainders of the numbers that have that quotient.
+     * returns the start and the end of the run that contains all the remainders of the numbers inserted that have
+     * the given quotient.
      * \param quotient quotient of the numbers where we want to have the associated
      * \return a std::pair with start and end position of the run
      */
-    std::pair<uint64_t,uint64_t> get_run_boundaries(uint64_t quotient);
+    std::pair<uint64_t,uint64_t> get_run_boundaries(uint64_t quotient) const;
 
-    /** 
-     * \brief gets the end of the previous run of the selected quotient (or its own if it exists). 
+    /**
+     * \brief gets the end of the previous run of the selected quotient (or its own if it exists).
      * It is the equivalent of doing  select(runend_vector, rank(occupieds_vector, quotient))
      * \param quotient quotient to give to the function
      * \return - the position of the end of the previous run
      *         - true if the pos is out of quotient block, else false (useful for first_unused_slot)
      */
-    std::pair<uint64_t, bool> get_runend(uint64_t quotient);
+    std::pair<uint64_t, bool> get_runend(uint64_t quotient) const;
 
-    /** 
+    /**
      * \brief It returns the start of the run associated with quotient in parameter
-     * If quotient is not occupied it returns the first slot where  would be inserted a remainder linked to this quotient
-     * Counts how many runs begin before the quotient using rank(), then find the position of the end of the last
-     * run. The next slot is the beginning of our interest run, if it is before our quotient, then the slot "quotient"
-     * is the beginning of the run
-     * \param quotient quotient of which we want the beginning of the run 
-     * \param occ_bit the information of occupation of the quotient (1=the quotient is occupied) 
+     * \param quotient quotient of which we want the beginning of the run
+     * \param occ_bit the information of occupation of the quotient (1=the quotient is occupied)
      * \return a uint64_t, the position of the beginning of the run
      */
-    uint64_t get_runstart(uint64_t quotient, bool occ_bit=1);
+    uint64_t get_runstart(uint64_t quotient, bool occ_bit=1) const;
 
-    /** 
-     * \brief Used in get runstart()
-     * for the special case where the quotient if the first slot of a block
-     * Because we start counting in the block how many runs start before our quotient (the occupieds
-     * we can't do it if it is in first position, so we start by counting the runends.
-     * \param quotient quotient of which we want the beginning of the run 
-     * \param paj the position after the jump done using the offset of the block 
+    /**
+     * \brief Used in get_runstart() for the special case where the quotient is the first slot of a block
+     * \param quotient quotient of which we want the beginning of the run
+     * \param paj the position after the jump done using the offset of the block
      * \param offset the information of the offset of the block (might be different of paj)
-     * \param occ_bit the information of occupation of the quotient (1=the quotient is occupied) 
-     * \return a uint64_t, the position of the beginning of the ru
+     * \param occ_bit the information of occupation of the quotient (1=the quotient is occupied)
+     * \return a uint64_t, the position of the beginning of the run
      */
-    uint64_t get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t offset, bool occ_bit);
+    uint64_t get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t offset, bool occ_bit) const;
 
 
     /** 
@@ -429,7 +418,7 @@ class Rsqf {
      * \param max_memory Max size to occupy with the RSQF (in MBytes). The memory of the RSQF is given by 1 parameter: the quotient size(q), the remainder size(r) is (64 - q).
      * \return Quotient size in bits
      **/
-    uint64_t find_quotient_given_memory(uint64_t max_memory);
+    uint64_t find_quotient_given_memory(uint64_t max_memory) const;
 
     /** 
      * \brief Computes the remainder from a number to insert/find in the filter
@@ -498,16 +487,16 @@ class Rsqf {
      * \param curr_quotient the quotient from where to find the first unused slot
      * \return uint64 of the position of the first unused slot.
      */
-    uint64_t first_unused_slot(uint64_t curr_quotient); //const
+    uint64_t first_unused_slot(uint64_t curr_quotient) const;
 
-    /** 
-     * \brief Returns the first slot that can't be shifted during a deletion. 
+    /**
+     * \brief Returns the first slot that can't be shifted during a deletion.
      * It iterates over all the slots after curr_quotient, and stops when it finds else an unused slot
      * or an occupied slot whose run starts at this precise slot. (the run of a quotient can't start before the quotient itself)
      * \param curr_quotient the quotient from where to find the first unshiftable slot
      * \return uint64 of the position of the last shiftable slot.
      */
-    uint64_t first_unshiftable_slot(uint64_t curr_quotient); //const
+    uint64_t first_unshiftable_slot(uint64_t curr_quotient) const;
 
 
 
@@ -520,7 +509,8 @@ class Rsqf {
    void save_on_disk(const std::string& filename);
    static Rsqf load_from_disk(const std::string& filename);
 
-};  
+    void resize(uint64_t n);
+};
 
 
 #endif

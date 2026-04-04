@@ -95,7 +95,7 @@ public:
      * 
      * \param file path to file
      */
-    void insert(std::string file);
+    void insert_from_file(const std::string& filename);
 
     /** 
      * TODO: allow user to choose hash function
@@ -121,7 +121,7 @@ public:
      * \param number to insert
      * \param count number of occurences of the element to insert (default: 1)
      */
-    virtual void insert(uint64_t number, uint64_t count = 1);
+    void insert(uint64_t number, uint64_t count = 1);
 
     /**
      * \brief finds the position in which to insert a remainder in a run
@@ -133,34 +133,34 @@ public:
      * \returns a pair containing the position in which the remainder should be inserted and a boolean indicating
      * if it is already present in the run
      */
-    std::pair<uint64_t, bool> find_insert_position(const std::pair<uint64_t,uint64_t> boundary, uint64_t rem);
+    std::pair<uint64_t, bool> find_insert_position(const std::pair<uint64_t,uint64_t> boundary, uint64_t rem) const;
 
     void query(std::ifstream& infile, std::ofstream& outfile);
 
-    /** 
+    /**
      * \brief query a sequence from the filter.
-     * 
+     *
      * Every abundance of each kmer of the query sequence will be queried. This is done following Fimpera scheme
-     * and the smallest count amongst them will be returned. 
-     * 
+     * and the smallest count amongst them will be returned.
+     *
      * \param seq the sequence to query
      * \param k the kmer size, k-s+1 smers will be effectively queried
      * \return the abundance of the given kmer in the filter
      */
-    result_query query(std::string seq);
+    result_query query(std::string seq) const;
 
-    /** 
+    /**
      * \brief query a number from the filter.
-     * 
+     *
      * It queries a number. It first checks if the occupied bit of the quotient is set to 1. If so it scans
-     * in a linear way the remainders of the run associated to this element. If it 
-     * finds the remainder it returns its exact count (or order of magnitude, depending of the filter used ) else 0.
+     * in a linear way the remainders of the run associated to this element. If it
+     * finds the remainder it returns its exact count (or order of magnitude, depending of the filter used) else 0.
      * Stops immediately if the filter is empty
-     * 
+     *
      * \param number Number to query
      * \return the abundance of the given number in the filter
      */
-    uint64_t query(uint64_t number);
+    uint64_t query(uint64_t number) const;
     
 
     /** 
@@ -172,10 +172,8 @@ public:
      * 
      * \return a string to uint_64t map, linking every originally inserted kmer to its abundance in the filter
      **/ 
-    std::map<uint64_t, uint64_t> enumerate();
+    std::map<uint64_t, uint64_t> enumerate() const;
 
-    //tmp public
-    void resize(uint n);
 
 
     /** 
@@ -189,7 +187,7 @@ public:
      * 
      * \return an uint64 with the value stored in the slot
      */
-    uint64_t get_remainder(uint64_t position, bool w_counter = false);
+    uint64_t get_remainder(uint64_t position, bool w_counter = false) const;
 
     /** 
      * \brief Deduce a quotient size from the memory occupation limit and counter's size
@@ -202,13 +200,15 @@ public:
      * 
      * \return Quotient size in bits
      **/
-    uint64_t find_quotient_given_memory(uint64_t max_memory, uint64_t count_size);
+    uint64_t find_quotient_given_memory(uint64_t max_memory, uint64_t count_size) const;
 
 
     /**
      * \brief Serializes BQF on disk without compression, can be loaded later for queries.
      */
     void save_on_disk(const std::string& filename);
+
+    void resize(uint64_t n);
 
 private:
     void add_to_counter(uint64_t position, uint64_t rem_count);

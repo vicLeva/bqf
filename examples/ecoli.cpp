@@ -20,7 +20,7 @@ int main (int argc, char * argv[]) {
         "with 5 bits for counter, the quotient filter will weight 2^18*(3+5+38)bits = 1.5MB\n\n";
 
         Bqf ecoli_bqf(18, 5, 32, 4);
-        ecoli_bqf.insert(cwd + "data/ecoli_28_counted");
+        ecoli_bqf.insert_from_file(cwd + "data/ecoli_28_counted");
 
         ecoli_bqf.save_on_disk("/udd/nbuchin/Documents/ecoli_bqf");
         std::cout << ecoli_bqf.block2string(0) << "\n";

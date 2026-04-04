@@ -71,8 +71,6 @@ void test_lots_of_full_rsqf(){
     Rsqf small_qf(qsize, 64-qsize, false);
 
     for (size_t i=0 ; i<(1ULL<<qsize) ; i++) { //fill to 2^qsize elements (100%-1)
-      //cout << "llooooopppp" << endl;
-      //cout << i << " ";
       uint64_t val = distributionTMP(generatorTMP);      
       small_qf.insert(val);
     }     
@@ -188,13 +186,9 @@ void test_one_bqf(){
 
   //INSERT ELEMS
   for (size_t i=0 ; i<3 ; i++) {
-    //std::cout << "\ni " << i << endl;
     uint64_t val = distribution(generator);
-    //val &= mask_right(qsize);
-    //if (val == 0) { val += (1ULL << 45); }
-    //else { val += (val<<qsize); }
 
-    val &= mask_right(hashsize); 
+    val &= mask_right(hashsize);
     val &= mask_left(64-qsize);
     val |= 64; 
 
@@ -238,9 +232,6 @@ void test_one_bqf(){
     bqf.remove((*it).first, (*it).second);
   }
   verif.clear();
-
-
-  //std::cout << bqf.block2string(0) << "\n" << bqf.block2string(1);
 
   //CHECK ENUMERATE
   enu = bqf.enumerate();

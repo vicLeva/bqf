@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
         begin = std::chrono::steady_clock::now();
 
 		Bqf bqf(q, c, k, z);
-		bqf.insert(input_file);
+		bqf.insert_from_file(input_file);
 		bqf.save_on_disk(output_file);
 
         std::cout << "BQF constructed successfully and saved to " << output_file << std::endl;

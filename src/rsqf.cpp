@@ -51,7 +51,7 @@ Rsqf::Rsqf(uint64_t max_memory, bool verbose) : verbose(verbose) {
     filter = vector<uint64_t>(num_of_words);
 }
 
-string Rsqf::block2string(size_t block_id, bool bit_format) {
+string Rsqf::block2string(uint64_t block_id, bool bit_format) const {
     stringstream stream;
 
     // Init the position in filter to the first machine word of the block
@@ -150,15 +150,15 @@ string Rsqf::block2string(size_t block_id, bool bit_format) {
 HIGH LEVEL OPERATIONS
 **************************************************************
 */
-uint64_t Rsqf::get_quot_size(){
+uint64_t Rsqf::get_quot_size() const {
     return quotient_size;
 }
 
-uint64_t Rsqf::get_num_el_inserted(){
+uint64_t Rsqf::get_num_el_inserted() const {
     return elements_inside;
 }
 
-uint64_t Rsqf::find_quotient_given_memory(uint64_t max_memory){ //TO CHANGE, MISS HASH INFORMATION
+uint64_t Rsqf::find_quotient_given_memory(uint64_t max_memory) const { //TO CHANGE, MISS HASH INFORMATION
     uint64_t quotient_size;
     uint64_t curr_m;
     
@@ -269,7 +269,7 @@ void Rsqf::insert(uint64_t number){
 }
 
 
-bool Rsqf::query(uint64_t number){
+bool Rsqf::query(uint64_t number) const {
     if (elements_inside == 0) return 0;
     //get quotient q and remainder r
     uint64_t quot = quotient(number);
@@ -381,7 +381,7 @@ bool Rsqf::remove(uint64_t number){
 }
 
 
-unordered_set<uint64_t> Rsqf::enumerate(){
+unordered_set<uint64_t> Rsqf::enumerate() const {
     unordered_set<uint64_t> finalSet;
     uint64_t curr_occ;
     
@@ -419,7 +419,7 @@ unordered_set<uint64_t> Rsqf::enumerate(){
 }
 
 
-void Rsqf::resize(int n){
+void Rsqf::resize(uint64_t n){
     unordered_set<uint64_t> inserted_elements = this->enumerate();
 
     this->quotient_size += n;
@@ -455,7 +455,7 @@ uint64_t Rsqf::remainder(uint64_t num) const{
 
 // REMAINDER OPERATIONS
 
-uint64_t Rsqf::get_remainder(uint64_t position){
+uint64_t Rsqf::get_remainder(uint64_t position) const {
     const uint64_t block = position >> 6;
     const uint64_t pos_in_block = position & 63;
     const uint64_t pos = block * bits_per_block + MET_UNIT*BLOCK_SIZE + pos_in_block*remainder_size;
@@ -472,11 +472,11 @@ void Rsqf::set_remainder(uint64_t position, uint64_t value){
     set_bits(filter, pos, value, remainder_size);
 }
 
-uint64_t Rsqf::get_remainder_word_position(uint64_t quotient){
+uint64_t Rsqf::get_remainder_word_position(uint64_t quotient) const {
     return (get_block_id(quotient) * words_per_block + MET_UNIT + ((remainder_size * get_shift_in_block(quotient)) / BLOCK_SIZE));
 }
 
-uint64_t Rsqf::get_remainder_shift_position(uint64_t quotient){
+uint64_t Rsqf::get_remainder_shift_position(uint64_t quotient) const {
     return (get_shift_in_block(quotient) * remainder_size) % BLOCK_SIZE;
 }
 
@@ -667,14 +667,14 @@ void Rsqf::set_runend_bit(uint64_t current_block, uint64_t value, uint64_t bit_p
 
 //BITVECTOR AND METADATA OPERATIONS
 
-bool Rsqf::is_occupied(uint64_t position){
+bool Rsqf::is_occupied(uint64_t position) const {
     uint64_t block = get_block_id(position);
     uint64_t pos_in_block = get_shift_in_block(position);
     return get_bit_from_word(get_occupied_word(block) ,pos_in_block);
 }
 
 
-uint64_t Rsqf::first_unshiftable_slot(uint64_t curr_quotient){ //const
+uint64_t Rsqf::first_unshiftable_slot(uint64_t curr_quotient) const {
     pair<uint64_t, bool> rend_pos = get_runend(curr_quotient);
     
     if (verbose){
@@ -708,7 +708,7 @@ uint64_t Rsqf::first_unshiftable_slot(uint64_t curr_quotient){ //const
     return curr_quotient;
 }
 
-uint64_t Rsqf::first_unused_slot(uint64_t curr_quotient){ //const
+uint64_t Rsqf::first_unused_slot(uint64_t curr_quotient) const {
     pair<uint64_t, bool> rend_pos = get_runend(curr_quotient);
     
     if (verbose){
@@ -740,7 +740,7 @@ uint64_t Rsqf::first_unused_slot(uint64_t curr_quotient){ //const
 }
 
 
-pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
+pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient) const {
     uint64_t current_block = get_block_id(quotient);
     uint64_t current_shift = get_shift_in_block(quotient);
     uint64_t offset = get_offset_word(current_block);
@@ -796,7 +796,7 @@ pair<uint64_t, bool> Rsqf::get_runend(uint64_t quotient){
 }
 
 
-uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
+uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit) const {
     uint64_t current_block = get_block_id(quotient);
     uint64_t current_shift = get_shift_in_block(quotient);
     uint64_t offset = get_offset_word(current_block);
@@ -819,12 +819,8 @@ uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
         uint64_t nb_runs; 
         //nb_runs = d in the paper, number of runs that have to end before ours can start
         nb_runs = bitrankasm(get_occupied_word(current_block),
-                             current_shift-1);   
+                             current_shift-1);
 
-        if (verbose){
-            //cout << "[RUNSTART] d " << nb_runs << endl; 
-        }
-            
 
         current_shift = get_shift_in_block(pos_after_jump);
         
@@ -842,8 +838,6 @@ uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
             select_val = bitselectasm(get_runend_word(current_block) & runend_mask, 
                                       nb_runs);            
 
-            //cout << "select_val " << select_val << endl;
-                                            
             if (select_val < get_shift_in_block(quotient)){ return quotient; }
         }
         else {
@@ -872,7 +866,7 @@ uint64_t Rsqf::get_runstart(uint64_t quotient, bool occ_bit){
     }
 } 
 
-uint64_t Rsqf::get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t offset, bool occ_bit){
+uint64_t Rsqf::get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t offset, bool occ_bit) const {
     if (verbose){
         cout << "get_runstart_shift0 " << quotient << " " << paj << " " << offset << " " << occ_bit << endl; 
     } 
@@ -917,7 +911,7 @@ uint64_t Rsqf::get_runstart_shift0(uint64_t quotient, uint64_t paj, uint64_t off
 }
 
 
-pair<uint64_t,uint64_t> Rsqf::get_run_boundaries(uint64_t quotient){
+pair<uint64_t,uint64_t> Rsqf::get_run_boundaries(uint64_t quotient) const {
     //SUB OPTI
     assert(is_occupied(quotient));
     

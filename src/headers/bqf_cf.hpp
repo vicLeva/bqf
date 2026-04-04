@@ -2,7 +2,6 @@
 #define BQF_CF
 
 #include "abstract_bqf.hpp"
-#include <gtest/gtest.h>
 
 typedef enum {
     text, binary, stream
@@ -45,9 +44,7 @@ public:
     uint64_t yield_kmer(void);
 
 private :
-    //unitary tests
     friend class BqfCfTest;
-    FRIEND_TEST(BqfCfTest, SimpleInsert);
 
     /**
      * @brief inserts all kmers from a DNA sequence and writes all k-mers present more than once in a stream

@@ -64,7 +64,6 @@ uint64_t get_bits(const std::vector<uint64_t>& vec, uint64_t pos, uint64_t len){
     if (shift + len <= MEM_UNIT) return (vec[word] >> shift) & mask;
 
     return (vec[word] >> shift) | ((vec[word+1] << (MEM_UNIT - shift)) & mask);
-    //return (cqf[block] >> shift) | ((cqf[block+1] & mask_right(len-(MEM_UNIT-shift))) << (MEM_UNIT - shift));
 }
 
 using namespace std;
