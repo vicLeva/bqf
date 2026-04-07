@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(RSQF)
+project(RSQF VERSION 1.1.0)
 
 SET (CMAKE_CXX_STANDARD 17)
 SET(CMAKE_BUILD_TYPE Release)
