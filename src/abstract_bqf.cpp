@@ -630,6 +630,44 @@ void Bqf::resize(uint64_t n){
     this->filter.swap(new_filter);
 }
 
+
+/* ===========================================================================
+   [BENCH] Two isolated resize strategies for performance comparison.
+   See bench/resize_bench.cpp. Not used on the production insert path.
+   =========================================================================== */
+
+void Bqf::resize_inplace(uint64_t n){
+    // The production resize() IS the single-pass in-place transcription.
+    this->resize(n);
+}
+
+void Bqf::resize_enumerate(uint64_t n){
+    if (n == 0) return;
+    assert(n <= this->remainder_size);
+
+    // 1. Decode every element back to (hash, count).
+    std::map<uint64_t, uint64_t> elements = this->enumerate();
+
+    // 2. Grow the quotient, shrink the remainder, allocate a fresh filter.
+    this->quotient_size  += n;
+    this->remainder_size -= n;
+    this->words_per_block = MET_UNIT + this->remainder_size;
+    this->bits_per_block  = this->words_per_block * BLOCK_SIZE;
+
+    const uint64_t num_quots    = 1ULL << this->quotient_size;
+    const uint64_t num_of_words = num_quots * this->words_per_block / MEM_UNIT;
+
+    this->size_limit     = num_quots * 0.95;
+    this->number_blocks  = std::ceil(num_quots / BLOCK_SIZE);
+    this->filter         = std::vector<uint64_t>(num_of_words);
+    this->elements_inside = 0;
+
+    // 3. Re-insert each element through the normal insert path.
+    for (const auto& kv : elements) {
+        this->insert(kv.first, kv.second);
+    }
+}
+
 uint64_t Bqf::get_remainder(uint64_t position, bool w_counter) const { //default=false
     const uint64_t block = position >> 6;
     const uint64_t pos = block * bits_per_block + MET_UNIT*BLOCK_SIZE + (position & 63) * remainder_size;

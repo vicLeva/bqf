@@ -22,6 +22,7 @@ add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(examples)
 add_subdirectory(unitary_tests)
+add_subdirectory(bench)
 
 target_include_directories(RSQF PRIVATE ${CMAKE_SOURCE_DIR}/bundled/FQFeeder/include ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(RSQF PRIVATE fqfeeder ZLIB::ZLIB)

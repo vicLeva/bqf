@@ -210,6 +210,28 @@ public:
 
     void resize(uint64_t n);
 
+    /**
+     * \brief [BENCH] In-place transcription resize strategy.
+     *
+     * Thin wrapper around resize(): walks the old filter block-by-block and
+     * writes remainders+counters directly into the grown filter in a single
+     * pass, without decoding elements back to hashes. This is the strategy used
+     * on the production insert path. Exposed under an explicit name so the
+     * resize benchmark can call it unambiguously alongside resize_enumerate().
+     */
+    void resize_inplace(uint64_t n);
+
+    /**
+     * \brief [BENCH] Enumerate-and-reinsert resize strategy (counter-aware).
+     *
+     * Counter-preserving analog of Rsqf::resize: enumerate() every (hash,count)
+     * pair into a map, allocate a fresh grown filter, then re-insert() each
+     * element through the normal insert path. Simpler but pays a full decode +
+     * per-element insertion cost. Produces a filter byte-identical to
+     * resize_inplace() for the same input, which the benchmark asserts.
+     */
+    void resize_enumerate(uint64_t n);
+
 private:
     void add_to_counter(uint64_t position, uint64_t rem_count);
     uint64_t insert_process_count(uint64_t count);
