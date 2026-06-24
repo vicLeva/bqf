@@ -20,7 +20,8 @@
  *   Repeats auto-drop to 1 above BIG_N elements (a single run is already long).
  *
  * Output: CSV on stdout ->
- *   q,n_elements,remainder_size,inplace_ms,enumerate_ms,est_peak_gb,peak_rss_gb,repeats_used
+ *   q,n_elements,remainder_size,inplace_ms,enumerate_ms,
+ *   improved_mem_gb,naive_mem_gb,peak_rss_gb,repeats_used
  *
  * Usage: ./resize_bench [q_min] [q_max] [repeats] [seed] [ram_budget_gb]
  *   defaults: q_min=14 q_max=31 repeats=3 seed=42 ram_budget_gb=0 (unlimited)
@@ -74,20 +75,30 @@ static double peak_rss_gb() {
     return 0.0;
 }
 
-// Analytic peak-memory estimate (GB) for the enumerate strategy at quotient q.
-// Sums: the element map + old filter + new filter + retained base + retained
-// in-place result. The map term dominates for large q.
+// Bytes occupied by the packed filter at quotient size q.
+static double filt_bytes(uint64_t q) {
+    const double slots = static_cast<double>(1ULL << q);
+    const double wpb   = (HASH_BITS + C_BITS - q) + MET_UNIT;     // words per block
+    return slots * wpb / BLOCK_SIZE * sizeof(uint64_t);
+}
+
+// Memory each variant *requires* to resize q -> q+1 (GB), modelling the real
+// single-filter scenario (no benchmark-harness copies):
+//   improved (in-place): hold the old filter + the new filter simultaneously.
+//   naive (enumerate)  : additionally materialise an n-element std::map.
+static double improved_mem_gb(uint64_t q) {
+    return (filt_bytes(q) + filt_bytes(q + 1)) / 1e9;
+}
+static double naive_mem_gb(uint64_t q) {
+    const double map_b = 0.95 * static_cast<double>(1ULL << q) * MAP_NODE_BYTES;
+    return (filt_bytes(q) + filt_bytes(q + 1) + map_b) / 1e9;
+}
+
+// Conservative estimate of the benchmark harness's own peak (GB): it keeps a
+// base copy and the in-place result resident alongside the naive working set.
+// Used only to size the RAM-budget stop so the process does not OOM.
 static double est_peak_gb(uint64_t q) {
-    const double slots   = static_cast<double>(1ULL << q);
-    const double n       = 0.95 * slots;
-    const double wpb_q   = (HASH_BITS + C_BITS - q) + MET_UNIT;   // words/block at q
-    const double wpb_q1  = (HASH_BITS + C_BITS - (q + 1)) + MET_UNIT;
-    const double filt_q  = slots       * wpb_q  / BLOCK_SIZE * sizeof(uint64_t);
-    const double filt_q1 = slots * 2.0 * wpb_q1 / BLOCK_SIZE * sizeof(uint64_t);
-    const double map_b   = n * MAP_NODE_BYTES;
-    // map + filter(b) + new_filter + base + last_inplace(q+1)
-    const double bytes = map_b + filt_q + filt_q1 + filt_q + filt_q1;
-    return bytes / 1e9;
+    return naive_mem_gb(q) + (filt_bytes(q) + filt_bytes(q + 1)) / 1e9;
 }
 
 // Two Bqf states are equal iff their geometry and packed filter match.
@@ -113,7 +124,7 @@ int main(int argc, char** argv) {
               << " repeats=" << repeats << " seed=" << seed
               << " ram_budget_gb=" << ram_gb << "\n";
     std::cout << "q,n_elements,remainder_size,inplace_ms,enumerate_ms,"
-                 "est_peak_gb,peak_rss_gb,repeats_used\n";
+                 "improved_mem_gb,naive_mem_gb,peak_rss_gb,repeats_used\n";
 
     std::mt19937_64 rng(seed);
     std::uniform_int_distribution<uint64_t> hash_dist(0, hash_mask);
@@ -171,7 +182,8 @@ int main(int argc, char** argv) {
 
         std::cout << q << "," << n_elements << "," << remainder_size << ","
                   << best_inplace << "," << best_enum << ","
-                  << est << "," << peak_rss_gb() << "," << rused
+                  << improved_mem_gb(q) << "," << naive_mem_gb(q) << ","
+                  << peak_rss_gb() << "," << rused
                   << "\n" << std::flush;                // flush: partial-run safe
         std::cerr << "  q=" << q << " n=" << n_elements
                   << " inplace=" << best_inplace << "ms"

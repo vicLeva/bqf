@@ -37,7 +37,7 @@ cmake --build "$BUILD_DIR" --target resize_bench -j"$(nproc)"
 mkdir -p "$OUTDIR"
 CSV="$OUTDIR/resize_results.csv"
 LOG="$OUTDIR/resize_results.log"
-PNG="$OUTDIR/resize_compare.png"
+PLOT_PREFIX="$OUTDIR/resize"        # -> <prefix>_time.png, <prefix>_memory.png
 
 # --- run sweep (self-limits q_max via the RAM budget) ---
 echo "[run_cluster] running sweep -> $CSV (log: $LOG)"
@@ -48,11 +48,11 @@ cat "$LOG"
 
 # --- plot (skip gracefully if matplotlib is unavailable on the node) ---
 if python3 -c "import matplotlib" 2>/dev/null; then
-    python3 bench/plot_resize.py "$CSV" "$PNG"
-    echo "[run_cluster] plot -> $PNG"
+    python3 bench/plot_resize.py "$CSV" "$PLOT_PREFIX"
+    echo "[run_cluster] plots -> ${PLOT_PREFIX}_time.png, ${PLOT_PREFIX}_memory.png"
 else
     echo "[run_cluster] matplotlib not found; copy $CSV locally and run:"
-    echo "             python3 bench/plot_resize.py $CSV $PNG"
+    echo "             python3 bench/plot_resize.py $CSV $PLOT_PREFIX"
 fi
 
 echo "[run_cluster] done."
